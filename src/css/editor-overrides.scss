@@ -1,0 +1,308 @@
+.app-forward-editor {
+  .gmail_quote_wrapper {
+    .gmail_quote_content {
+      display: block !important;
+    }
+  }
+}
+
+.fr-popup {
+  z-index: 22222 !important;
+}
+
+.app-editor-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 100px;
+  background: $white;
+
+  .email-editor-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 100px;
+  }
+
+  .fr-box {
+    .fr-toolbar.fr-top {
+      border: 0px;
+    }
+
+    .fr-wrapper,
+    .fr-second-toolbar {
+      background: transparent !important;
+      border: 0px !important;
+    }
+
+    .fr-toolbar.fr-bottom {
+      z-index: 2;
+      border: 0px !important;
+      border-top: 1px solid $grey-50 !important;
+
+      .fr-newline {
+        display: none;
+      }
+
+      .fr-btn {
+        height: 32px;
+        width: 32px;
+
+        &.fr-active:not(.fr-dropdown) {
+          .fr-svg {
+            path {
+              fill: $primary;
+            }
+          }
+        }
+
+        .fr-svg {
+          display: block;
+          margin: 0 auto;
+
+          path {
+            fill: $grey;
+          }
+        }
+      }
+    }
+
+    .fr-wrapper {
+      flex-grow: 1;
+      overflow-y: scroll;
+
+      scrollbar-width: none;
+      /* For Firefox */
+      -ms-overflow-style: none;
+      /* For Internet Explorer/Edge */
+      scrollbar-color: transparent transparent;
+      /* For Firefox */
+
+      &::-webkit-scrollbar {
+        display: none;
+        /* For Webkit browsers (Chrome, Safari, etc.) */
+      }
+
+      &::-webkit-scrollbar-track {
+        background-color: transparent;
+        /* For Webkit browsers */
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background-color: transparent;
+
+        /* For Webkit browsers */
+        &:hover {
+          background-color: transparent;
+          /* For Webkit browsers */
+        }
+      }
+    }
+
+    .fr-element {
+      font-weight: 400;
+      color: $black !important;
+
+      .row,
+      .column {
+        display: revert;
+      }
+
+      table {
+
+        td,
+        th {
+          border: unset;
+        }
+      }
+
+      p,
+      a,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      input,
+      label,
+      textarea,
+      span,
+      li,
+      body {
+        font-family: unset;
+      }
+
+      &.fr-disabled {
+        user-select: initial;
+      }
+
+      h1 {
+        margin-block-start: 0.67em;
+        margin-block-end: 0.67em;
+        font-size: 2em;
+        font-weight: bold;
+      }
+
+      h2 {
+        margin-block-start: 0.83em;
+        margin-block-end: 0.83em;
+        font-size: 1.5em;
+        font-weight: bold;
+      }
+
+      h3 {
+        margin-block-start: 1em;
+        margin-block-end: 1em;
+        font-size: 1.17em;
+        font-weight: bold;
+      }
+
+      h4 {
+        margin-block-start: 1.33em;
+        margin-block-end: 1.33em;
+        font-size: 1em;
+        font-weight: bold;
+      }
+
+      h5 {
+        margin-block-start: 1.67em;
+        margin-block-end: 1.67em;
+        font-size: 0.83em;
+        font-weight: bold;
+      }
+
+      h6 {
+        margin-block-start: 2.33em;
+        margin-block-end: 2.33em;
+        font-size: 0.67em;
+        font-weight: bold;
+      }
+
+      p {
+        margin-block-start: 1em;
+        margin-block-end: 1em;
+      }
+
+
+      a {
+        font-family: unset;
+        font-weight: unset;
+      }
+
+      img {
+        max-width: unset;
+      }
+
+      .gmail_quote_content {
+        color: #500050;
+
+        blockquote {
+          color: #500050;
+          margin: 0px 0px 0px 0.8ex;
+          border-left: 1px solid rgb(204, 204, 204);
+          padding-left: 1ex;
+        }
+
+        .gmail_quote_wrapper {
+          .gmail_quote_content {
+            display: block !important;
+          }
+        }
+      }
+
+      span[data-token-type="variable"] {
+        color: $primary;
+        font-size: 13px;
+        font-weight: 550;
+        letter-spacing: 1.1px;
+
+        background: rgba($color: var(--primary-rgb), $alpha: 0.1);
+        border: 0.5px solid rgba($color: var(--primary-rgb), $alpha: 0.2);
+
+        padding: 0 2px;
+        border-radius: 4px;
+      }
+
+      span[data-token-type="spintax"] {
+        color: $primary;
+        font-size: 13px;
+        font-weight: 550;
+        letter-spacing: 1.1px;
+
+        background: rgba($color: var(--primary-rgb), $alpha: 0.1);
+        border: 0.5px solid rgba($color: var(--primary-rgb), $alpha: 0.2);
+
+        padding: 0 2px;
+        border-radius: 4px;
+
+        span {
+          font-weight: 550;
+        }
+      }
+
+      .spintax-option {
+        position: relative;
+        display: inline-block;
+
+
+        &:empty::before {
+          content: attr(data-placeholder);
+          color: rgba(var(--primary-rgb), 0.7);
+
+          pointer-events: none;
+          white-space: nowrap;
+        }
+      }
+
+      .spintax-separator {
+        user-select: text;
+        margin: 0px 2px;
+        color: $primary;
+      }
+
+      .gmail_quote_wrapper {
+        margin-top: 12px;
+        font-size: 14px;
+        color: #444;
+
+        /* Clear-dot fallback for better visibility (optional) */
+        .show-trimmed-button {
+          border: none;
+          width: 24px;
+          height: 11px;
+          cursor: pointer;
+          pointer-events: none;
+          border-radius: 5.5px;
+          background-color: rgb(232, 234, 237);
+
+          pointer-events: auto;
+          user-select: none;
+          caret-color: transparent;
+
+          &:hover {
+            background-color: rgb(218, 220, 224);
+          }
+
+          .ss-clear-dot {
+            pointer-events: none;
+            user-select: none;
+
+            background-size: 21px;
+            background-position: bottom;
+            background-repeat: no-repeat;
+
+            width: 24px;
+            height: 15px;
+            background-image: url(https://www.gstatic.com/images/icons/material/system_gm/2x/more_horiz_black_20dp.png);
+          }
+
+          /* Hidden quote content */
+          .trimmed-content {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+fragment PlanDetailsFragment on account_plan_details {
+  id
+  plan_name
+  billing_details
+  email_credits
+  email_credits_used
+  is_sub_active
+  plan_end_date
+}

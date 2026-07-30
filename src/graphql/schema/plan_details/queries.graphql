@@ -1,0 +1,18 @@
+#import './fragments.graphql'
+
+subscription getUserPlanDetails($accountId: Int!) {
+  results: account_plan_details(where: {
+    account_id: { _eq: $accountId}
+  }) {
+    ...PlanDetailsFragment
+  }
+}
+
+subscription getUserPaymentDetails($accountId: Int!) {
+  results: account_subscriptions(where: {
+    account_id: {_eq: $accountId}
+  }) {
+    is_inr_payment
+    payment_card_details
+  }
+}

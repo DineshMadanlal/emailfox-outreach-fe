@@ -1,0 +1,5 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="20" cy="20" r="20" fill="rgba(var(--primary-rgb), 0.05)"/>
+<path d="M12 20V26C12 27.1046 12.8954 28 14 28H26C27.1046 28 28 27.1046 28 26V20" stroke="rgba(var(--primary-rgb), 1)" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M20 12V22M20 22L16 17.9395M20 22L24 17.9395" stroke="rgba(var(--primary-rgb), 1)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

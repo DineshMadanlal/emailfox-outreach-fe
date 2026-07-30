@@ -1,0 +1,92 @@
+// Quasar SCSS (& Sass) Variables
+// --------------------------------------------------
+// To customize the look and feel of this app, you can override
+// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+
+// Check documentation for full list of Quasar variables
+
+// Your own variables (that are declared here) and Quasar's own
+// ones will be available out of the box in your .vue/.scss/.sass files
+
+// It's highly recommended to change the default colors
+// to match your app's branding.
+// Tip: Use the "Theme Builder" on Quasar's documentation website.
+:root {
+  --primary-color: #1C1F26;
+  --secondary-color: #12151A;
+  --tertiary-color: #553FEB;
+  --positive-color: #0B9C56;
+  --warning-color: #E77E03;
+  --negative-color: #DE1D2B;
+  --grey-color: #55647F;
+
+  --information-color: #268BEB;
+  --white-color: #FFFFFF;
+  --black-color: #040A14;
+  --blue-grey-color: #DCE0E8;
+
+  // list of grey colors
+  --grey-50: #eef0f2;
+  --grey-100: #cacfd7;
+  --grey-200: #b1b8c4;
+  --grey-300: #8d97a9;
+  --grey-400: #778399;
+  --grey-700: #3c475a;
+  --grey-800: #2F3746;
+}
+
+// Define a mixin to automatically generate color classes
+@mixin generate-color-classes($color-name, $color-variable) {
+  .text-#{"#{$color-name}"} {
+color: var(--#{$color-variable}) !important;
+}
+
+.bg-#{"#{$color-name}"} {
+background: var(--#{$color-variable}) !important;
+}
+}
+
+/* Define the mixin */
+@mixin svg-icon-stroke($property, $color) {
+  #{$property} {
+    stroke: $color;
+  }
+}
+
+@mixin svg-icon-fill($property, $color) {
+  #{$property} {
+    fill: $color;
+  }
+}
+
+// Use the mixin for different colors
+@include generate-color-classes("information", "information-color");
+@include generate-color-classes("white", "white-color");
+@include generate-color-classes("black", "black-color");
+
+/** Quasar doesn't support the below css names and that's why we're adding the below
+css to support new colors
+Documentaion Link: https://quasar.dev/style/color-palette#adding-your-own-colors
+*/
+// Use CSS variables in your SCSS
+$primary: var(--primary-color);
+$secondary: var(--secondary-color);
+$tertiary: var(--tertiary-color);
+$positive: var(--positive-color);
+$warning: var(--warning-color);
+$negative: var(--negative-color);
+$grey: var(--grey-color);
+
+$information: var(--information-color);
+$white: var(--white-color);
+$black: var(--black-color);
+$blue-grey: var(--blue-grey-color);
+
+// list of grey colors
+$grey-50: var(--grey-50);
+$grey-100: var(--grey-100);
+$grey-200: var(--grey-200);
+$grey-300: var(--grey-300);
+$grey-400: var(--grey-400);
+$grey-700: var(--grey-700);
+$grey-800: var(--grey-800);

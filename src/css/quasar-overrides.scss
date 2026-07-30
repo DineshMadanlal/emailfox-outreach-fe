@@ -1,0 +1,79 @@
+p,
+a,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+input,
+label,
+textarea,
+span,
+li,
+body {
+  font-weight: 400;
+  font-family: Inter, sans-serif;
+
+  /** ensure that every element in your app has a line-height that is 1.414 times its font size. */
+  line-height: 1.414;
+}
+
+p,
+a {
+  margin: 0px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0px;
+  font-weight: bold;
+}
+
+/** Input element border **/
+.q-field--outlined {
+  .q-field__control {
+    border-radius: 6px;
+
+    &::before {
+      border-color: $blue-grey;
+    }
+  }
+
+  &.q-field--highlighted {
+    .q-field__control {
+      color: $primary;
+
+      &::after {
+        border-width: 1.2px;
+        box-shadow: 0px 0px 0px 3px rgba($color: var(--primary-rgb), $alpha: 0.10);
+      }
+    }
+  }
+
+  &.q-field--error {
+    .q-field__control {
+      color: $negative;
+
+      &::after {
+        border-width: 1.2px;
+        box-shadow: 0px 0px 0px 3px rgba($color: var(--negative-rgb), $alpha: 0.10);
+      }
+    }
+  }
+}
+
+.q-btn {
+  border-radius: 6px;
+}
+
+.q-select--without-input {
+  .q-select__dropdown-icon {
+    color: $grey;
+    font-size: 16px;
+  }
+}
