@@ -14,11 +14,19 @@
       />
     </q-dialog>
 
-    <div class="edit-sequence-container">
+    <!-- Api loader -->
+    <ApiLoader :show="fetchCampaignByIdApiLoading" />
+
+    <!--  -->
+    <div
+      class="edit-sequence-container"
+
+      v-if="campaignByIdJson.id"
+    >
       <!-- header -->
       <div class="edit-sequence-header">
         <CampaignFormHeader
-          :campaignByIdJson="campaignByIdJson"
+          :campaignById="campaignByIdJson"
 
           @closeCampaignForm="closeCampaignForm"
           @onUpdateCampaignJson="onUpdateCampaignJson"
@@ -34,9 +42,12 @@
 </template>
 
 <script>
+// lodash
+import isEmpty from 'lodash/isEmpty';
+
 // vue
 import {
-  defineComponent, onMounted, reactive, toRefs, computed,
+  defineComponent, onMounted, reactive, toRefs, computed, getCurrentInstance,
 } from 'vue';
 
 // quasar
@@ -45,7 +56,15 @@ import { useMeta } from 'quasar';
 // router
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 
+// pinia
+import { storeExclusions } from 'src/stores/storeExclusions.js';
+
+// utils
+import { getApiCall } from 'src/utils/apiRequests';
+import { convertStringToNumber } from 'src/utils/numbers';
+
 // components
+import ApiLoader from 'components/General/ApiLoader.vue';
 import CampaignFormHeader from 'components/CampaignForm/Header.vue';
 import DiscardConfirmation from 'components/Modals/DiscardConfirmation.vue';
 
@@ -59,6 +78,7 @@ export default defineComponent({
   name: 'EditCampaign',
 
   components: {
+    ApiLoader,
     DiscardConfirmation,
     CampaignFormHeader,
   },
@@ -68,24 +88,22 @@ export default defineComponent({
     const $route = useRoute();
     const $router = useRouter();
 
+    // app cntext
+    const { appContext } = getCurrentInstance();
+
     // composition API
     const { isMobileDevice, generateMetadata } = useAppHelpersApi();
+
+    // pinia
+    const storeExclusionsPinia = storeExclusions();
 
     // metadata
     useMeta(generateMetadata('Campaign Editor'));
 
-    // computed
-    const currentCampaignId = computed(() => $route.params.campaignId);
-
     // state
     const state = reactive({
-      campaigns: [],
-      isFetchApiLoading: false,
-
-      campaignByIdJson: {
-        id: currentCampaignId.value,
-        name: 'Cold Email Sequence: 3 Follow-ups',
-      },
+      campaignByIdJson: {},
+      fetchCampaignByIdApiLoading: false,
 
       //
       formChanged: false,
@@ -93,6 +111,10 @@ export default defineComponent({
       previousRoutePath: '',
       showDiscardConfirmationModal: false,
     });
+
+    // computed
+    const campaignId = computed(() => convertStringToNumber($route.params.campaignId));
+    const campaignByIdJsonFromStore = computed(() => storeExclusionsPinia.campaignByIdJson);
 
     // methods
     const onExitPage = () => {
@@ -115,10 +137,65 @@ export default defineComponent({
 
     const onUpdateCampaignJson = (updatedCampaignJson) => {
       state.campaignByIdJson = updatedCampaignJson;
+
+      // update store
+      storeExclusionsPinia.setMultipleFields({
+        campaignByIdJson: updatedCampaignJson,
+      });
+    };
+
+    const getCampaignById = async () => {
+      try {
+        state.fetchCampaignByIdApiLoading = true;
+
+        // make api call
+        const response = await getApiCall({
+          includeWorkspace: true,
+          endpoint: `/sequences/${campaignId.value}`,
+        });
+
+        if (isEmpty(response)) {
+          // show error warning
+          appContext.config.globalProperties.$toast({
+            warning: true,
+            message: 'Sequence Not Found',
+          });
+
+          // Push to error page
+          $router.push('/outreach/campaign-not-found');
+        } else {
+          state.campaignByIdJson = response;
+
+          // update store
+          storeExclusionsPinia.setMultipleFields({
+            campaignByIdJson: response,
+          });
+
+          // metadata
+          useMeta(generateMetadata(state.campaignByIdJson.name));
+        }
+      } catch (error) {
+        // show error warning
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+
+        // Push to error page
+        $router.push('/outreach/campaign-not-found');
+      } finally {
+        state.fetchCampaignByIdApiLoading = false;
+      }
     };
 
     const onComponentMounted = async () => {
       state.previousRoutePath = $router?.options?.history?.state?.back;
+
+      if (campaignByIdJsonFromStore.value?.id === campaignId.value) {
+        state.campaignByIdJson = campaignByIdJsonFromStore.value;
+      }
+
+      getCampaignById();
     };
 
     onMounted(() => {
@@ -161,6 +238,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
 
   .edit-sequence-container {
     width: 100%;

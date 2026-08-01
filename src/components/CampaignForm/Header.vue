@@ -9,9 +9,10 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveCampaignDetails
-        :campaignJson="campaignByIdJson"
+        isUpdateName
+        :campaignJson="campaignById"
 
-        @onUpdateCampaignName="onUpdateCampaignName"
+        @onUpdateCampaign="onUpdateCampaignName"
       />
     </q-dialog>
 
@@ -40,7 +41,7 @@
 
     <!-- Right side content -->
     <CampaignSteps
-      :campaignByIdJson="campaignByIdJson"
+      :campaignById="campaignById"
     />
 
     <!-- Close -->
@@ -86,7 +87,7 @@ export default defineComponent({
   },
 
   props: {
-    campaignByIdJson: {
+    campaignById: {
       type: Object,
       default: () => ({}),
     },
@@ -102,7 +103,7 @@ export default defineComponent({
     });
 
     // computed
-    const campaignName = computed(() => props.campaignByIdJson.name);
+    const campaignName = computed(() => props.campaignById.name);
 
     // methods
     const onUpdateCampaignName = (updatedCampaignJson) => {

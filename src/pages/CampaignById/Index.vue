@@ -7,6 +7,8 @@
     <CampaignByIdHeader
       v-if="campaignByIdJson.id"
       :campaignByIdJson="campaignByIdJson"
+
+      @onUpdateCampaign="onUpdateCampaign"
     />
 
     <!-- Campaign by ID -->
@@ -74,9 +76,7 @@ export default defineComponent({
 
     // state
     const state = reactive({
-      campaignByIdJson: {
-        id: convertStringToNumber($route.params.campaignId),
-      },
+      campaignByIdJson: {},
       fetchCampaignByIdApiLoading: false,
     });
 
@@ -86,15 +86,13 @@ export default defineComponent({
 
     // methods
     const makeApiCallOnMounted = async () => {
-      if (true) {
-        return;
-      }
       try {
         state.fetchCampaignByIdApiLoading = true;
 
         // make api call
         const response = await getApiCall({
-          endpoint: `/campaigns/${campaignId.value}`,
+          includeWorkspace: true,
+          endpoint: `/sequences/${campaignId.value}`,
         });
 
         if (isEmpty(response)) {
@@ -131,6 +129,15 @@ export default defineComponent({
       }
     };
 
+    const onUpdateCampaign = (updatedCampaignJson) => {
+      state.campaignByIdJson = updatedCampaignJson;
+
+      // update store
+      storeExclusionsPinia.setMultipleFields({
+        campaignByIdJson: updatedCampaignJson,
+      });
+    };
+
     // lifecycle hooks
     onMounted(() => {
       if (campaignByIdJsonFromStore.value?.id === campaignId.value) {
@@ -146,6 +153,9 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+
+      // methods
+      onUpdateCampaign,
     };
   },
 });

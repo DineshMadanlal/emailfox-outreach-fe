@@ -1,0 +1,65 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.15.0
+
+      - name: Install Dependencies
+        run: npm install
+
+      # CREATE ENV FILE HERE
+      - name: Create .env
+        run: |
+          echo "BE_API_URL=https://outreach-api.emailfox.ai/api" >> .env
+          echo "GRAPHQL_ENDPOINT=gql.apiruntime.com/v1/graphql" >> .env
+          echo "GLEAP_API_KEY=1avlI33Wb3s19NpXARq142QeFdy0brXv" >> .env
+          echo "EDITOR_KEY=xGE6oF4B3B2C10D9C4C4B2LxloC-22VKOG1FGULVKHXDXNDXc2a1Kd1SNdF3H3A8C6D4F4A3E3B2A12==" >> .env
+
+      - name: Build Quasar App
+        run: npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      # Upload immutable hashed assets
+      - name: Upload Static Assets
+        run: |
+          aws s3 sync dist/spa s3://emailfox-frontend \
+            --delete \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable"
+
+      # Upload index.html separately
+      - name: Upload index.html
+        run: |
+          aws s3 cp dist/spa/index.html s3://emailfox-frontend/index.html \
+            --cache-control "public, max-age=300, stale-while-revalidate=86400" \
+            --content-type "text/html"
+
+      # Invalidate ONLY index.html
+      - name: Invalidate CloudFront index.html
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E2SA3QL6S3LHOC \
+            --paths "/index.html" "/"

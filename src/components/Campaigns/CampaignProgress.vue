@@ -35,27 +35,10 @@ export default defineComponent({
     },
   },
 
-  setup() {
+  setup(props) {
     // computed
-    const campaignStatusJson = computed(() => {
-      const statuses = Object.values(CAMPAIGN_STATUS);
-
-      const randomStatusValue = statuses[Math.floor(Math.random() * statuses.length)].value;
-      switch (randomStatusValue) {
-        case CAMPAIGN_STATUS.INPROGRESS.value:
-          return CAMPAIGN_STATUS.INPROGRESS;
-        case CAMPAIGN_STATUS.COMPLETED.value:
-          return CAMPAIGN_STATUS.COMPLETED;
-        case CAMPAIGN_STATUS.PAUSED.value:
-          return CAMPAIGN_STATUS.PAUSED;
-        case CAMPAIGN_STATUS.STOPPED.value:
-          return CAMPAIGN_STATUS.STOPPED;
-        case CAMPAIGN_STATUS.SCHEDULED.value:
-          return CAMPAIGN_STATUS.SCHEDULED;
-        default:
-          return CAMPAIGN_STATUS.DRAFTED;
-      }
-    });
+    const campaignStatusJson = computed(() => CAMPAIGN_STATUS[props.status]
+      || CAMPAIGN_STATUS.DRAFTED);
 
     return {
       // computed

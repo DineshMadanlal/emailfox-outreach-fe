@@ -468,7 +468,7 @@ export const SUPPRESSION_FIELD_ALIASES = {
 export const CAMPAIGN_TYPES = {
   EMAIL: {
     label: 'Email Outreach',
-    value: 'EMAIL_OUTREACH',
+    value: 'EMAIL_ONLY',
     description: 'Reach prospects through Email only.',
     icons: [{
       image: 'mail',
@@ -477,7 +477,7 @@ export const CAMPAIGN_TYPES = {
   },
   LINKEDIN: {
     label: 'LinkedIn Outreach',
-    value: 'LINKEDIN_OUTREACH',
+    value: 'LINKEDIN_ONLY',
     description: 'Reach prospects through LinkedIn only.',
     icons: [{
       image: 'linkedin',

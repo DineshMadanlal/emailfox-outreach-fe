@@ -1,6 +1,6 @@
 // utils
 import {
-  postApiCall, putApiCall,
+  postApiCall, putApiCall, patchApiCall,
 } from 'src/utils/apiRequests';
 
 // constants
@@ -85,4 +85,48 @@ export const getDelayState = ({ unit, value }) => {
     delayUnit: DELAY_UNIT_TYPES.DAYS.value,
     delayValue: value,
   };
+};
+
+export const pauseCampaignById = async ({
+  campaignId, $toast,
+}) => {
+  try {
+    // API Call
+    await patchApiCall({
+      includeWorkspace: true,
+      endpoint: `/sequences/${campaignId}/pause`,
+    });
+
+    return true;
+  } catch (error) {
+    // show toast
+    $toast({
+      warning: true,
+      message: error.message,
+    });
+
+    return false;
+  }
+};
+
+export const cloneCampaignById = async ({
+  campaignId, $toast,
+}) => {
+  try {
+    // API Call
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: `/sequences/${campaignId}/clone`,
+    });
+
+    return response;
+  } catch (error) {
+    // show toast
+    $toast({
+      warning: true,
+      message: error.message,
+    });
+
+    return false;
+  }
 };

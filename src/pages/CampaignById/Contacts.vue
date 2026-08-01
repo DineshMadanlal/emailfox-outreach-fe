@@ -1,12 +1,16 @@
 <template>
   <div class="sequence-by-id-contacts">
     <!-- contact delivery stats -->
-    <ContactDeliveryStats />
+    <ContactDeliveryStats
+      :campaignId="campaignByIdJson.id"
+
+      v-if="false"
+    />
 
     <!-- table -->
     <ContactsTable
       hideHeader
-      :sequenceByIdPage="true"
+      :campaignId="campaignByIdJson.id"
     />
   </div>
 </template>
@@ -20,11 +24,18 @@ import ContactsTable from 'components/Contacts/ContactsTable.vue';
 import ContactDeliveryStats from 'components/Contacts/ContactDeliveryStats.vue';
 
 export default defineComponent({
-  name: 'SequenceByIdContacts',
+  name: 'CampaignByIdContacts',
 
   components: {
     ContactsTable,
     ContactDeliveryStats,
+  },
+
+  props: {
+    campaignByIdJson: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 });
 </script>

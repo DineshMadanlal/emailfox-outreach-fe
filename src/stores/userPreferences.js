@@ -54,6 +54,13 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
       listDetails: {},
     },
 
+    campaignByIdContactsState: {
+      filters: {},
+      pagination: null,
+      tableData: [],
+      visibleColumns: [],
+    },
+
     // all sequences
     allCampaignsState: {
       tablePreferences: {
@@ -61,11 +68,6 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
         searchInput: '',
       },
       tableData: [],
-      visibleColumns: [],
-    },
-
-    // sequence by ID
-    sequenceByIdState: {
       visibleColumns: [],
     },
 

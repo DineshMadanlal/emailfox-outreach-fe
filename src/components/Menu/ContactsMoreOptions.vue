@@ -8,7 +8,7 @@
     <!-- List -->
     <q-list style="min-width: 202px" class="contacts-action-list">
       <!-- Edit -->
-      <q-item
+      <!-- <q-item
         v-ripple
         clickable
         class="flex items-center each-contact-action-item"
@@ -19,10 +19,10 @@
         <p class="contact-action-text">
           Edit Contact
         </p>
-      </q-item>
+      </q-item> -->
 
       <!-- Mark as Inactive -->
-      <q-item
+      <!-- <q-item
         v-ripple
         clickable
         class="flex items-center each-contact-action-item"
@@ -33,7 +33,7 @@
         <p class="contact-action-text">
           View Details
         </p>
-      </q-item>
+      </q-item> -->
 
       <!-- Delete -->
       <q-item

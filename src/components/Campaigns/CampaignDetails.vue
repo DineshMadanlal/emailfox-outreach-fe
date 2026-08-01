@@ -31,19 +31,26 @@
 
       <div class="seq-details-flex">
         <!-- Email Sequence -->
-        <!-- <div
+        <div
           class="each-detail-block"
         >
           <LocalSvgIcon
-            image="mail"
+            v-for="(iconData, index) in campaignChannelJson.icons"
+            :key="`${tableRowJson.id}-channel-icon-${index}`"
+
+            :image="iconData.image"
             classes="each-detail-icon"
           />
-        </div> -->
 
-        <!-- <LocalSvgIcon
+          <div class="stat-value-text">
+            {{ campaignChannelJson.label }}
+          </div>
+        </div>
+
+        <LocalSvgIcon
           image="circle-dot"
           classes="circle-dot-icon"
-        /> -->
+        />
 
         <!-- Campaign Created At -->
         <div class="each-detail-block">
@@ -82,6 +89,7 @@
 
         @cloneCampaign="onCloneCampaign"
         @renameCampaign="onRenameCampaign"
+        @pauseCampaign="onPauseCampaign"
         @archiveCampaign="$emit('archiveCampaign')"
       />
     </q-btn>
@@ -106,7 +114,10 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { formatDate2 } from 'src/utils/dates';
-import { postApiCall } from 'src/utils/apiRequests';
+import { pauseCampaignById, cloneCampaignById } from 'src/utils/campaignApi.js';
+
+// constants
+import { CAMPAIGN_TYPES, CAMPAIGN_STATUS } from 'src/boot/campaign-constants';
 
 export default defineComponent({
   name: 'CampaignDetails',
@@ -144,6 +155,32 @@ export default defineComponent({
     // computed
     const campaignCreatedAt = computed(() => formatDate2(props.tableRowJson.created_at));
 
+    const isEmailOnlyCampaign = computed(() => props.tableRowJson.type
+      === CAMPAIGN_TYPES.EMAIL.value);
+
+    const isLinkedInOnlyCampaign = computed(() => props.tableRowJson.type
+      === CAMPAIGN_TYPES.LINKEDIN.value);
+
+    const campaignChannelJson = computed(() => {
+      if (isEmailOnlyCampaign.value) {
+        return {
+          label: 'Single Channel',
+          icons: CAMPAIGN_TYPES.EMAIL.icons,
+        };
+      }
+      if (isLinkedInOnlyCampaign.value) {
+        return {
+          label: 'Single Channel',
+          icons: CAMPAIGN_TYPES.LINKEDIN.icons,
+        };
+      }
+
+      return {
+        label: 'Multi Channel',
+        icons: CAMPAIGN_TYPES.MULTI_CHANNEL.icons,
+      };
+    });
+
     // methods
     const onUpdateCampaign = (updatedCampaignJson) => {
       state.showSaveCampaignDetailsModal = false;
@@ -156,29 +193,45 @@ export default defineComponent({
       state.showSaveCampaignDetailsModal = true;
     };
 
-    const onCloneCampaign = async () => {
-      try {
-        showQuasarLoader();
+    const onPauseCampaign = async () => {
+      const oldStatus = props.tableRowJson.status;
 
-        // API Call
-        const response = await postApiCall({
-          includeWorkspace: true,
-          endpoint: `/sequences/${props.tableRowJson.id}/clone`,
+      // update the campaign status in the parent component
+      emit('onUpdateCampaign', {
+        ...props.tableRowJson,
+        status: CAMPAIGN_STATUS.PAUSED.value,
+      });
+
+      // try catch is handled in the api function
+      const response = await pauseCampaignById({
+        campaignId: props.tableRowJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (!response) {
+        // update the campaign status in the parent component
+        emit('onUpdateCampaign', {
+          ...props.tableRowJson,
+          status: oldStatus,
         });
+      }
+    };
 
+    const onCloneCampaign = async () => {
+      showQuasarLoader();
+
+      const response = await cloneCampaignById({
+        campaignId: props.tableRowJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (response) {
         // move to campaign by ID
         const campaignId = response.id;
         $router.push(`/outreach/campaigns/${campaignId}/edit`);
-      } catch (error) {
-        // show toast
-        appContext.config.globalProperties.$toast({
-          warning: true,
-          message: error.message,
-        });
-      } finally {
-        // Hide the loader after the operation is complete
-        hideQuasarLoader();
       }
+
+      hideQuasarLoader();
     };
 
     return {
@@ -188,11 +241,13 @@ export default defineComponent({
       // computed
       isMobileDevice,
       campaignCreatedAt,
+      campaignChannelJson,
 
       // methods
       onUpdateCampaign,
       onRenameCampaign,
       onCloneCampaign,
+      onPauseCampaign,
     };
   },
 });

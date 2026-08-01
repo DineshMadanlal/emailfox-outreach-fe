@@ -63,6 +63,7 @@
         v-if="showAllContactsIllustration"
 
         :listId="listId"
+        :campaignId="campaignId"
       />
 
       <div
@@ -432,6 +433,10 @@ export default defineComponent({
       type: Number,
       default: null,
     },
+    campaignId: {
+      type: Number,
+      default: null,
+    },
     hideHeader: {
       type: Boolean,
       default: false,
@@ -525,6 +530,8 @@ export default defineComponent({
       return `${start} to ${end} of ${getNumeralAmount(rowsNumber)}`;
     });
 
+    const isCampaignByIdPage = computed(() => !!props.campaignId);
+
     const selectedContactsLength = computed(() => size(state.selectedContacts));
 
     const baseColumns = [
@@ -597,7 +604,7 @@ export default defineComponent({
     };
 
     const updateDataToStore = () => {
-      if (props.sequenceByIdPage) {
+      if (isCampaignByIdPage.value) {
         return;
       }
       const dataToStore = {
@@ -611,6 +618,13 @@ export default defineComponent({
         userStore.setMultipleFields({
           listByIdContactsState: {
             ...userStore.listByIdContactsState,
+            ...dataToStore,
+          },
+        });
+      } else if (props.campaignId) {
+        userStore.setMultipleFields({
+          campaignByIdContactsState: {
+            ...userStore.campaignByIdContactsState,
             ...dataToStore,
           },
         });
@@ -652,6 +666,8 @@ export default defineComponent({
         let endpoint = '/contacts';
         if (props.listId) {
           endpoint = `/lists/${props.listId}/contacts`;
+        } else if (props.campaignId) {
+          endpoint = `/sequences/${props.campaignId}/contacts`;
         }
 
         const response = await getApiCall({
@@ -760,6 +776,8 @@ export default defineComponent({
 
       if (props.listId) {
         loadFromStoreJson = userStore.listByIdContactsState;
+      } else if (props.campaignId) {
+        loadFromStoreJson = userStore.campaignByIdContactsState;
       }
 
       const {

@@ -36,6 +36,13 @@ import { getNumeralAmount } from 'src/utils/numbers.js';
 export default defineComponent({
   name: 'ContactDeliveryStats',
 
+  props: {
+    campaignId: {
+      type: [String, Number],
+      default: null,
+    },
+  },
+
   setup() {
     // state
     const state = reactive({

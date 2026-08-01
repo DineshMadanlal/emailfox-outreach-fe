@@ -3,6 +3,37 @@
     id="sequenceByIdHeader"
     class="sequence-by-id-header"
   >
+    <!-- Dialog -->
+    <q-dialog
+      v-model="showSaveCampaignDetailsModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SaveCampaignDetails
+        :isUpdateName="isUpdateName"
+        :campaignJson="campaignByIdJson"
+
+        @onUpdateCampaign="onUpdateCampaign"
+      />
+    </q-dialog>
+
+    <!-- Dialog -->
+    <q-dialog
+      v-model="showArchiveCampaignModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ArchiveCampaign
+        :selectedCampaignJson="campaignByIdJson"
+
+        @onSuccess="onSuccessfulArchiveCampaign"
+      />
+    </q-dialog>
+
     <!-- top header -->
     <div class="sequence-id-top-header">
       <!-- Campaigns route -->
@@ -28,31 +59,14 @@
       <!-- left -->
       <div>
         <h6 class="sequence-name-text ellipsis">
-          Outreach campaign
+          {{ campaignByIdJson.name }}
         </h6>
 
         <div class="sequence-details-grid">
           <!-- Status -->
           <CampaignProgress
-            status="INPROGRESS"
+            :status="campaignByIdJson.status"
           />
-
-          <!-- Dot -->
-          <LocalSvgIcon
-            image="circle-dot"
-            classes="dot-icon"
-          />
-
-          <!-- Number of campaigns -->
-          <div class="flex item-center no-wrap">
-            <LocalSvgIcon
-              image="seq-sent"
-            />
-
-            <p class="seq-value-text">
-              {{ numberOfCampaigns }}
-            </p>
-          </div>
 
           <!-- Dot -->
           <LocalSvgIcon
@@ -61,13 +75,18 @@
           />
 
           <!-- Number of contacts -->
-          <div class="flex item-center no-wrap">
+          <div
+            class="flex item-center no-wrap"
+            :title="`Number of contacts: ${numberOfContacts}`"
+          >
             <LocalSvgIcon
               image="contacts"
               classes="seq-contact-icon"
             />
 
-            <p class="seq-value-text">
+            <p
+              class="seq-value-text"
+            >
               {{ numberOfContacts }}
             </p>
           </div>
@@ -92,6 +111,15 @@
             image="more"
             classes="sequence-more-icon"
           />
+
+          <CampaignMoreOptions
+            :campaignStatus="campaignByIdJson.status"
+
+            @cloneCampaign="onCloneCampaign"
+            @renameCampaign="onRenameCampaign"
+            @pauseCampaign="onPauseCampaign"
+            @archiveCampaign="showArchiveCampaignModal = true"
+          />
         </q-btn>
 
         <!-- Edit Button -->
@@ -102,6 +130,8 @@
 
           color="black"
           class="edit-sequence-btn"
+
+          :to="`/outreach/campaigns/${campaignByIdJson.id}/edit`"
         >
           <LocalSvgIcon
             image="edit"
@@ -120,6 +150,8 @@
 
           color="primary"
           class="add-contacts-btn"
+
+          :to="`/outreach/campaigns/${campaignByIdJson.id}/edit/contacts`"
         >
           <div class="flex no-wrap items-center">
             <LocalSvgIcon
@@ -166,19 +198,41 @@
 
 <script>
 // vue
-import { computed, defineComponent } from 'vue';
+import {
+  computed, defineComponent, toRefs, reactive, getCurrentInstance,
+} from 'vue';
+
+// vue-router
+import { useRouter } from 'vue-router';
 
 // components
 import CampaignProgress from 'components/Campaigns/CampaignProgress.vue';
+import CampaignMoreOptions from 'components/Menu/CampaignMoreOptions.vue';
+
+import ArchiveCampaign from 'components/Campaigns/Modals/ArchiveCampaign.vue';
+import SaveCampaignDetails from 'components/Campaigns/Modals/SaveCampaignDetails.vue';
+
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { getNumeralAmount } from 'src/utils/numbers.js';
+import { pauseCampaignById, cloneCampaignById } from 'src/utils/campaignApi.js';
+
+// constants
+import { CAMPAIGN_STATUS } from 'src/boot/campaign-constants';
 
 export default defineComponent({
-  name: 'SequenceByIdHeader',
+  name: 'CampaignByIdHeader',
+
+  emits: ['onUpdateCampaign'],
 
   components: {
     CampaignProgress,
+    CampaignMoreOptions,
+
+    ArchiveCampaign,
+    SaveCampaignDetails,
   },
 
   props: {
@@ -188,10 +242,27 @@ export default defineComponent({
     },
   },
 
-  setup(props) {
+  setup(props, { emit }) {
+    // router
+    const $router = useRouter();
+
+    // instance
+    const { appContext } = getCurrentInstance();
+
+    // composition API
+    const { isMobileDevice, showQuasarLoader, hideQuasarLoader } = useAppHelpersApi();
+
+    // state
+    const state = reactive({
+      isUpdateName: false,
+      showSaveCampaignDetailsModal: false,
+      showArchiveCampaignModal: false,
+    });
+
     // computed
-    const numberOfCampaigns = computed(() => 4);
-    const numberOfContacts = computed(() => getNumeralAmount(12345));
+    const numberOfContacts = computed(() => getNumeralAmount(
+      props.campaignByIdJson.total_no_contacts || 0,
+    ));
 
     const sequenceByIdRoutes = computed(() => {
       const sequenceId = props.campaignByIdJson.id;
@@ -224,11 +295,80 @@ export default defineComponent({
       ];
     });
 
+    // methods
+    const onRenameCampaign = () => {
+      state.isUpdateName = true;
+      state.showSaveCampaignDetailsModal = true;
+    };
+
+    const onSuccessfulArchiveCampaign = () => {
+      state.showArchiveCampaignModal = false;
+
+      $router.push('/outreach/campaigns-all');
+    };
+
+    const onUpdateCampaign = (updatedCampaignJson) => {
+      state.showSaveCampaignDetailsModal = false;
+
+      emit('onUpdateCampaign', updatedCampaignJson);
+    };
+
+    const onCloneCampaign = async () => {
+      showQuasarLoader();
+
+      const response = await cloneCampaignById({
+        campaignId: props.campaignByIdJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (response) {
+        // move to campaign by ID
+        const campaignId = response.id;
+        $router.push(`/outreach/campaigns/${campaignId}/edit`);
+      }
+
+      hideQuasarLoader();
+    };
+
+    const onPauseCampaign = async () => {
+      const oldStatus = props.campaignByIdJson.status;
+
+      // update the campaign status in the parent component
+      emit('onUpdateCampaign', {
+        ...props.campaignByIdJson,
+        status: CAMPAIGN_STATUS.PAUSED.value,
+      });
+
+      // try catch is handled in the api function
+      const response = await pauseCampaignById({
+        campaignId: props.campaignByIdJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (!response) {
+        // update the campaign status in the parent component
+        emit('onUpdateCampaign', {
+          ...props.campaignByIdJson,
+          status: oldStatus,
+        });
+      }
+    };
+
     return {
+      // state
+      ...toRefs(state),
+
       // computed
+      isMobileDevice,
       numberOfContacts,
       sequenceByIdRoutes,
-      numberOfCampaigns,
+
+      // methods
+      onCloneCampaign,
+      onRenameCampaign,
+      onUpdateCampaign,
+      onPauseCampaign,
+      onSuccessfulArchiveCampaign,
     };
   },
 });

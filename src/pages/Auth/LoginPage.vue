@@ -50,8 +50,12 @@ export default defineComponent({
     const ssoLogin = async (tokenInput) => {
       try {
         const response = await postApiCall({
-          endpoint: '/users/login',
-          payload: { token: tokenInput },
+          endpoint: '/partners/sso-login',
+          payload: {
+            // hardcoded partner_id for now
+            partner_id: 2,
+            token: tokenInput,
+          },
         });
 
         // set token

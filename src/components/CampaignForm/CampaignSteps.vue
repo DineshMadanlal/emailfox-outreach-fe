@@ -56,7 +56,7 @@ export default defineComponent({
   emits: ['setStep'],
 
   props: {
-    campaignByIdJson: {
+    campaignById: {
       type: Object,
       default: () => ({}),
     },
@@ -69,7 +69,7 @@ export default defineComponent({
     // computed
     const activeRoutePath = computed(() => $route.path);
 
-    const campaignId = computed(() => props.campaignByIdJson.id);
+    const campaignId = computed(() => props.campaignById.id);
 
     const sequenceFormSteps = computed(() => {
       const steps = [

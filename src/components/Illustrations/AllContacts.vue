@@ -46,13 +46,20 @@ export default defineComponent({
       type: [String, Number],
       default: null,
     },
+    campaignId: {
+      type: [String, Number],
+      default: null,
+    },
   },
 
   setup(props) {
     const toRoute = computed(() => {
       if (props.listId) {
         return `/outreach/contacts/${props.listId}/upload`;
+      } if (props.campaignId) {
+        return `/outreach/campaigns/${props.campaignId}/edit/contacts`;
       }
+
       return '/outreach/contacts/upload';
     });
 

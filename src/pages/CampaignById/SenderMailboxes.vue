@@ -15,8 +15,6 @@
         :baseColumns="baseColumns"
         :dynamicColumns="dynamicColumns"
         v-model:visibleColumns="visibleColumns"
-
-        @update:visible-columns="onUpdateVisibleColumns"
       />
     </q-dialog>
 
@@ -303,9 +301,6 @@
 </template>
 
 <script>
-// lodash
-import isEmpty from 'lodash/isEmpty';
-
 // vue
 import {
   defineComponent, toRefs, reactive, computed, onMounted, getCurrentInstance,
@@ -325,14 +320,11 @@ import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import StatusBadge from 'components/CampaignById/StatusBadge.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 
-// import store
-import { useUserPreferencesStore } from 'src/stores/userPreferences';
-
 // constants
 import { DEFAULT_TABLE_PAGINATION } from 'boot/constants';
 
 export default defineComponent({
-  name: 'SequenceByIdSenderMailboxes',
+  name: 'CampaignByIdSenderMailboxes',
 
   components: {
     StatusBadge,
@@ -341,15 +333,19 @@ export default defineComponent({
     ColumnsVisibility,
   },
 
-  setup() {
+  props: {
+    campaignByIdJson: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  setup(props) {
     // instance
     const { appContext } = getCurrentInstance();
 
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
-
-    // store
-    const userStore = useUserPreferencesStore();
 
     // state
     const state = reactive({
@@ -435,16 +431,6 @@ export default defineComponent({
       ];
     });
 
-    // methods
-    const onUpdateVisibleColumns = () => {
-      // store in pinia
-      userStore.setMultipleFields({
-        sequenceByIdState: {
-          visibleColumns: state.visibleColumns,
-        },
-      });
-    };
-
     // API Calls
     const fetchData = async (page = 1, perPage = 10) => {
       try {
@@ -456,12 +442,9 @@ export default defineComponent({
           search_text: state.searchMailboxInput,
         };
 
-        if (state.filterDomainId) {
-          params.domain_id = state.filterDomainId;
-        }
-
         const response = await getApiCall({
-          endpoint: '/mailboxes',
+          includeWorkspace: true,
+          endpoint: `/sequences/${props.campaignByIdJson.id}/mailboxes`,
           params,
         });
 
@@ -499,16 +482,6 @@ export default defineComponent({
         state.multiSelectOptionJson = {};
 
         state.pagination.rowsNumber = count;
-
-        // store in pinia
-        userStore.setMultipleFields({
-          allMailboxesTableData: state.tableData,
-          allMailboxesPreferences: {
-            pagination: state.pagination,
-            filterDomainId: state.filterDomainId,
-            searchMailboxInput: state.searchMailboxInput,
-          },
-        });
       } catch (error) {
         // Show a toaster that domain have been setup successfully
         appContext.config.globalProperties.$toast({
@@ -548,12 +521,8 @@ export default defineComponent({
     };
 
     const makeApiCallOnMounted = () => {
-      if (isEmpty(userStore.sequenceByIdState?.visibleColumns)) {
-        // set default visible columns
-        state.visibleColumns = dynamicColumns.value.map((col) => col.name);
-      } else {
-        state.visibleColumns = [...userStore.sequenceByIdState.visibleColumns];
-      }
+      // set default visible columns
+      state.visibleColumns = dynamicColumns.value.map((col) => col.name);
 
       onRequest({
         pagination: state.pagination,
@@ -579,7 +548,6 @@ export default defineComponent({
       onRequest,
       getNumeralAmount,
       onFetchMailboxRecords,
-      onUpdateVisibleColumns,
       onSearchMailboxInput,
     };
   },
