@@ -19,29 +19,6 @@
       </div>
     </div>
 
-    <!-- Start Product Tour -->
-    <!--<q-item
-      clickable
-      class="user-info-action-item"
-
-      v-if="isPrimaryPlatform"
-
-      @click="startProductTour"
-    >
-      <div class="flex no-wrap items-center">
-        <!~~ logout icon ~~>
-        <LocalSvgIcon
-          image="flag"
-          classes="info-action-icon"
-        />
-
-        <!~~  ~~>
-        <p class="info-action-item-text">
-          Start Product Tour
-        </p>
-      </div>
-    </q-item>-->
-
     <!-- Exit workspace -->
     <q-item
       clickable

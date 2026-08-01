@@ -148,7 +148,6 @@ module.exports = configure((ctx) => ({
       AUTHENTICATION_API: process.env.BE_API_URL,
       STRIPE_PAY_PUBLISHABLE_KEY: process.env.STRIPE_PAY_KEY,
       GRAPHQL_ENDPOINT: process.env.GRAPHQL_ENDPOINT,
-      GLEAP_API_KEY: process.env.GLEAP_API_KEY,
       EDITOR_KEY: process.env.EDITOR_KEY,
     },
 

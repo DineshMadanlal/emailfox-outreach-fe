@@ -12,7 +12,6 @@ import { useAuthStore } from 'src/stores/auth';
 
 // utils
 import { isMainApp } from 'src/utils/applyBranding';
-import { trackUserEvent } from 'src/utils/externalServices';
 import { getWorkspaceSlugFromUrl } from 'src/utils/helperFunctions';
 
 // methods
@@ -133,15 +132,6 @@ export default boot(({ router }) => {
 
         return;
       }
-    }
-
-    // track page route event
-    if (isAuthenticated.value && isPrimaryPlatform) {
-      // Only track page views for authenticated users
-      trackUserEvent('Page Navigation', {
-        page: to.fullPath,
-        referrer: from.fullPath,
-      });
     }
 
     /** If the user is authenticated and the page is semi-public,

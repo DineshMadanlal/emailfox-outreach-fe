@@ -57,9 +57,6 @@ import { useWorkspace } from 'src/composables/useWorkspace';
 // vue router
 import { useRoute } from 'vue-router';
 
-// utils
-import { showGleapWidget } from 'src/utils/externalServices';
-
 // Components
 import LogoOrText from 'components/Workspaces/LogoOrText.vue';
 
@@ -77,7 +74,7 @@ export default defineComponent({
     },
   },
 
-  setup(props) {
+  setup() {
     // route
     const $route = useRoute();
 
@@ -131,17 +128,6 @@ export default defineComponent({
         route: '/account',
         routeCheck: '/account',
       }];
-
-      if (props.isPrimaryApp) {
-        routes.push({
-          name: 'chatsupport',
-          label: 'Chat Support',
-          icon: 'chat',
-          clickHandler: () => {
-            showGleapWidget();
-          },
-        });
-      }
 
       return routes;
     });

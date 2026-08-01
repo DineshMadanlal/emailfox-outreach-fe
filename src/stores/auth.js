@@ -11,7 +11,6 @@ import { useQuasar, QSpinnerBars } from 'quasar';
 import { isMainApp } from 'src/utils/applyBranding';
 import { postApiCall } from 'src/utils/apiRequests';
 import { differenceBetweenDays } from 'src/utils/dates';
-import { gleapClearIdentity } from 'src/utils/externalServices';
 import { primaryAppRouteToLoginPage } from 'src/utils/helperFunctions';
 
 // constants
@@ -112,11 +111,6 @@ export const useAuthStore = defineStore('storeAuth', () => {
   };
 
   const onExitWorkspace = () => {
-    if (isPrimaryPlatform.value) {
-      // Clear Gleap identity if the user is logged out from the main app
-      gleapClearIdentity();
-    }
-
     state.user = {};
     state.token = '';
     state.activeWorkspaceData = null;
@@ -150,11 +144,6 @@ export const useAuthStore = defineStore('storeAuth', () => {
       // });
     } finally {
       $q.loading.hide();
-
-      if (isPrimaryPlatform.value) {
-        // Clear Gleap identity if the user is logged out from the main app
-        gleapClearIdentity();
-      }
 
       state.user = {};
       state.token = '';

@@ -91,9 +91,6 @@ import { storeExclusions } from 'src/stores/storeExclusions.js';
 // Utils
 import { isMainApp } from 'src/utils/applyBranding';
 import { waitForTimeInSeconds } from 'src/utils/helperFunctions';
-import {
-  initGleap, gleapIdentifyUser, gleapUpdateContact,
-} from 'src/utils/externalServices';
 
 // Composables
 import { useWorkspace } from 'src/composables/useWorkspace';
@@ -102,9 +99,6 @@ import { useWorkspace } from 'src/composables/useWorkspace';
 import {
   getUserPlanDetails,
 } from 'src/graphql/schema/plan_details';
-
-// constants
-import { SLA_TIMINGS_FOR_CHAT } from 'boot/constants';
 
 export default defineComponent({
   name: 'AppLayout',
@@ -164,14 +158,6 @@ export default defineComponent({
         authStorePinia.setMultipleFields({
           userPlan: planDetails,
         });
-
-        if (isPrimaryApp.value) {
-          // gleap update contact with plan details
-          gleapUpdateContact({
-            plan: planDetails.plan_name,
-            sla: SLA_TIMINGS_FOR_CHAT[planDetails.plan_name] || 480,
-          });
-        }
       }
     });
 
@@ -213,11 +199,7 @@ export default defineComponent({
     };
 
     const trackExternalServices = async () => {
-      await initGleap();
-      gleapIdentifyUser({
-        userId: loggedInUser.value.id,
-        user: loggedInUser.value,
-      });
+      //
     };
 
     const loadFroalaPlugin = async () => {
