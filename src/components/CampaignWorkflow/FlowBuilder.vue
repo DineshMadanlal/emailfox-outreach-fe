@@ -1,28 +1,51 @@
 <template>
-  <div class="flow-builder-section">
-    <!-- empty workflow -->
-    <div
-      v-if="isWorkflowEmpty"
-      class="empty-workflow-state"
-    >
-      <WorkflowEmptyState />
+  <div class="flow-builder-section custom-scrollbar">
+    <!-- content -->
+    <div class="flow-builder-content">
+      <!-- API Loader -->
+      <ApiLoader
+        :show="ui.isFetchApiLoading"
+      />
+
+      <!-- empty workflow -->
+      <div
+        v-if="isWorkflowEmpty"
+        class="empty-workflow-state"
+      >
+        <WorkflowEmptyState />
+      </div>
+
+      <!-- Vue Flow -->
+      <VueFlow
+        v-else
+        :nodes="flowNodes"
+        :edges="flowEdges"
+        :node-types="nodeTypes"
+        :fit-view-on-init="false"
+        :min-zoom="0.35"
+        :max-zoom="2"
+        :default-viewport="{ x: 350, y: 48, zoom: 1 }"
+        class="workflow-vueflow"
+      >
+        <!-- Controls -->
+        <Controls position="bottom-right" />
+      </VueFlow>
     </div>
 
-    <!-- Vue Flow -->
-    <VueFlow
-      v-else
-      :nodes="flowNodes"
-      :edges="flowEdges"
-      :node-types="nodeTypes"
-      :fit-view-on-init="false"
-      :min-zoom="0.35"
-      :max-zoom="2"
-      :default-viewport="{ x: 350, y: 48, zoom: 1 }"
-      class="workflow-vueflow"
-    >
-      <!-- Controls -->
-      <Controls position="bottom-right" />
-    </VueFlow>
+    <!-- Footer -->
+    <div class="edit-sequence-footer">
+      <!-- Save Button -->
+      <q-btn
+        no-caps
+        unelevated
+
+        color="primary"
+        :loading="ui.isSaving"
+        :label="footerButtonLabel"
+
+        @click="onSubmitForm"
+      />
+    </div>
   </div>
 </template>
 
@@ -34,7 +57,11 @@ import cloneDeep from 'lodash/cloneDeep';
 // vue
 import {
   computed, defineComponent, markRaw, onBeforeUnmount, provide, reactive, watch,
+  toRefs, getCurrentInstance, onMounted,
 } from 'vue';
+
+// vue router
+import { useRouter } from 'vue-router';
 
 // vue flow
 import {
@@ -47,12 +74,14 @@ import {
 import { Controls } from '@vue-flow/controls';
 
 // Components
+import ApiLoader from 'components/General/ApiLoader.vue';
 import WorkflowAddNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowAddNode.vue';
 import WorkflowEmptyState from 'components/CampaignWorkflow/SequenceCanvas/WorkflowEmptyState.vue';
 import WorkflowActionNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowActionNode.vue';
 import WorkflowConditionNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowConditionNode.vue';
 
 // Utils
+import { getApiCall, postApiCall } from 'src/utils/apiRequests';
 import { getBrandRgbColorByName, getBlendedHexFromRgba } from 'src/utils/quasarHelpers.js';
 
 // Constants
@@ -88,24 +117,43 @@ export default defineComponent({
   components: {
     Controls,
     VueFlow,
+    ApiLoader,
     WorkflowEmptyState,
   },
 
-  setup() {
+  props: {
+    campaignById: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  setup(props) {
+    // router
+    const $router = useRouter();
+
+    // app cntext
+    const { appContext } = getCurrentInstance();
+
+    // npm
     const {
       setCenter, findNode, dimensions, getViewport,
     } = useVueFlow();
 
+    // state
     const state = reactive({
       workflow: {
         steps: [],
+        archivedStepIds: [],
       },
       ui: {
         isSaving: false,
         hasChanges: false,
+        isFetchApiLoading: false,
       },
     });
 
+    // timer
     let autoSaveTimer = null;
 
     const nodeTypes = markRaw({
@@ -119,6 +167,18 @@ export default defineComponent({
     const isLinkedInOutreachCampaign = computed(() => false);
     const isMultiChannelOutreachCampaign = computed(() => true);
 
+    const footerButtonLabel = computed(() => {
+      if (state.ui.isSaving) {
+        return 'Saving...';
+      }
+
+      if (state.ui.hasChanges) {
+        return 'Save & Next';
+      }
+
+      return 'Next';
+    });
+
     // methods
     const getTempId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
@@ -131,7 +191,163 @@ export default defineComponent({
       return leftKey && rightKey && leftKey === rightKey;
     };
 
-    const isConditionNode = (step) => step?.step_type === WORKFLOW_STEP_TYPES.CONDITIONAL;
+    const isConditionNode = (step) => step?.step_type === WORKFLOW_STEP_TYPES.CONDITION;
+
+    // methods
+    const getCleanSteps = (steps) => steps.map((step) => {
+      const { _tempId, ...rest } = step;
+      const cleanedStep = { ...rest };
+
+      if (isConditionNode(step)) {
+        cleanedStep.branches = (step.branches || []).map((branch) => ({
+          ...branch,
+          steps: getCleanSteps(branch.steps || []),
+        }));
+      }
+
+      return cleanedStep;
+    });
+
+    const centerSequence = async ({ nodeId, isFirstStep }) => {
+      setTimeout(() => {
+        const node = findNode(nodeId);
+        if (!node) {
+          return;
+        }
+
+        // 1. Calculate the center X coordinate of the node
+        // If node.dimensions.width is not yet available, fallback to a default or 0
+        const nodeWidth = node.dimensions?.width || 0;
+        const targetX = node.position.x + nodeWidth / 2;
+
+        let targetY;
+        const currentViewport = getViewport();
+
+        if (isFirstStep) {
+          // Keep the current vertical position exactly where it is (Horizontal pan only)
+          const containerHeight = dimensions.value.height;
+          targetY = (containerHeight / 2 - currentViewport.y) / currentViewport.zoom;
+        } else {
+          // Center the node completely in the middle of the screen (Both X and Y)
+          const nodeHeight = node.dimensions?.height || 0;
+          targetY = node.position.y + nodeHeight / 2;
+        }
+
+        // 3. Smoothly pan horizontally
+        setCenter(targetX, targetY, {
+          duration: 250, // Animation duration in milliseconds
+          zoom: 1, // Optional: Limit the zoom level during the pan
+        });
+      }, 100);
+    };
+
+    const updateStepRecursive = ({ steps, step }) => {
+      if (!Array.isArray(steps)) {
+        return false;
+      }
+
+      for (let index = 0; index < steps.length; index += 1) {
+        const currentStep = steps[index];
+
+        if (isSameStep(currentStep, step)) {
+          steps[index] = {
+            ...currentStep,
+            ...step,
+          };
+
+          return true;
+        }
+
+        const branches = currentStep?.branches || [];
+
+        for (let branchIndex = 0; branchIndex < branches.length; branchIndex += 1) {
+          const branchSteps = branches[branchIndex]?.steps || [];
+          const updated = updateStepRecursive({
+            steps: branchSteps,
+            step,
+          });
+
+          if (updated) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    };
+
+    const getStepsByCampaignId = async () => {
+      try {
+        state.ui.isFetchApiLoading = true;
+
+        //
+        const response = await getApiCall({
+          includeWorkspace: true,
+          endpoint: `/sequences/${props.campaignById.id}/steps`,
+        });
+
+        if (!response || !Array.isArray(response)) {
+          throw new Error('Invalid response from API');
+        }
+
+        state.workflow.steps = [...response];
+        state.workflow.archivedStepIds = [];
+
+        if (state.workflow.steps.length > 0) {
+          // center the vue flow
+          const nodeId = getStepKey(response[0]);
+
+          centerSequence({
+            nodeId,
+            isFirstStep: response.length === 1,
+          });
+        }
+      } catch (error) {
+        // show error warning
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+      } finally {
+        state.ui.isFetchApiLoading = false;
+      }
+    };
+
+    const onSaveSteps = async () => {
+      try {
+        state.ui.isSaving = true;
+
+        const workflowSnapshot = cloneDeep(state.workflow);
+
+        // remove _tempId from steps before sending to API
+        const cleanSteps = getCleanSteps(workflowSnapshot.steps);
+
+        const payload = {
+          steps: cleanSteps,
+          archived_steps_id: state.workflow.archivedStepIds || [],
+        };
+
+        // API call to save steps
+        const response = await postApiCall({
+          includeWorkspace: true,
+          endpoint: `/sequences/${props.campaignById.id}/steps`,
+          payload,
+        });
+
+        state.workflow.steps = [...response];
+
+        state.workflow.archivedStepIds = [];
+        state.ui.hasChanges = false;
+      } catch (error) {
+        // show error warning
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+      } finally {
+        state.ui.isSaving = false;
+      }
+    };
 
     const scheduleAutoSave = () => {
       state.ui.hasChanges = true;
@@ -140,14 +356,14 @@ export default defineComponent({
         clearTimeout(autoSaveTimer);
       }
 
+      // auto save logic
       autoSaveTimer = setTimeout(() => {
-        const workflowSnapshot = cloneDeep(state.workflow);
+        // const workflowSnapshot = cloneDeep(state.workflow);
 
-        state.ui.isSaving = true;
-        console.log('Auto-saving workflow:', workflowSnapshot);
+        // state.ui.isSaving = true;
 
-        state.ui.isSaving = false;
-        state.ui.hasChanges = false;
+        // state.ui.isSaving = false;
+        // state.ui.hasChanges = false;
       }, 500);
     };
 
@@ -205,41 +421,6 @@ export default defineComponent({
       return false;
     };
 
-    const updateStepRecursive = ({ steps, step }) => {
-      if (!Array.isArray(steps)) {
-        return false;
-      }
-
-      for (let index = 0; index < steps.length; index += 1) {
-        const currentStep = steps[index];
-
-        if (isSameStep(currentStep, step)) {
-          steps[index] = {
-            ...currentStep,
-            ...step,
-          };
-
-          return true;
-        }
-
-        const branches = currentStep?.branches || [];
-
-        for (let branchIndex = 0; branchIndex < branches.length; branchIndex += 1) {
-          const branchSteps = branches[branchIndex]?.steps || [];
-          const updated = updateStepRecursive({
-            steps: branchSteps,
-            step,
-          });
-
-          if (updated) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    };
-
     const removeStepRecursive = ({ steps, step }) => {
       if (!Array.isArray(steps)) {
         return false;
@@ -277,39 +458,6 @@ export default defineComponent({
         conditionalWorkflowJson,
         newStepJson,
       });
-    };
-
-    const centerSequence = async ({ nodeId, isFirstStep }) => {
-      setTimeout(() => {
-        const node = findNode(nodeId);
-        if (!node) {
-          return;
-        }
-
-        // 1. Calculate the center X coordinate of the node
-        // If node.dimensions.width is not yet available, fallback to a default or 0
-        const nodeWidth = node.dimensions?.width || 0;
-        const targetX = node.position.x + nodeWidth / 2;
-
-        let targetY;
-        const currentViewport = getViewport();
-
-        if (isFirstStep) {
-          // Keep the current vertical position exactly where it is (Horizontal pan only)
-          const containerHeight = dimensions.value.height;
-          targetY = (containerHeight / 2 - currentViewport.y) / currentViewport.zoom;
-        } else {
-          // Center the node completely in the middle of the screen (Both X and Y)
-          const nodeHeight = node.dimensions?.height || 0;
-          targetY = node.position.y + nodeHeight / 2;
-        }
-
-        // 3. Smoothly pan horizontally
-        setCenter(targetX, targetY, {
-          duration: 250, // Animation duration in milliseconds
-          zoom: 1, // Optional: Limit the zoom level during the pan
-        });
-      }, 100);
     };
 
     const onAddNewStep = ({ step, conditionalWorkflowJson }) => {
@@ -415,7 +563,7 @@ export default defineComponent({
     };
 
     const getNodeMeta = (step) => {
-      if (step?.step_type === WORKFLOW_STEP_TYPES.CONDITIONAL) {
+      if (step?.step_type === WORKFLOW_STEP_TYPES.CONDITION) {
         const conditionCatalog = WORKFLOW_CONDITION_CATALOG[step.condition_type];
 
         return {
@@ -764,6 +912,21 @@ export default defineComponent({
     const flowNodes = computed(() => flowGraph.value.nodes);
     const flowEdges = computed(() => flowGraph.value.edges);
 
+    const onSubmitForm = () => {
+      if (state.ui.hasChanges) {
+        // API call to save steps
+        onSaveSteps();
+      } else {
+        // route to contacts step
+        $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
+      }
+    };
+
+    // lifecycle hooks
+    onMounted(() => {
+      getStepsByCampaignId();
+    });
+
     // watchers
     watch(
       () => state.workflow,
@@ -798,10 +961,18 @@ export default defineComponent({
     provide('workflowContext', workflowContext);
 
     return {
+      // state
+      ...toRefs(state),
+
+      // computed
       flowEdges,
       flowNodes,
-      isWorkflowEmpty,
       nodeTypes,
+      isWorkflowEmpty,
+      footerButtonLabel,
+
+      // methods
+      onSubmitForm,
     };
   },
 });
@@ -815,37 +986,48 @@ export default defineComponent({
 
   display: flex;
   flex-direction: column;
-  justify-content: center;
-
-  padding: 12px;
 
   background-size: 28px 28px;
   background-color: rgba(var(--primary-rgb), 0.03);
-  background-image: radial-gradient($grey-100 1px, transparent 1px);s
+  background-image: radial-gradient($grey-100 1px, transparent 1px);
 
-  .empty-workflow-state {
+  overflow-y: auto;
+
+  // content
+  .flow-builder-content {
     width: 100%;
-    min-height: 560px;
-    display: flex;
     flex: 1;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-  }
 
-  .workflow-vueflow {
-    height: 100%;
-    min-height: 200px;
+    padding: 24px 12px;
+    position: relative;
 
-    :deep(.vue-flow__node) {
-      padding: 0;
-      border: none;
-      box-shadow: none;
-      background: transparent;
+    .empty-workflow-state {
+      width: 100%;
+      min-height: 560px;
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
     }
 
-    :deep(.vue-flow__edge-path) {
-      stroke: $grey-200;
-      stroke-width: 1;
+    .workflow-vueflow {
+      height: 100%;
+      min-height: 200px;
+
+      :deep(.vue-flow__node) {
+        padding: 0;
+        border: none;
+        box-shadow: none;
+        background: transparent;
+      }
+
+      :deep(.vue-flow__edge-path) {
+        stroke: $grey-200;
+        stroke-width: 1;
+      }
     }
   }
 }

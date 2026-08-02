@@ -302,7 +302,7 @@ export default defineComponent({
     const state = reactive({
       isApiLoading: false,
 
-      selectedLinkedInStep: WORKFLOW_STEP_TYPES.LINKEDIN_VIEW_PROFILE,
+      selectedLinkedInStep: WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE,
 
       message: '',
       subject: '',
@@ -462,6 +462,7 @@ export default defineComponent({
     const createVariantJson = () => {
       const variantJson = {
         message: state.message,
+        weight: 100,
       };
 
       if (selectedLinkedInActionDetails.value.supportsSubject) {

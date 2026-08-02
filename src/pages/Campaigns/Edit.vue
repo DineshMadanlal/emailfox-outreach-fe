@@ -15,7 +15,9 @@
     </q-dialog>
 
     <!-- Api loader -->
-    <ApiLoader :show="fetchCampaignByIdApiLoading" />
+    <ApiLoader
+      :show="fetchCampaignByIdApiLoading && !campaignByIdJson.id"
+    />
 
     <!--  -->
     <div
@@ -35,7 +37,11 @@
 
       <!-- content -->
       <div class="edit-sequence-content">
-        <router-view />
+        <router-view
+          :campaignById="campaignByIdJson"
+        />
+
+        <!--  -->
       </div>
     </div>
   </div>
@@ -303,7 +309,6 @@ export default defineComponent({
 
       // xs max
       @media (max-width: $breakpoint-xs-max) {
-        flex-direction: column;
         padding: 12px 16px;
       }
     }

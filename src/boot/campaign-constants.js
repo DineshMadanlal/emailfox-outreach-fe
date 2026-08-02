@@ -499,16 +499,16 @@ export const CAMPAIGN_TYPES = {
 };
 
 export const WORKFLOW_STEP_TYPES = {
-  // conditional branches
-  CONDITIONAL: 'CONDITIONAL',
+  // CONDITION branches
+  CONDITION: 'CONDITION',
 
   // action
   EMAIL: 'EMAIL',
-  LINKEDIN_VIEW_PROFILE: 'LINKEDIN_VIEW_PROFILE',
-  LINKEDIN_SEND_CONNECTION: 'LINKEDIN_SEND_CONNECTION',
-  LINKEDIN_SEND_MESSAGE: 'LINKEDIN_SEND_MESSAGE',
-  LINKEDIN_SEND_INMAIL: 'LINKEDIN_SEND_INMAIL',
-  LINKEDIN_LIKE_LATEST_POST: 'LINKEDIN_LIKE_LATEST_POST',
+  LINKEDIN_VISIT_PROFILE: 'LINKEDIN_VISIT_PROFILE',
+  LINKEDIN_CONNECTION_REQUEST: 'LINKEDIN_CONNECTION_REQUEST',
+  LINKEDIN_MESSAGE: 'LINKEDIN_MESSAGE',
+  LINKEDIN_INMAIL: 'LINKEDIN_INMAIL',
+  LINKEDIN_LIKE_POST: 'LINKEDIN_LIKE_POST',
   LINKEDIN_FOLLOW_PROFILE: 'LINKEDIN_FOLLOW_PROFILE',
 };
 
@@ -551,12 +551,12 @@ export const EMAIL_WORKFLOW_STEP_CATALOG = {
 };
 
 export const LINKEDIN_ACTION_DETAILS = {
-  [WORKFLOW_STEP_TYPES.LINKEDIN_VIEW_PROFILE]: {
+  [WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE]: {
     subTitle: 'Automated LinkedIn Profile Visit',
     description: 'Automatically visit the prospect\'s LinkedIn profile.',
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_SEND_CONNECTION]: {
+  [WORKFLOW_STEP_TYPES.LINKEDIN_CONNECTION_REQUEST]: {
     subTitle: 'Write LinkedIn Connection Request Message',
     description: 'Personalize the connection request with a message. Leave it empty to send the request without one.',
     isOptional: true,
@@ -568,7 +568,7 @@ export const LINKEDIN_ACTION_DETAILS = {
     },
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_SEND_MESSAGE]: {
+  [WORKFLOW_STEP_TYPES.LINKEDIN_MESSAGE]: {
     subTitle: 'Write LinkedIn Message',
     description: 'Compose a personalized message to send to an existing LinkedIn connection.',
 
@@ -580,33 +580,35 @@ export const LINKEDIN_ACTION_DETAILS = {
     },
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_SEND_INMAIL]: {
-    subTitle: 'Write LinkedIn InMail',
-    description: 'Compose a personalized InMail to send directly to the prospect. This step requires a LinkedIn account with InMail access (such as Sales Navigator or Premium).',
+  // [WORKFLOW_STEP_TYPES.LINKEDIN_INMAIL]: {
+  //   subTitle: 'Write LinkedIn InMail',
+  //   description: `Compose a personalized InMail to send directly to the prospect.
+  //   This step requires a LinkedIn account with InMail access
+  //   (such as Sales Navigator or Premium).`,
 
-    supportsMessage: true,
-    supportsSubject: true,
+  //   supportsMessage: true,
+  //   supportsSubject: true,
 
-    limits: {
-      subject: 200,
-      body: 2000,
-    },
-  },
+  //   limits: {
+  //     subject: 200,
+  //     body: 2000,
+  //   },
+  // },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_LIKE_LATEST_POST]: {
+  [WORKFLOW_STEP_TYPES.LINKEDIN_LIKE_POST]: {
     subTitle: 'Automated LinkedIn Post Like',
     description: 'Automatically like the prospect\'s most recent LinkedIn post.',
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_FOLLOW_PROFILE]: {
-    subTitle: 'Automated LinkedIn Profile Follow',
-    description: 'Automatically follow the prospect on LinkedIn.',
-  },
+  // [WORKFLOW_STEP_TYPES.LINKEDIN_FOLLOW_PROFILE]: {
+  //   subTitle: 'Automated LinkedIn Profile Follow',
+  //   description: 'Automatically follow the prospect on LinkedIn.',
+  // },
 };
 
 export const LINKEDIN_WORKFLOW_STEP_CATALOG = {
-  [WORKFLOW_STEP_TYPES.LINKEDIN_VIEW_PROFILE]: {
-    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_VIEW_PROFILE,
+  [WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE]: {
+    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE,
     category: WORKFLOW_STEP_CATEGORIES.LINKEDIN,
     title: 'Visit Profile',
     description: 'Visit the prospect\'s LinkedIn profile',
@@ -619,8 +621,8 @@ export const LINKEDIN_WORKFLOW_STEP_CATALOG = {
     },
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_SEND_CONNECTION]: {
-    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_SEND_CONNECTION,
+  [WORKFLOW_STEP_TYPES.LINKEDIN_CONNECTION_REQUEST]: {
+    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_CONNECTION_REQUEST,
     category: WORKFLOW_STEP_CATEGORIES.LINKEDIN,
     title: 'Connection Request',
     description: 'Send a LinkedIn connection request',
@@ -633,8 +635,8 @@ export const LINKEDIN_WORKFLOW_STEP_CATALOG = {
     },
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_SEND_MESSAGE]: {
-    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_SEND_MESSAGE,
+  [WORKFLOW_STEP_TYPES.LINKEDIN_MESSAGE]: {
+    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_MESSAGE,
     category: WORKFLOW_STEP_CATEGORIES.LINKEDIN,
     title: 'LinkedIn Message',
     description: 'Send a LinkedIn message',
@@ -652,8 +654,8 @@ export const LINKEDIN_WORKFLOW_STEP_CATALOG = {
     },
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_SEND_INMAIL]: {
-    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_SEND_INMAIL,
+  [WORKFLOW_STEP_TYPES.LINKEDIN_INMAIL]: {
+    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_INMAIL,
     category: WORKFLOW_STEP_CATEGORIES.LINKEDIN,
     title: 'InMail',
     description: 'Send a LinkedIn InMail',
@@ -672,8 +674,8 @@ export const LINKEDIN_WORKFLOW_STEP_CATALOG = {
     },
   },
 
-  [WORKFLOW_STEP_TYPES.LINKEDIN_LIKE_LATEST_POST]: {
-    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_LIKE_LATEST_POST,
+  [WORKFLOW_STEP_TYPES.LINKEDIN_LIKE_POST]: {
+    stepType: WORKFLOW_STEP_TYPES.LINKEDIN_LIKE_POST,
     category: WORKFLOW_STEP_CATEGORIES.LINKEDIN,
     title: 'Like Latest Post',
     description: 'Like the prospect\'s latest LinkedIn post',
@@ -728,7 +730,7 @@ export const WORKFLOW_BRANCH_CATALOG = {
 
 export const WORKFLOW_CONDITION_CATALOG = {
   [WORKFLOW_CONDITION_TYPES.LINKEDIN_CONNECTION_ACCEPTED]: {
-    stepType: WORKFLOW_STEP_TYPES.CONDITIONAL,
+    stepType: WORKFLOW_STEP_TYPES.CONDITION,
 
     title: 'Connection Accepted',
     description: 'Check if the LinkedIn connection request was accepted',
