@@ -25,13 +25,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # CREATE ENV FILE HERE
-      - name: Create .env
-        run: |
-          echo "BE_API_URL=https://outreach-api.apiruntime.com/api" >> .env
-          echo "GRAPHQL_ENDPOINT=gql.apiruntime.com/v1/graphql" >> .env
-          echo "EDITOR_KEY=xGE6oF4B3B2C10D9C4C4B2LxloC-22VKOG1FGULVKHXDXNDXc2a1Kd1SNdF3H3A8C6D4F4A3E3B2A12==" >> .env
-
       - name: Build Quasar App
         run: npm run build
 

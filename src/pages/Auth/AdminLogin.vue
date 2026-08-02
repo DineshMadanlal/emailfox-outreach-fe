@@ -22,7 +22,7 @@
         </p>
 
         <SocialAuth
-          v-if="isPrimaryPlatform"
+          v-if="false"
         />
 
         <!-- Quasar Form -->

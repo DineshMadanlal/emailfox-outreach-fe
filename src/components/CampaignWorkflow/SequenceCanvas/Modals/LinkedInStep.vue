@@ -3,7 +3,7 @@
     flat
     class="linkedin-step-card app-modal-card"
   >
-    <!-- header -->
+    <!-- modal header -->
     <div class="app-modal-header">
       <!-- header text -->
         <h4 class="modal-header-text">
