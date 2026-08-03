@@ -111,12 +111,12 @@ export default defineComponent({
 
     watch(() => props.workflow, (newWorkflow) => {
       // ignore if the values are same
-      if (
-        newWorkflow?.delay_unit === state.delayUnit
-        && newWorkflow?.delay_value === state.delayValue
-      ) {
-        return;
-      }
+      // if (
+      //   newWorkflow?.delay_unit === state.delayUnit
+      //   && newWorkflow?.delay_value === state.delayValue
+      // ) {
+      //   return;
+      // }
 
       // update the state when the workflow prop changes
       setDelayState(newWorkflow);

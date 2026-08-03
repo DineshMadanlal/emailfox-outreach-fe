@@ -91,6 +91,7 @@ import {
   WORKFLOW_STEP_CATALOG,
   WORKFLOW_STEP_TYPES,
   WORKFLOW_CONDITION_CATALOG,
+  CAMPAIGN_TYPES,
 } from 'boot/campaign-constants';
 
 // css imports
@@ -163,9 +164,15 @@ export default defineComponent({
     });
 
     // computed
-    const isEmailOutreachCampaign = computed(() => false);
-    const isLinkedInOutreachCampaign = computed(() => false);
-    const isMultiChannelOutreachCampaign = computed(() => true);
+    const isEmailOutreachCampaign = computed(
+      () => props.campaignById.type === CAMPAIGN_TYPES.EMAIL.value,
+    );
+    const isLinkedInOutreachCampaign = computed(
+      () => props.campaignById.type === CAMPAIGN_TYPES.LINKEDIN.value,
+    );
+    const isMultiChannelOutreachCampaign = computed(
+      () => props.campaignById.type === CAMPAIGN_TYPES.MULTI_CHANNEL.value,
+    );
 
     const footerButtonLabel = computed(() => {
       if (state.ui.isSaving) {
@@ -182,13 +189,21 @@ export default defineComponent({
     // methods
     const getTempId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-    const getStepKey = (step, fallback) => step?.id || step?._tempId || fallback;
+    const getStepKey = (step, fallback) => {
+      const rawKey = step?.id ?? step?._tempId ?? fallback;
+
+      if (rawKey === undefined || rawKey === null || rawKey === '') {
+        return null;
+      }
+
+      return String(rawKey);
+    };
 
     const isSameStep = (leftStep, rightStep) => {
-      const leftKey = leftStep?.id || leftStep?._tempId;
-      const rightKey = rightStep?.id || rightStep?._tempId;
+      const leftKey = getStepKey(leftStep);
+      const rightKey = getStepKey(rightStep);
 
-      return leftKey && rightKey && leftKey === rightKey;
+      return Boolean(leftKey && rightKey && leftKey === rightKey);
     };
 
     const isConditionNode = (step) => step?.step_type === WORKFLOW_STEP_TYPES.CONDITION;
@@ -276,6 +291,23 @@ export default defineComponent({
       return false;
     };
 
+    const saveWorkflowStepsFromApi = (responseSteps) => {
+      state.workflow.steps = [];
+
+      // for loop response
+      responseSteps.forEach((step) => {
+        if (isConditionNode(step)) {
+          step.branches = step.branches || [];
+        }
+
+        //
+        state.workflow.steps.push(step);
+      });
+
+      // archive step ids
+      state.workflow.archivedStepIds = [];
+    };
+
     const getStepsByCampaignId = async () => {
       try {
         state.ui.isFetchApiLoading = true;
@@ -290,16 +322,18 @@ export default defineComponent({
           throw new Error('Invalid response from API');
         }
 
-        state.workflow.steps = [...response];
-        state.workflow.archivedStepIds = [];
+        //
+        if (response?.length > 0) {
+          //
+          saveWorkflowStepsFromApi(response);
 
-        if (state.workflow.steps.length > 0) {
           // center the vue flow
           const nodeId = getStepKey(response[0]);
 
+          // center sequence
           centerSequence({
             nodeId,
-            isFirstStep: response.length === 1,
+            isFirstStep: true,
           });
         }
       } catch (error) {
@@ -334,7 +368,11 @@ export default defineComponent({
           payload,
         });
 
-        state.workflow.steps = [...response];
+        //
+        if (response.length) {
+          //
+          saveWorkflowStepsFromApi(response);
+        }
 
         state.workflow.archivedStepIds = [];
         state.ui.hasChanges = false;

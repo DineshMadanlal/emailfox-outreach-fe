@@ -97,15 +97,14 @@ export default defineComponent({
     const { isMobileDevice } = useAppHelpersApi();
 
     // computed
-    const isEmailOutreachCampaign = computed(() => workflowContext.isEmailOutreachCampaign.value);
-    const isLinkedInOutreachCampaign = computed(
-      () => workflowContext.isLinkedInOutreachCampaign.value,
-    );
-    const isMultiChannelOutreachCampaign = computed(
-      () => workflowContext.isMultiChannelOutreachCampaign.value,
-    );
-
     const workflowSteps = computed(() => {
+      //
+      const {
+        isEmailOutreachCampaign,
+        isLinkedInOutreachCampaign,
+        isMultiChannelOutreachCampaign,
+      } = workflowContext;
+
       if (isEmailOutreachCampaign.value) {
         return Object.values(EMAIL_WORKFLOW_STEP_CATALOG);
       } if (isLinkedInOutreachCampaign.value) {
