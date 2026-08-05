@@ -1,0 +1,313 @@
+<template>
+  <q-card flat class="add-options-card">
+    <!-- loader -->
+    <ApiLoader
+      :show="isApiLoading"
+    />
+
+    <!-- LinkedIn Step -->
+    <q-dialog
+      v-model="showSelectSenderMailboxesModal"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SelectSenderMailboxes
+        @close="showSelectSenderMailboxesModal = false"
+      />
+    </q-dialog>
+
+    <!-- header -->
+    <div class="options-header">
+      <div class="header-icon-squared">
+        <LocalSvgIcon image="mail" class="option-header-icon" />
+      </div>
+
+      <p class="option-header-text">
+        Add Sender Mailboxes
+      </p>
+    </div>
+
+    <!-- content -->
+    <div
+      v-if="hasConnectedAccounts"
+      class="options-content connected-accounts-content custom-scrollbar"
+    >
+
+    </div>
+
+    <!-- Empty: Ability for the user to add new sender mailboxes -->
+    <div
+      v-else
+      class="options-content empty-content"
+    >
+      <!-- Select Mailbox -->
+      <q-card
+        flat
+        class="select-mailbox-card"
+
+        @click="showSelectSenderMailboxesModal = true"
+      >
+        <!-- Icon -->
+        <div class="mail-circle-icon-container">
+          <LocalSvgIcon image="mail" class="mail-icon" />
+        </div>
+
+        <p class="select-mailbox-label-text">
+          Select Mailbox
+        </p>
+
+        <p class="select-mailbox-desc-text">
+          Select a mailbox to send your campaign emails from.
+        </p>
+      </q-card>
+    </div>
+</q-card>
+</template>
+
+<script>
+// lodash
+import size from 'lodash/size';
+
+// vue
+import {
+  defineComponent, reactive, toRefs, onMounted, getCurrentInstance, computed,
+} from 'vue';
+
+// Components
+import ApiLoader from 'components/General/ApiLoader.vue';
+import SelectSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/SelectSenderMailboxes.vue';
+
+// Utils
+import { getApiCall } from 'src/utils/apiRequests';
+
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
+
+// constants
+import { INFINITE_SCROLL_MAX_LIMIT } from 'boot/constants';
+
+export default defineComponent({
+  name: 'SaveSenderAccounts',
+
+  components: {
+    ApiLoader,
+    SelectSenderMailboxes,
+  },
+
+  props: {
+    campaignById: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  setup(props) {
+    // composition API
+    const { isMobileDevice } = useAppHelpersApi();
+
+    // app context
+    const { appContext } = getCurrentInstance();
+
+    // state
+    const state = reactive({
+      isApiLoading: false,
+
+      connectedAccounts: [],
+
+      ui: {
+        has_next: true,
+        total: 0,
+        resultsFetchedOnce: false,
+      },
+
+      showSelectSenderMailboxesModal: false,
+    });
+
+    // computed
+    const hasConnectedAccounts = computed(() => {
+      if (!state.ui.resultsFetchedOnce) {
+        return false;
+      }
+
+      return state.ui.total > 0;
+    });
+
+    // methods
+    const fetchConnectedAccounts = async () => {
+      try {
+        state.isApiLoading = true;
+
+        const params = {
+          offset: size(state.connectedAccounts),
+          limit: INFINITE_SCROLL_MAX_LIMIT,
+        };
+
+        // fetch connected accounts
+        const response = await getApiCall({
+          params,
+          includeWorkspace: true,
+          endpoint: `sequences/${props.campaignById.id}/mailboxes`,
+
+        });
+
+        const accounts = response.data || [];
+        state.ui.has_next = response.has_next;
+        state.ui.total = response.total || 0;
+
+        // update results fetched
+        state.ui.resultsFetchedOnce = true;
+
+        //
+        state.connectedAccounts.push(...accounts);
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+      } finally {
+        state.isApiLoading = false;
+      }
+    };
+
+    // lifecycle hooks
+    onMounted(() => {
+      // fetch connected accounts
+      fetchConnectedAccounts();
+    });
+
+    return {
+      // state
+      ...toRefs(state),
+
+      // computed
+      isMobileDevice,
+      hasConnectedAccounts,
+    };
+  },
+});
+</script>
+
+<style lang="scss" scoped>
+.add-options-card {
+  width: 100%;
+  max-width: 745px;
+  border: 1px solid $grey-50;
+  position: relative;
+
+  // header
+  .options-header {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    align-items: center;
+
+    gap: 12px;
+    border-bottom: 1px solid $grey-50;
+
+    .header-icon-squared {
+      height: 26px;
+      min-width: 26px;
+      max-width: 26px;
+
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid rgba(var(--primary-rgb), 0.2);
+      background: rgba(var(--primary-rgb), 0.1);
+
+      :deep(.option-header-icon) {
+        width: 100%;
+        height: 100%;
+
+        @include svg-icon-stroke('path, circle, rect, ellipse', $grey);
+      }
+    }
+
+    .option-header-text {
+      color: $black;
+      font-size: 16px;
+      font-weight: 600;
+    }
+  }
+
+  // content
+  .options-content {
+    width: 100%;
+    padding: 16px 20px;
+  }
+
+  .connected-accounts-content {
+    height: 204px;
+    overflow-y: auto;
+  }
+
+  .empty-content {
+    .select-mailbox-card {
+      width: 100%;
+      max-width: 310px;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid $grey-50;
+
+      &:hover {
+        background: rgba(var(--primary-rgb), 0.05);
+      }
+
+      .mail-circle-icon-container {
+        min-height: 40px;
+        min-width: 40px;
+        max-height: 40px;
+        max-width: 40px;
+
+        border-radius: 50%;
+        background: rgba(var(--primary-rgb), 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        :deep(.mail-icon) {
+          width: 20px;
+          height: 20px;
+
+          @include svg-icon-stroke('path, circle, rect, ellipse', $primary);
+        }
+      }
+
+      .select-mailbox-label-text {
+        margin-top: 12px;
+        margin-bottom: 8px;
+
+        color: $primary;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 16px;
+      }
+
+      .select-mailbox-desc-text {
+        color: rgba(var(--black-rgb), 0.8);
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+      }
+    }
+  }
+
+  // xs max
+  @media (max-width: $breakpoint-xs-max) {
+    // header
+    .options-header {
+      padding: 16px 12px;
+    }
+
+    // content
+    .options-content {
+      padding: 16px 12px;
+    }
+  }
+}
+</style>

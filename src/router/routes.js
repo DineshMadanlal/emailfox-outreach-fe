@@ -235,7 +235,7 @@ const routes = [
               {
                 path: 'contacts',
                 meta: { requiresAuth: true },
-                component: () => import('components/CampaignWorkflow/SaveContacts.vue'),
+                component: () => import('components/CampaignWorkflow/ContactsAndAccounts.vue'),
               },
               {
                 path: 'settings',

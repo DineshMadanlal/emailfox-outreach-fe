@@ -115,6 +115,8 @@ const HEIGHT_CONFIG = {
 export default defineComponent({
   name: 'FlowBuilder',
 
+  emits: ['updateFormChanged'],
+
   components: {
     Controls,
     VueFlow,
@@ -127,9 +129,13 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    formChanged: {
+      type: Boolean,
+      default: false,
+    },
   },
 
-  setup(props) {
+  setup(props, { emit }) {
     // router
     const $router = useRouter();
 
@@ -343,6 +349,11 @@ export default defineComponent({
           message: error.message,
         });
       } finally {
+        //
+        setTimeout(() => {
+          state.ui.hasChanges = false;
+        }, 500);
+
         state.ui.isFetchApiLoading = false;
       }
     };
@@ -372,6 +383,9 @@ export default defineComponent({
         if (response.length) {
           //
           saveWorkflowStepsFromApi(response);
+
+          // move to the contacts step
+          $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
         }
 
         state.workflow.archivedStepIds = [];
@@ -973,6 +987,13 @@ export default defineComponent({
         scheduleAutoSave();
       },
       { deep: true },
+    );
+
+    watch(
+      () => state.ui.hasChanges,
+      (newVal) => {
+        emit('updateFormChanged', newVal);
+      },
     );
 
     // before unmount

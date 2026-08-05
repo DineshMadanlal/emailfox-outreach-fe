@@ -39,6 +39,8 @@
       <div class="edit-sequence-content">
         <router-view
           :campaignById="campaignByIdJson"
+
+          @updateFormChanged="onUpdateFormChanged"
         />
 
         <!--  -->
@@ -60,7 +62,7 @@ import {
 import { useMeta } from 'quasar';
 
 // router
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 // pinia
 import { storeExclusions } from 'src/stores/storeExclusions.js';
@@ -204,19 +206,24 @@ export default defineComponent({
       getCampaignById();
     };
 
-    onMounted(() => {
-      onComponentMounted();
-    });
+    const onUpdateFormChanged = (changed) => {
+      state.formChanged = changed;
+    };
 
     // Hook to prevent route change if unsaved changes exist
-    onBeforeRouteLeave((to, from, next) => {
+    $router.beforeEach((to, from, next) => {
       if (state.formChanged) {
         state.leaveRoutePath = to.fullPath;
         state.showDiscardConfirmationModal = true;
+
+        next(false);
       } else {
-        // No changes, allow route change
         next();
       }
+    });
+
+    onMounted(() => {
+      onComponentMounted();
     });
 
     return {
@@ -230,6 +237,7 @@ export default defineComponent({
       onExitPage,
       closeCampaignForm,
       onUpdateCampaignJson,
+      onUpdateFormChanged,
 
       // hardcoded
       SEQUENCE_FORM_STEPS,

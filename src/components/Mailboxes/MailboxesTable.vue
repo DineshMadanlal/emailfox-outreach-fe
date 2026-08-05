@@ -270,9 +270,7 @@
               <div
                 class="flex no-wrap items-center"
               >
-                <p>
-                  {{ col.label }}
-                </p>
+                {{ col.label }}
 
                 <InfoTooltip
                   v-if="col.tooltip"
