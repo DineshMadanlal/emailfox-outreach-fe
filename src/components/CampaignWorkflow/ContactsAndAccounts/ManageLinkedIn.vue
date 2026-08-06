@@ -7,7 +7,7 @@
 
     <!-- Add Sender Mailboxes -->
     <q-dialog
-      v-model="modals.showAddSenderMailboxesModal"
+      v-model="modals.showAddSenderLinkedInModal"
 
       :class="isMobileDevice
         ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
@@ -16,16 +16,16 @@
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
-      <AddSenderMailboxes
+      <AddSenderLinkedIn
         :campaignId="campaignById.id"
 
-        @onMailboxesAdded="onMailboxesAddedToCampaign"
+        @onAddAccounts="onAccountsAddedToCampaign"
       />
     </q-dialog>
 
     <!-- Remove Sender Mailboxes -->
     <q-dialog
-      v-model="modals.showRemoveSenderMailboxesModal"
+      v-model="modals.showRemoveSenderLinkedInModal"
 
       :class="isMobileDevice
         ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
@@ -34,21 +34,21 @@
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
-      <RemoveSenderMailboxes
+      <RemoveSenderLinkedIn
         :campaignId="campaignById.id"
 
-        @onMailboxesRemoved="onMailboxesRemovedFromCampaign"
+        @onRemoveAccounts="onAccountsRemovedFromCampaign"
       />
     </q-dialog>
 
     <!-- header -->
     <div class="options-header">
       <div class="header-icon-squared">
-        <LocalSvgIcon image="mail" class="option-header-icon" />
+        <LocalSvgIcon image="linkedin" class="option-header-icon" />
       </div>
 
       <p class="option-header-text">
-        Sender Mailboxes
+        Sender LinkedIn Accounts
       </p>
 
       <q-space />
@@ -59,10 +59,10 @@
         no-caps
         unelevated
 
-        label="Remove"
         color="grey"
+        label="Remove"
 
-        @click="modals.showRemoveSenderMailboxesModal = true"
+        @click="modals.showRemoveSenderLinkedInModal = true"
       >
       </q-btn>
 
@@ -71,10 +71,9 @@
         flat
         no-caps
         unelevated
-
         color="primary"
 
-        @click="modals.showAddSenderMailboxesModal = true"
+        @click="modals.showAddSenderLinkedInModal = true"
       >
         <div class="flex no-wrap items-center">
           <LocalSvgIcon
@@ -97,9 +96,10 @@
         class="connected-accounts-content custom-scrollbar"
       >
         <!--  -->
-        <ConnectedMailboxes
+        <ConnectedLinkedInAccounts
           :accounts="connectedAccounts"
         />
+
         <!-- Loader -->
         <div
           v-if="isApiLoading"
@@ -130,7 +130,7 @@
         </div>
 
         <div class="selected-label-text">
-          {{ $pluralize('Mailbox', ui.total) }} Connected
+          {{ $pluralize('LinkedIn Account', ui.total) }} Connected
         </div>
       </div>
     </div>
@@ -143,21 +143,21 @@
       <!-- Select Mailbox -->
       <q-card
         flat
-        class="select-mailbox-card"
+        class="select-linkedin-card"
 
-        @click="modals.showAddSenderMailboxesModal = true"
+        @click="modals.showAddSenderLinkedInModal = true"
       >
         <!-- Icon -->
         <div class="mail-circle-icon-container">
-          <LocalSvgIcon image="mail" class="mail-icon" />
+          <LocalSvgIcon image="linkedin" class="linkedin-icon" />
         </div>
 
-        <p class="select-mailbox-label-text">
-          Select Mailbox
+        <p class="select-linkedin-label-text">
+          Select LinkedIn Account
         </p>
 
-        <p class="select-mailbox-desc-text">
-          Select a mailbox to send your campaign emails from.
+        <p class="select-linkedin-desc-text">
+          Select a LinkedIn account to send your campaign messages from.
         </p>
       </q-card>
     </div>
@@ -175,9 +175,9 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
-import ConnectedMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/ConnectedMailboxes.vue';
-import AddSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/AddSenderMailboxes.vue';
-import RemoveSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/RemoveSenderMailboxes.vue';
+import ConnectedLinkedInAccounts from 'components/CampaignWorkflow/ContactsAndAccounts/ConnectedLinkedInAccounts.vue';
+import AddSenderLinkedIn from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/AddSenderLinkedIn.vue';
+import RemoveSenderLinkedIn from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/RemoveSenderLinkedIn.vue';
 
 // Utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -189,13 +189,13 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 import { INFINITE_SCROLL_MAX_LIMIT } from 'boot/constants';
 
 export default defineComponent({
-  name: 'ManageMailboxes',
+  name: 'ManageLinkedIn',
 
   components: {
     ApiLoader,
-    ConnectedMailboxes,
-    AddSenderMailboxes,
-    RemoveSenderMailboxes,
+    ConnectedLinkedInAccounts,
+    AddSenderLinkedIn,
+    RemoveSenderLinkedIn,
   },
 
   props: {
@@ -225,8 +225,8 @@ export default defineComponent({
       },
 
       modals: {
-        showAddSenderMailboxesModal: false,
-        showRemoveSenderMailboxesModal: false,
+        showAddSenderLinkedInModal: false,
+        showRemoveSenderLinkedInModal: false,
       },
     });
 
@@ -255,7 +255,7 @@ export default defineComponent({
         const response = await getApiCall({
           params,
           includeWorkspace: true,
-          endpoint: `sequences/${props.campaignById.id}/mailboxes`,
+          endpoint: `sequences/${props.campaignById.id}/linkedin-accounts`,
         });
 
         const accounts = response.data || [];
@@ -294,15 +294,15 @@ export default defineComponent({
       await fetchConnectedAccounts();
     };
 
-    const onMailboxesAddedToCampaign = () => {
-      state.modals.showAddSenderMailboxesModal = false;
+    const onAccountsAddedToCampaign = () => {
+      state.modals.showAddSenderLinkedInModal = false;
 
       // refetch connected accounts
       refetchConnectedAccounts();
     };
 
-    const onMailboxesRemovedFromCampaign = () => {
-      state.modals.showRemoveSenderMailboxesModal = false;
+    const onAccountsRemovedFromCampaign = () => {
+      state.modals.showRemoveSenderLinkedInModal = false;
 
       // refetch connected accounts
       refetchConnectedAccounts();
@@ -325,8 +325,8 @@ export default defineComponent({
 
       // methods
       loadMoreOptions,
-      onMailboxesAddedToCampaign,
-      onMailboxesRemovedFromCampaign,
+      onAccountsAddedToCampaign,
+      onAccountsRemovedFromCampaign,
     };
   },
 });
@@ -363,8 +363,6 @@ export default defineComponent({
       :deep(.option-header-icon) {
         width: 100%;
         height: 100%;
-
-        @include svg-icon-stroke('path, circle, rect, ellipse', $grey);
       }
     }
 
@@ -430,7 +428,7 @@ export default defineComponent({
       padding: 16px 12px;
     }
 
-    .select-mailbox-card {
+    .select-linkedin-card {
       width: 100%;
       max-width: 310px;
       cursor: pointer;
@@ -454,15 +452,13 @@ export default defineComponent({
         align-items: center;
         justify-content: center;
 
-        :deep(.mail-icon) {
-          width: 20px;
-          height: 20px;
-
-          @include svg-icon-stroke('path, circle, rect, ellipse', $primary);
+        :deep(.linkedin-icon) {
+          min-width: 20px;
+          min-height: 20px;
         }
       }
 
-      .select-mailbox-label-text {
+      .select-linkedin-label-text {
         margin-top: 12px;
         margin-bottom: 8px;
 
@@ -472,7 +468,7 @@ export default defineComponent({
         line-height: 16px;
       }
 
-      .select-mailbox-desc-text {
+      .select-linkedin-desc-text {
         color: rgba(var(--black-rgb), 0.8);
         font-size: 14px;
         font-weight: 400;

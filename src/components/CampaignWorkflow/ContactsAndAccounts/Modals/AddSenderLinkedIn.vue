@@ -7,7 +7,7 @@
     <div class="app-modal-header">
       <!-- header text -->
       <h4 class="modal-header-text">
-        Add Sender Mailbox
+        Add LinkedIn Accounts
       </h4>
 
       <q-space />
@@ -30,13 +30,13 @@
     </div>
 
     <div class="app-modal-content">
-      <!-- mailbox filters -->
+      <!-- linkedin filters -->
       <div
-        class="mailbox-filters-content"
+        class="linkedin-filters-content"
       >
-        <p class="add-mailbox-desc-text">
-          Choose which mailboxes to add to this campaign.
-          Only mailboxes that aren't already part of this campaign are shown.
+        <p class="add-linkedin-desc-text">
+          Choose which LinkedIn account to add to this campaign.
+          Only LinkedIn accounts that aren't already part of this campaign are shown.
         </p>
 
         <!-- search input -->
@@ -44,11 +44,11 @@
           :debounce="500"
           v-model="filters.searchText"
 
-          class="mailbox-filter-input"
+          class="linkedin-filter-input"
           moreClasses="dead-small"
-          placeholder="Search email"
+          placeholder="Search LinkedIn account"
 
-          @update:modelValue="onSearchMailboxInput"
+          @update:modelValue="onSearchInput"
         />
       </div>
 
@@ -59,7 +59,7 @@
 
         separator="cell"
         selection="multiple"
-        class="app-table select-mailboxes-table app-paginated-table sticky-first-col"
+        class="app-table select-linkedin-table app-paginated-table sticky-first-col"
 
         :rows="tableData"
         :columns="tableColumns"
@@ -106,7 +106,7 @@
                   <!-- quasar list -->
                   <q-list style="min-width: 270px">
                     <TableMultiSelect
-                      multiSelectType="mailboxes"
+                      multiSelectType="linkedin"
                       :multiSelectOptionJson="multiSelectOptionJson"
 
                       :totalList="pagination.rowsNumber"
@@ -169,7 +169,7 @@
                 :options="[5, 10, 20, 30, 50]"
                 v-model="pagination.rowsPerPage"
 
-                @update:model-value="onFetchMailboxRecords"
+                @update:model-value="onFetchAccounts"
 
                 class="records-per-page-select"
               >
@@ -237,30 +237,27 @@
         </template>
 
         <!-- Content -->
-        <template v-slot:body-cell-nameAndEmail="props">
+        <!-- Name -->
+        <template v-slot:body-cell-name="props">
           <q-td
             :props="props"
           >
-            <div>
-              <div class="mailbox-name-text">
-                {{ props.row.name }}
-              </div>
-
-              <div class="mailbox-email-text">
-                {{ props.row.email }}
-              </div>
+            <div class="linkedin-name-text">
+              {{ props.row.name }}
             </div>
           </q-td>
         </template>
 
-        <!-- Provider -->
-        <template v-slot:body-cell-provider="props">
+        <!-- Status -->
+        <template v-slot:body-cell-status="props">
           <q-td
             :props="props"
           >
-            <EspProvider
-              :provider="props.row.provider || 'GMAIL'"
-            />
+            <div
+              class="linkedin-status-text"
+            >
+              {{ props.row.status }}
+            </div>
           </q-td>
         </template>
       </q-table>
@@ -291,7 +288,6 @@ import {
 } from 'vue';
 
 // Components
-import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 
@@ -304,20 +300,16 @@ import { WARMUP_STATUS } from 'src/boot/warmup-constants';
 import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
 // hardcoded
-const mailboxFilters = {
+const linkedInFilters = {
   searchText: '',
-  provider: '',
-  warmupStatus: '',
-  status: '',
 };
 
 export default defineComponent({
-  name: 'AddSenderMailboxes',
+  name: 'AddSenderLinkedIn',
 
-  emits: ['onMailboxesAdded'],
+  emits: ['onAddAccounts'],
 
   components: {
-    EspProvider,
     AppSearchInput,
     TableMultiSelect,
   },
@@ -344,7 +336,7 @@ export default defineComponent({
       },
 
       filters: {
-        ...mailboxFilters,
+        ...linkedInFilters,
       },
 
       // pagination
@@ -359,19 +351,19 @@ export default defineComponent({
     // computed
     const tableColumns = computed(() => {
       const columns = [
-        // name & email
+        // name
         {
-          name: 'nameAndEmail',
+          name: 'name',
           label: 'Name',
           align: 'left',
         },
 
-        // Provider
-        {
-          name: 'provider',
-          label: 'Provider',
-          align: 'left',
-        },
+        // status
+        // {
+        //   name: 'status',
+        //   label: 'Status',
+        //   align: 'left',
+        // },
 
         // Campaign In Use
         // {
@@ -432,7 +424,7 @@ export default defineComponent({
 
         const response = await getApiCall({
           params,
-          endpoint: '/mailboxes',
+          endpoint: '/connected-accounts/linkedin',
           includeWorkspace: true,
         });
 
@@ -449,7 +441,7 @@ export default defineComponent({
         // Show a toaster that domain have been setup successfully
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message || 'Unexpected error occured. Unable to fetch mailboxes.',
+          message: error.message || 'Unexpected error occured. Unable to fetch linkedin accounts.',
         });
       } finally {
         state.loaders.isFetchApi = false;
@@ -473,7 +465,7 @@ export default defineComponent({
       }
     };
 
-    const onFetchMailboxRecords = () => {
+    const onFetchAccounts = () => {
       onRequest({
         pagination: state.pagination,
       });
@@ -511,33 +503,33 @@ export default defineComponent({
       state.showTableMultiSelectMenu = false;
     };
 
-    const onSearchMailboxInput = async () => {
+    const onSearchInput = async () => {
       // trim white spaces
       state.filters.searchText = state.filters.searchText?.trim();
 
-      onFetchMailboxRecords();
+      onFetchAccounts();
     };
 
     const onSubmitForm = async () => {
       try {
         state.loaders.isSaveApi = true;
 
-        // mailbox IDs
-        const mailboxIds = state.selectedAccounts.map((account) => account.id);
+        // account IDs
+        const accountIds = state.selectedAccounts.map((account) => account.id);
 
         await postApiCall({
           payload: {
-            mailbox_ids: mailboxIds,
+            linkedin_account_ids: accountIds,
           },
           includeWorkspace: true,
-          endpoint: `sequences/${props.campaignId}/mailboxes/add`,
+          endpoint: `sequences/${props.campaignId}/linkedin-accounts/add`,
         });
 
-        emit('onMailboxesAdded');
+        emit('onAddAccounts');
       } catch (error) {
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message || 'Unexpected error occured. Unable to add mailboxes.',
+          message: error.message || 'Unexpected error occured. Unable to add linkedin accounts.',
         });
       } finally {
         state.loaders.isSaveApi = false;
@@ -546,7 +538,7 @@ export default defineComponent({
 
     // lifecycle hook
     onMounted(() => {
-      onFetchMailboxRecords();
+      onFetchAccounts();
     });
 
     return {
@@ -560,11 +552,11 @@ export default defineComponent({
       // methods
       onSubmitForm,
       onRequest,
-      onSearchMailboxInput,
+      onSearchInput,
       updateMultiSelect,
       onTableRowSelect,
       resetTableMultiSelect,
-      onFetchMailboxRecords,
+      onFetchAccounts,
     };
   },
 });
@@ -599,7 +591,7 @@ export default defineComponent({
     overflow-y: auto;
     padding: 0px;
 
-    .mailbox-filters-content {
+    .linkedin-filters-content {
       width: 100%;
       padding: 20px;
 
@@ -607,7 +599,7 @@ export default defineComponent({
       flex-direction: column;
       gap: 12px;
 
-      .add-mailbox-desc-text {
+      .add-linkedin-desc-text {
         color: $grey;
         font-size: 14px;
         font-weight: 400;
@@ -622,13 +614,13 @@ export default defineComponent({
       }
     }
 
-    .select-mailboxes-table {
-      .mailbox-name-text {
+    .select-linkedin-table {
+      .linkedin-name-text {
         color: $black;
         font-size: 14px;
         font-weight: 500;
       }
-      .mailbox-email-text {
+      .linkedin-email-text {
         margin-top: 4px;
         font-size: 14px;
         font-weight: 400;

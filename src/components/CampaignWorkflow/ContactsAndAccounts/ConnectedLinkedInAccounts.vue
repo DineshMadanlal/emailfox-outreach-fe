@@ -8,14 +8,8 @@
     >
       <!--  -->
       <div class="name-and-email-container">
-        <div>
-          <div class="account-name-text">
-            {{ account.name || 'Dummy' }}
-          </div>
-
-          <div class="account-email-text">
-            {{ account.email || 'dummy@dummy.com' }}
-          </div>
+        <div class="account-name-text">
+          {{ account.connected_account_name }}
         </div>
       </div>
     </div>
@@ -27,7 +21,7 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'ConnectedMailboxes',
+  name: 'ConnectedLinkedInAccounts',
 
   props: {
     accounts: {
@@ -55,15 +49,6 @@ export default defineComponent({
         font-size: 14px;
         font-weight: 500;
         line-height: 16px;
-      }
-
-      .account-email-text {
-        color: $grey;
-        font-size: 14px;
-        font-weight: 400;
-        line-height: 16px;
-
-        margin-top: 4px;
       }
     }
 

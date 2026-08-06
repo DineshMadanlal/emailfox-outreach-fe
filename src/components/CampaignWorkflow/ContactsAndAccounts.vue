@@ -1,28 +1,49 @@
 <template>
   <div class="contacts-section">
-    <div class="full-width">
-      <!-- header -->
-      <p class="contacts-header-text">
-        Set Up Contacts and Mailboxes
-      </p>
+    <div class="contacts-accounts-container">
+      <div class="full-width">
+        <!-- header -->
+        <p class="contacts-header-text">
+          Set Up Contacts and Mailboxes
+        </p>
 
-      <!-- desc -->
-      <p class="contacts-desc-text">
-        Import your contacts and connect mailboxes for campaign delivery and tracking.
-      </p>
+        <!-- desc -->
+        <p class="contacts-desc-text">
+          Import your contacts and connect mailboxes for campaign delivery and tracking.
+        </p>
+      </div>
+
+      <!-- Manage Contacts -->
+      <ManageContacts
+        :campaignById="campaignById"
+      />
+
+      <!-- Add Sender Mailboxes Card -->
+      <ManageMailboxes
+        :campaignById="campaignById"
+
+        v-if="canManageMailboxes"
+      />
+
+      <ManageLinkedIn
+        :campaignById="campaignById"
+
+        v-if="canManageLinkedInAccounts"
+      />
     </div>
 
-    <!-- Manage Contacts -->
-    <ManageContacts
-      :campaignById="campaignById"
-    />
+    <div class="edit-sequence-footer">
+      <!-- Next Button -->
+      <q-btn
+        no-caps
+        unelevated
 
-    <!-- Add Sender Mailboxes Card -->
-    <ManageMailboxes
-      :campaignById="campaignById"
+        label="Next"
+        color="primary"
 
-      v-if="canManageMailboxes"
-    />
+        @click="onNextPage"
+      />
+    </div>
   </div>
 </template>
 <script>
@@ -31,9 +52,13 @@ import {
   defineComponent, toRefs, reactive, inject, computed,
 } from 'vue';
 
+// vue router
+import { useRouter } from 'vue-router';
+
 // components
 import ManageContacts from 'components/CampaignWorkflow/ContactsAndAccounts/ManageContacts.vue';
 import ManageMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/ManageMailboxes.vue';
+import ManageLinkedIn from 'components/CampaignWorkflow/ContactsAndAccounts/ManageLinkedIn.vue';
 
 export default defineComponent({
   name: 'ContactsAndAccounts',
@@ -41,6 +66,7 @@ export default defineComponent({
   components: {
     ManageContacts,
     ManageMailboxes,
+    ManageLinkedIn,
   },
 
   props: {
@@ -50,9 +76,12 @@ export default defineComponent({
     },
   },
 
-  setup() {
+  setup(props) {
     // inject
     const editCampaignContext = inject('editCampaignContext');
+
+    // router
+    const $router = useRouter();
 
     // state
     const state = reactive({
@@ -77,6 +106,12 @@ export default defineComponent({
       return isLinkedInOutreachCampaign.value || isMultiChannelOutreachCampaign.value;
     });
 
+    // methods
+    const onNextPage = () => {
+      // route to contacts step
+      $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/settings`);
+    };
+
     return {
       // state
       ...toRefs(state),
@@ -84,6 +119,9 @@ export default defineComponent({
       // computed
       canManageMailboxes,
       canManageLinkedInAccounts,
+
+      // methods
+      onNextPage,
     };
   },
 });
@@ -92,29 +130,40 @@ export default defineComponent({
 <style lang="scss" scoped>
 .contacts-section {
   width: 100%;
-  gap: 24px;
+  min-height: 0;
+  flex: 1;
+
   display: flex;
   flex-direction: column;
-  padding: 20px 32px;
 
-  .contacts-header-text {
-    color: $black;
-    font-size: 16px;
-    font-weight: 600;
-  }
+  .contacts-accounts-container {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 
-  .contacts-desc-text {
-    color: rgba(var(--black-rgb), 0.8);
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 16px; /* 114.286% */
+    gap: 24px;
+    padding: 20px 32px;
 
-    margin-top: 6px;
-  }
+    .contacts-header-text {
+      color: $black;
+      font-size: 16px;
+      font-weight: 600;
+    }
 
-  // xs max
-  @media (max-width: $breakpoint-xs-max) {
-    padding: 20px 12px;
+    .contacts-desc-text {
+      color: rgba(var(--black-rgb), 0.8);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 16px; /* 114.286% */
+
+      margin-top: 6px;
+    }
+
+    // xs max
+    @media (max-width: $breakpoint-xs-max) {
+      padding: 20px 12px;
+    }
   }
 }
 </style>

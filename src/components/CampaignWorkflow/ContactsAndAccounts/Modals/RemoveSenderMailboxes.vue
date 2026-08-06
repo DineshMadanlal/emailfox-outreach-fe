@@ -1,13 +1,13 @@
 <template>
   <q-card
     flat
-    class="select-sender-accounts-card app-modal-card custom-scrollbar"
+    class="remove-sender-accounts-card app-modal-card custom-scrollbar"
   >
     <!-- modal header -->
     <div class="app-modal-header">
       <!-- header text -->
       <h4 class="modal-header-text">
-        Add Sender Mailbox
+        Remove Mailboxes
       </h4>
 
       <q-space />
@@ -34,9 +34,9 @@
       <div
         class="mailbox-filters-content"
       >
-        <p class="add-mailbox-desc-text">
-          Choose which mailboxes to add to this campaign.
-          Only mailboxes that aren't already part of this campaign are shown.
+        <p class="remove-mailbox-desc-text">
+          Select the mailboxes to remove from this campaign.
+          Only mailboxes currently part of this campaign are shown.
         </p>
 
         <!-- search input -->
@@ -59,7 +59,7 @@
 
         separator="cell"
         selection="multiple"
-        class="app-table select-mailboxes-table app-paginated-table sticky-first-col"
+        class="app-table remove-mailboxes-table app-paginated-table sticky-first-col"
 
         :rows="tableData"
         :columns="tableColumns"
@@ -273,8 +273,8 @@
         no-caps
         unelevated
 
-        label="Save"
         color="primary"
+        label="Remove From Campaign"
         @click="onSubmitForm"
 
         :loading="loaders.isSaveApi"
@@ -312,9 +312,9 @@ const mailboxFilters = {
 };
 
 export default defineComponent({
-  name: 'AddSenderMailboxes',
+  name: 'RemoveSenderMailboxes',
 
-  emits: ['onMailboxesAdded'],
+  emits: ['onMailboxesRemoved'],
 
   components: {
     EspProvider,
@@ -402,7 +402,7 @@ export default defineComponent({
         const params = {
           offset: (page - 1) * perPage,
           limit: perPage,
-          seq_id_ne: props.campaignId,
+          seq_id_eq: props.campaignId,
         };
 
         // filters
@@ -530,10 +530,10 @@ export default defineComponent({
             mailbox_ids: mailboxIds,
           },
           includeWorkspace: true,
-          endpoint: `sequences/${props.campaignId}/mailboxes/add`,
+          endpoint: `sequences/${props.campaignId}/mailboxes/remove`,
         });
 
-        emit('onMailboxesAdded');
+        emit('onMailboxesRemoved');
       } catch (error) {
         appContext.config.globalProperties.$toast({
           warning: true,
@@ -571,7 +571,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.select-sender-accounts-card {
+.remove-sender-accounts-card {
   position: relative;
   max-width: 650px;
   $modalHeaderHeight: 68px;
@@ -607,7 +607,7 @@ export default defineComponent({
       flex-direction: column;
       gap: 12px;
 
-      .add-mailbox-desc-text {
+      .remove-mailbox-desc-text {
         color: $grey;
         font-size: 14px;
         font-weight: 400;
@@ -622,7 +622,7 @@ export default defineComponent({
       }
     }
 
-    .select-mailboxes-table {
+    .remove-mailboxes-table {
       .mailbox-name-text {
         color: $black;
         font-size: 14px;
