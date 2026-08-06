@@ -2,12 +2,12 @@
   <q-card flat class="add-options-card">
     <!-- loader -->
     <ApiLoader
-      :show="isApiLoading"
+      :show="showApiLoader"
     />
 
     <!-- LinkedIn Step -->
     <q-dialog
-      v-model="showSelectSenderMailboxesModal"
+      v-model="showAddSenderMailboxesModal"
 
       :class="isMobileDevice
         ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
@@ -16,8 +16,11 @@
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
-      <SelectSenderMailboxes
-        @close="showSelectSenderMailboxesModal = false"
+      <AddSenderMailboxes
+        :campaignId="campaignById.id"
+
+        @close="showAddSenderMailboxesModal = false"
+        @onMailboxesAdded="onMailboxesAddedToCampaign"
       />
     </q-dialog>
 
@@ -35,22 +38,46 @@
     <!-- content -->
     <div
       v-if="hasConnectedAccounts"
-      class="options-content connected-accounts-content custom-scrollbar"
+      class="connected-accounts-content custom-scrollbar"
     >
+      <!--  -->
+      <ConnectedMailboxes
+        :accounts="connectedAccounts"
+      />
+      <!-- Loader -->
+      <div
+        v-if="isApiLoading"
+        class="api-loader-container"
+        :class="{ 'absolute-pos': connectedAccounts.length > 0 }"
+      >
+        <!-- api loader -->
+        <ApiLoader
+          show
+          size="32px"
+        />
+      </div>
 
+      <!-- Add an intersection to load more activities - Kind of infinite scroll implementation -->
+      <q-intersection
+        :disable="!ui.has_next"
+        @visibility="loadMoreOptions"
+
+        v-if="!isApiLoading"
+      >
+      </q-intersection>
     </div>
 
     <!-- Empty: Ability for the user to add new sender mailboxes -->
     <div
       v-else
-      class="options-content empty-content"
+      class="empty-content"
     >
       <!-- Select Mailbox -->
       <q-card
         flat
         class="select-mailbox-card"
 
-        @click="showSelectSenderMailboxesModal = true"
+        @click="showAddSenderMailboxesModal = true"
       >
         <!-- Icon -->
         <div class="mail-circle-icon-container">
@@ -80,7 +107,8 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
-import SelectSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/SelectSenderMailboxes.vue';
+import ConnectedMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/ConnectedMailboxes.vue';
+import AddSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/AddSenderMailboxes.vue';
 
 // Utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -96,7 +124,8 @@ export default defineComponent({
 
   components: {
     ApiLoader,
-    SelectSenderMailboxes,
+    ConnectedMailboxes,
+    AddSenderMailboxes,
   },
 
   props: {
@@ -125,7 +154,7 @@ export default defineComponent({
         resultsFetchedOnce: false,
       },
 
-      showSelectSenderMailboxesModal: false,
+      showAddSenderMailboxesModal: false,
     });
 
     // computed
@@ -136,6 +165,8 @@ export default defineComponent({
 
       return state.ui.total > 0;
     });
+
+    const showApiLoader = computed(() => state.isApiLoading && !state.ui.resultsFetchedOnce);
 
     // methods
     const fetchConnectedAccounts = async () => {
@@ -152,12 +183,11 @@ export default defineComponent({
           params,
           includeWorkspace: true,
           endpoint: `sequences/${props.campaignById.id}/mailboxes`,
-
         });
 
         const accounts = response.data || [];
         state.ui.has_next = response.has_next;
-        state.ui.total = response.total || 0;
+        state.ui.total = response.count || 0;
 
         // update results fetched
         state.ui.resultsFetchedOnce = true;
@@ -174,6 +204,25 @@ export default defineComponent({
       }
     };
 
+    const loadMoreOptions = async () => {
+      await fetchConnectedAccounts();
+
+      return true;
+    };
+
+    const onMailboxesAddedToCampaign = () => {
+      state.showAddSenderMailboxesModal = false;
+
+      // reset connected accounts
+      state.connectedAccounts = [];
+      state.ui.has_next = true;
+      state.ui.total = 0;
+      state.ui.resultsFetchedOnce = false;
+
+      // fetch connected accounts
+      fetchConnectedAccounts();
+    };
+
     // lifecycle hooks
     onMounted(() => {
       // fetch connected accounts
@@ -186,7 +235,12 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      showApiLoader,
       hasConnectedAccounts,
+
+      // methods
+      loadMoreOptions,
+      onMailboxesAddedToCampaign,
     };
   },
 });
@@ -234,18 +288,33 @@ export default defineComponent({
     }
   }
 
-  // content
-  .options-content {
-    width: 100%;
-    padding: 16px 20px;
-  }
-
   .connected-accounts-content {
+    width: 100%;
     height: 204px;
     overflow-y: auto;
+    padding: 0px;
+
+    .api-loader-container {
+      width: 300px;
+      height: 32px;
+      position: relative;
+
+      &.absolute-pos {
+        bottom: 32px;
+        position: absolute;
+      }
+    }
   }
 
   .empty-content {
+    width: 100%;
+    padding: 16px 20px;
+
+    // xs max
+    @media (max-width: $breakpoint-xs-max) {
+      padding: 16px 12px;
+    }
+
     .select-mailbox-card {
       width: 100%;
       max-width: 310px;
@@ -301,11 +370,6 @@ export default defineComponent({
   @media (max-width: $breakpoint-xs-max) {
     // header
     .options-header {
-      padding: 16px 12px;
-    }
-
-    // content
-    .options-content {
       padding: 16px 12px;
     }
   }

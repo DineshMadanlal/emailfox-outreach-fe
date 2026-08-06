@@ -328,11 +328,3 @@ export const getWorkspaceSlugFromUrl = () => {
 
   return workspaceSlug;
 };
-
-export const primaryAppRouteToLoginPage = () => {
-  const rootDomain = getRootDomain();
-
-  window.location.href = process.env.DEV_MODE
-    ? 'http://app.skysenders.local:8080/login'
-    : `https://app.${rootDomain}/login`;
-};

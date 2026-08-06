@@ -91,7 +91,6 @@ import {
   WORKFLOW_STEP_CATALOG,
   WORKFLOW_STEP_TYPES,
   WORKFLOW_CONDITION_CATALOG,
-  CAMPAIGN_TYPES,
 } from 'boot/campaign-constants';
 
 // css imports
@@ -168,17 +167,6 @@ export default defineComponent({
       addNode: markRaw(WorkflowAddNode),
       conditionNode: markRaw(WorkflowConditionNode),
     });
-
-    // computed
-    const isEmailOutreachCampaign = computed(
-      () => props.campaignById.type === CAMPAIGN_TYPES.EMAIL.value,
-    );
-    const isLinkedInOutreachCampaign = computed(
-      () => props.campaignById.type === CAMPAIGN_TYPES.LINKEDIN.value,
-    );
-    const isMultiChannelOutreachCampaign = computed(
-      () => props.campaignById.type === CAMPAIGN_TYPES.MULTI_CHANNEL.value,
-    );
 
     const footerButtonLabel = computed(() => {
       if (state.ui.isSaving) {
@@ -1010,11 +998,6 @@ export default defineComponent({
       updateWorkflowStep,
       archiveWorkflowStep,
       removeWorkflowStep,
-
-      //
-      isEmailOutreachCampaign,
-      isLinkedInOutreachCampaign,
-      isMultiChannelOutreachCampaign,
     };
 
     provide('workflowContext', workflowContext);

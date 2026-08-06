@@ -115,6 +115,7 @@ export default defineComponent({
   setup(props) {
     // inject
     const workflowContext = inject('workflowContext');
+    const editCampaignContext = inject('editCampaignContext');
 
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
@@ -128,12 +129,14 @@ export default defineComponent({
     });
 
     // computed
-    const isEmailOutreachCampaign = computed(() => workflowContext.isEmailOutreachCampaign.value);
+    const isEmailOutreachCampaign = computed(
+      () => editCampaignContext.isEmailOutreachCampaign.value,
+    );
     const isLinkedInOutreachCampaign = computed(
-      () => workflowContext.isLinkedInOutreachCampaign.value,
+      () => editCampaignContext.isLinkedInOutreachCampaign.value,
     );
     const isMultiChannelOutreachCampaign = computed(
-      () => workflowContext.isMultiChannelOutreachCampaign.value,
+      () => editCampaignContext.isMultiChannelOutreachCampaign.value,
     );
 
     // methods

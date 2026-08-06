@@ -12,31 +12,35 @@
       </p>
     </div>
 
-    <!-- Add Contacts Card -->
-    <SaveContacts
+    <!-- Manage Contacts -->
+    <ManageContacts
       :campaignById="campaignById"
     />
 
     <!-- Add Sender Mailboxes Card -->
-    <SaveSenderAccounts
+    <ManageMailboxes
       :campaignById="campaignById"
+
+      v-if="canManageMailboxes"
     />
   </div>
 </template>
 <script>
 // vue
-import { defineComponent, toRefs, reactive } from 'vue';
+import {
+  defineComponent, toRefs, reactive, inject, computed,
+} from 'vue';
 
 // components
-import SaveContacts from 'components/CampaignWorkflow/ContactsAndAccounts/SaveContacts.vue';
-import SaveSenderAccounts from 'components/CampaignWorkflow/ContactsAndAccounts/SaveSenderAccounts.vue';
+import ManageContacts from 'components/CampaignWorkflow/ContactsAndAccounts/ManageContacts.vue';
+import ManageMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/ManageMailboxes.vue';
 
 export default defineComponent({
   name: 'ContactsAndAccounts',
 
   components: {
-    SaveContacts,
-    SaveSenderAccounts,
+    ManageContacts,
+    ManageMailboxes,
   },
 
   props: {
@@ -47,13 +51,39 @@ export default defineComponent({
   },
 
   setup() {
+    // inject
+    const editCampaignContext = inject('editCampaignContext');
+
     // state
     const state = reactive({
+    });
+
+    // computed
+    const canManageMailboxes = computed(() => {
+      const {
+        isEmailOutreachCampaign,
+        isMultiChannelOutreachCampaign,
+      } = editCampaignContext;
+
+      return isEmailOutreachCampaign.value || isMultiChannelOutreachCampaign.value;
+    });
+
+    const canManageLinkedInAccounts = computed(() => {
+      const {
+        isLinkedInOutreachCampaign,
+        isMultiChannelOutreachCampaign,
+      } = editCampaignContext;
+
+      return isLinkedInOutreachCampaign.value || isMultiChannelOutreachCampaign.value;
     });
 
     return {
       // state
       ...toRefs(state),
+
+      // computed
+      canManageMailboxes,
+      canManageLinkedInAccounts,
     };
   },
 });

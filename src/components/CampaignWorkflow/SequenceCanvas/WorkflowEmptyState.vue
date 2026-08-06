@@ -85,6 +85,7 @@ export default defineComponent({
   setup() {
     // inject
     const workflowContext = inject('workflowContext');
+    const editCampaignContext = inject('editCampaignContext');
 
     // state
     const state = reactive({
@@ -103,7 +104,7 @@ export default defineComponent({
         isEmailOutreachCampaign,
         isLinkedInOutreachCampaign,
         isMultiChannelOutreachCampaign,
-      } = workflowContext;
+      } = editCampaignContext;
 
       if (isEmailOutreachCampaign.value) {
         return Object.values(EMAIL_WORKFLOW_STEP_CATALOG);

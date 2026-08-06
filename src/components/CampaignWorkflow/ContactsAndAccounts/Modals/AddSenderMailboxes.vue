@@ -7,7 +7,7 @@
     <div class="app-modal-header">
       <!-- header text -->
       <h4 class="modal-header-text">
-        Select Sender Mailbox
+        Add Sender Mailbox
       </h4>
 
       <q-space />
@@ -34,6 +34,11 @@
       <div
         class="mailbox-filters-content"
       >
+        <p class="add-mailbox-desc-text">
+          Choose which mailboxes to add to this campaign.
+          Only mailboxes that aren't already part of this campaign are shown.
+        </p>
+
         <!-- search input -->
         <AppSearchInput
           :debounce="500"
@@ -59,7 +64,7 @@
         :rows="tableData"
         :columns="tableColumns"
 
-        :loading="isApiProcessing"
+        :loading="loaders.isFetchApi"
 
         v-model:selected="selectedAccounts"
 
@@ -271,8 +276,10 @@
         label="Save"
         color="primary"
         @click="onSubmitForm"
-      />
 
+        :loading="loaders.isSaveApi"
+        :disable="!selectedAccounts.length"
+      />
     </div>
   </q-card>
 </template>
@@ -289,8 +296,8 @@ import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 
 // utils
-import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount } from 'src/utils/numbers';
+import { getApiCall, postApiCall } from 'src/utils/apiRequests';
 
 // constants
 import { WARMUP_STATUS } from 'src/boot/warmup-constants';
@@ -305,7 +312,9 @@ const mailboxFilters = {
 };
 
 export default defineComponent({
-  name: 'SelectSenderMailboxes',
+  name: 'AddSenderMailboxes',
+
+  emits: ['onMailboxesAdded'],
 
   components: {
     EspProvider,
@@ -313,15 +322,26 @@ export default defineComponent({
     TableMultiSelect,
   },
 
-  setup() {
+  props: {
+    campaignId: {
+      type: [String, Number],
+      required: true,
+    },
+  },
+
+  setup(props, { emit }) {
     // app context
     const { appContext } = getCurrentInstance();
 
     // state
     const state = reactive({
       tableData: [],
-      isApiProcessing: false,
       selectedAccounts: [],
+
+      loaders: {
+        isFetchApi: false,
+        isSaveApi: false,
+      },
 
       filters: {
         ...mailboxFilters,
@@ -377,7 +397,7 @@ export default defineComponent({
     // API Calls
     const fetchData = async (page = 1, perPage = 10) => {
       try {
-        state.isApiProcessing = true;
+        state.loaders.isFetchApi = true;
 
         const params = {
           offset: (page - 1) * perPage,
@@ -420,7 +440,7 @@ export default defineComponent({
         // table data
         state.tableData = [...data];
 
-        state.selectedMailboxes = [];
+        state.selectedAccounts = [];
         state.multiSelectOptionJson = {};
 
         state.pagination.rowsNumber = count;
@@ -431,12 +451,12 @@ export default defineComponent({
           message: error.message || 'Unexpected error occured. Unable to fetch mailboxes.',
         });
       } finally {
-        state.isApiProcessing = false;
+        state.loaders.isFetchApi = false;
       }
     };
 
     const onRequest = async (params) => {
-      state.isApiProcessing = true;
+      state.loaders.isFetchApi = true;
 
       state.pagination.page = params.pagination.page;
       state.pagination.perPage = params.pagination.rowsPerPage;
@@ -459,13 +479,13 @@ export default defineComponent({
     };
 
     const onTableRowSelect = () => {
-      if (state.tableData.length === state.selectedMailboxes.length) {
+      if (state.tableData.length === state.selectedAccounts.length) {
         state.multiSelectOptionJson = {
           limit: state.tableData.length,
           selectedOption: TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST,
         };
       } else {
-        state.multiSelectOptionJson = null;
+        state.multiSelectOptionJson = {};
       }
     };
 
@@ -497,7 +517,30 @@ export default defineComponent({
       onFetchMailboxRecords();
     };
 
-    const onSubmitForm = () => {
+    const onSubmitForm = async () => {
+      try {
+        state.loaders.isSaveApi = true;
+
+        // mailbox IDs
+        const mailboxIds = state.selectedAccounts.map((account) => account.id);
+
+        await postApiCall({
+          payload: {
+            mailbox_ids: mailboxIds,
+          },
+          includeWorkspace: true,
+          endpoint: `sequences/${props.campaignId}/mailboxes`,
+        });
+
+        emit('onMailboxesAdded');
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message || 'Unexpected error occured. Unable to add mailboxes.',
+        });
+      } finally {
+        state.loaders.isSaveApi = false;
+      }
     };
 
     // lifecycle hook
@@ -558,6 +601,19 @@ export default defineComponent({
     .mailbox-filters-content {
       width: 100%;
       padding: 20px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .add-mailbox-desc-text {
+        color: $grey;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+
+        max-width: 520px;
+      }
 
       // xs max
       @media (max-width: $breakpoint-xs-max) {

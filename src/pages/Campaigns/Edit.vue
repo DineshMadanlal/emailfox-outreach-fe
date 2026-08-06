@@ -55,7 +55,7 @@ import isEmpty from 'lodash/isEmpty';
 
 // vue
 import {
-  defineComponent, onMounted, reactive, toRefs, computed, getCurrentInstance,
+  defineComponent, onMounted, reactive, toRefs, computed, getCurrentInstance, provide,
 } from 'vue';
 
 // quasar
@@ -80,7 +80,7 @@ import DiscardConfirmation from 'components/Modals/DiscardConfirmation.vue';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // constants
-import { SEQUENCE_FORM_STEPS } from 'src/boot/campaign-constants';
+import { SEQUENCE_FORM_STEPS, CAMPAIGN_TYPES } from 'src/boot/campaign-constants';
 
 export default defineComponent({
   name: 'EditCampaign',
@@ -123,6 +123,17 @@ export default defineComponent({
     // computed
     const campaignId = computed(() => convertStringToNumber($route.params.campaignId));
     const campaignByIdJsonFromStore = computed(() => storeExclusionsPinia.campaignByIdJson);
+
+    // computed
+    const isEmailOutreachCampaign = computed(
+      () => state.campaignByIdJson.type === CAMPAIGN_TYPES.EMAIL.value,
+    );
+    const isLinkedInOutreachCampaign = computed(
+      () => state.campaignByIdJson.type === CAMPAIGN_TYPES.LINKEDIN.value,
+    );
+    const isMultiChannelOutreachCampaign = computed(
+      () => state.campaignByIdJson.type === CAMPAIGN_TYPES.MULTI_CHANNEL.value,
+    );
 
     // methods
     const onExitPage = () => {
@@ -225,6 +236,16 @@ export default defineComponent({
     onMounted(() => {
       onComponentMounted();
     });
+
+    const editCampaignContext = {
+      //
+      isEmailOutreachCampaign,
+      isLinkedInOutreachCampaign,
+      isMultiChannelOutreachCampaign,
+    };
+
+    // provide
+    provide('editCampaignContext', editCampaignContext);
 
     return {
       // state

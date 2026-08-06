@@ -117,11 +117,6 @@ export default defineComponent({
       } catch (error) {
         updateAppBranding();
         state.showRouterView = true;
-
-        // if (workspaceSlug) {
-        //   // move to app.
-        //   primaryAppRouteToLoginPage();
-        // }
       } finally {
         applyBranding();
       }

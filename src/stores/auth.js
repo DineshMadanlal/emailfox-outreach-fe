@@ -11,7 +11,6 @@ import { useQuasar, QSpinnerBars } from 'quasar';
 import { isMainApp } from 'src/utils/applyBranding';
 import { postApiCall } from 'src/utils/apiRequests';
 import { differenceBetweenDays } from 'src/utils/dates';
-import { primaryAppRouteToLoginPage } from 'src/utils/helperFunctions';
 
 // constants
 import { PLAN_TYPES } from 'src/boot/constants';
@@ -151,13 +150,8 @@ export const useAuthStore = defineStore('storeAuth', () => {
 
       localStorage.clear();
 
-      // Deflect back to the main portal login page
-      if (isPrimaryPlatform.value) {
-        primaryAppRouteToLoginPage();
-      } else {
-        // redirect to the login page
-        window.location.href = '/login';
-      }
+      // redirect to the login page
+      window.location.href = '/login';
     }
   };
 

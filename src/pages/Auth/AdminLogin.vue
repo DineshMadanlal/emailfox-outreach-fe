@@ -161,7 +161,6 @@ import { useAuthStore } from 'src/stores/auth';
 // Utils
 import { postApiCall } from 'src/utils/apiRequests';
 import { isMainApp } from 'src/utils/applyBranding';
-import { primaryAppRouteToLoginPage } from 'src/utils/helperFunctions';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -271,16 +270,6 @@ export default defineComponent({
     const onInputChange = () => {
       state.formRef.resetValidation();
     };
-
-    //
-    onMounted(() => {
-      if (isPrimaryPlatform.value && activeWorkspaceData.value?.id) {
-        // do not allow workspace login in production
-        if (!process.env.DEV_MODE) {
-          primaryAppRouteToLoginPage();
-        }
-      }
-    });
 
     return {
       emailRules: [
