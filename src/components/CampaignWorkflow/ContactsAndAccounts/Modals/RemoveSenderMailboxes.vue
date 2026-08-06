@@ -76,6 +76,7 @@
             <q-th
               auto-width
             >
+              <!--  -->
               <q-checkbox
                 dense
                 color="primary"
