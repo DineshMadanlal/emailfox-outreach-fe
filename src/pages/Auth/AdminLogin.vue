@@ -141,7 +141,7 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, getCurrentInstance, computed, onMounted,
+  defineComponent, reactive, toRefs, getCurrentInstance, computed,
 } from 'vue';
 
 // quasar
