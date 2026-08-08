@@ -138,6 +138,8 @@ import { IGNORE_FIELD, CUSTOM_FIELD, CONTACTS_IMPORT_SOURCE_TYPE } from 'src/boo
 export default defineComponent({
   name: 'ImportContacts',
 
+  emits: ['closeModal', 'onListImported'],
+
   components: {
     StepSummary,
     UploadFile,
@@ -145,7 +147,18 @@ export default defineComponent({
     DiscardConfirmation,
   },
 
-  setup() {
+  props: {
+    fromCampaignWorkflow: {
+      type: Boolean,
+      default: false,
+    },
+    campaignId: {
+      type: [String, Number],
+      default: null,
+    },
+  },
+
+  setup(props, { emit }) {
     // router
     const $router = useRouter();
 
@@ -176,6 +189,11 @@ export default defineComponent({
       state.formChanged = false;
       state.showDiscardConfirmationModal = false;
 
+      if (props.fromCampaignWorkflow) {
+        emit('closeModal');
+        return;
+      }
+
       $router.push({ path: state.leaveRoutePath });
     };
 
@@ -185,6 +203,11 @@ export default defineComponent({
 
         state.showDiscardConfirmationModal = true;
       } else {
+        if (props.fromCampaignWorkflow) {
+          emit('closeModal');
+          return;
+        }
+
         // No changes, go back to previous route
         $router.push({ path: state.previousRoutePath });
       }
@@ -215,6 +238,31 @@ export default defineComponent({
       setStep(CONTACTS_IMPORT_STEPS.MAP_FIELDS.step);
     };
 
+    const addListToSequence = async () => {
+      try {
+        state.isSaveApiLoading = true;
+
+        const payload = {
+          list_ids: [state.csvDataJson.listId],
+        };
+
+        await postApiCall({
+          payload,
+          includeWorkspace: true,
+          endpoint: `/sequences/${props.campaignId}/lists`,
+        });
+
+        emit('onListImported');
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message || 'Failed to add list to the campaign. Please try again.',
+        });
+      } finally {
+        state.isSaveApiLoading = false;
+      }
+    };
+
     const importContacts = async (transformedContacts) => {
       try {
         state.isSaveApiLoading = true;
@@ -235,8 +283,13 @@ export default defineComponent({
 
         state.formChanged = false;
 
-        // move to the contacts page after successful import
-        $router.push(`/outreach/lists/view/${state.csvDataJson.listId}/list-contacts`);
+        if (props.fromCampaignWorkflow) {
+          // add list to the sequence
+          addListToSequence();
+        } else {
+          // move to the contacts page after successful import
+          $router.push(`/outreach/lists/view/${state.csvDataJson.listId}/list-contacts`);
+        }
       } catch (error) {
         appContext.config.globalProperties.$toast({
           warning: true,

@@ -53,38 +53,55 @@
 
       <q-space />
 
-      <!-- Remove -->
-      <q-btn
-        flat
-        no-caps
-        unelevated
+      <div
+        class="manage-action-flex"
 
-        color="grey"
-        label="Remove"
-
-        @click="modals.showRemoveSenderLinkedInModal = true"
+        v-if="hasConnectedAccounts"
       >
-      </q-btn>
+        <!-- Remove -->
+        <q-btn
+          flat
+          dense
+          no-caps
+          unelevated
 
-      <!-- Add -->
-      <q-btn
-        flat
-        no-caps
-        unelevated
-        color="primary"
+          color="grey"
 
-        @click="modals.showAddSenderLinkedInModal = true"
-      >
-        <div class="flex no-wrap items-center">
-          <LocalSvgIcon
-            image="plus"
-          />
+          @click="modals.showRemoveSenderLinkedInModal = true"
+        >
+          <div class="flex no-wrap items-center">
+            <LocalSvgIcon
+              image="circle-remove"
+            />
 
-          <div class="q-ml-sm">
-            Add
+            <div class="q-ml-sm">
+              Remove
+            </div>
           </div>
-        </div>
-      </q-btn>
+        </q-btn>
+
+        <!-- Add -->
+        <q-btn
+          flat
+          dense
+          no-caps
+          unelevated
+          color="primary"
+
+          @click="modals.showAddSenderLinkedInModal = true"
+        >
+          <div class="flex no-wrap items-center">
+            <LocalSvgIcon
+              image="circle-plus"
+              classes="circle-plus-icon"
+            />
+
+            <div class="q-ml-sm">
+              Add
+            </div>
+          </div>
+        </q-btn>
+      </div>
     </div>
 
     <div
@@ -104,7 +121,6 @@
         <div
           v-if="isApiLoading"
           class="api-loader-container"
-          :class="{ 'absolute-pos': connectedAccounts.length > 0 }"
         >
           <!-- api loader -->
           <ApiLoader
@@ -350,6 +366,13 @@ export default defineComponent({
     gap: 12px;
     border-bottom: 1px solid $grey-50;
 
+    .manage-action-flex {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
     .header-icon-squared {
       height: 26px;
       min-width: 26px;
@@ -371,6 +394,10 @@ export default defineComponent({
       font-size: 16px;
       font-weight: 600;
     }
+
+    :deep(.circle-plus-icon) {
+      @include svg-icon-stroke('path, circle', $primary);
+    }
   }
 
   .connected-accounts-content {
@@ -384,11 +411,6 @@ export default defineComponent({
       width: 300px;
       height: 32px;
       position: relative;
-
-      &.absolute-pos {
-        bottom: 32px;
-        position: absolute;
-      }
     }
   }
 

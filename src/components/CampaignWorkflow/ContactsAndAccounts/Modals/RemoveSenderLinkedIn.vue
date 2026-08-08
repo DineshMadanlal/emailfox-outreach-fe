@@ -258,8 +258,9 @@
         no-caps
         unelevated
 
-        label="Save"
         color="primary"
+        label="Remove From Campaign"
+
         @click="onSubmitForm"
 
         :loading="loaders.isSaveApi"
