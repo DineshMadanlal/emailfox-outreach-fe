@@ -74,6 +74,28 @@
             classes="dot-icon"
           />
 
+          <div
+            class="campaign-channel-block"
+          >
+            <LocalSvgIcon
+              v-for="(iconData, index) in campaignChannelJson.icons"
+              :key="`${campaignByIdJson.id}-channel-icon-${index}`"
+
+              :image="iconData.image"
+              classes="each-detail-icon"
+            />
+
+            <div class="channel-value-text">
+              {{ campaignChannelJson.label }}
+            </div>
+          </div>
+
+          <!-- Dot -->
+          <LocalSvgIcon
+            image="circle-dot"
+            classes="dot-icon"
+          />
+
           <!-- Number of contacts -->
           <div
             class="flex item-center no-wrap"
@@ -239,6 +261,10 @@ export default defineComponent({
     campaignByIdJson: {
       type: Object,
       required: true,
+    },
+    campaignChannelJson: {
+      type: Object,
+      default: () => ({}),
     },
   },
 
@@ -451,6 +477,19 @@ export default defineComponent({
 
       :deep(.seq-contact-icon) {
         @include svg-icon-stroke('path, circle, rect', $grey);
+      }
+
+      .campaign-channel-block {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .channel-value-text {
+          color: $grey-700;
+          font-size: 13px;
+          font-weight: 400;
+          line-height: 16px; /* 123.077% */
+        }
       }
 
       .seq-value-text {

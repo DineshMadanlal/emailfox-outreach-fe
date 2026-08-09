@@ -7,6 +7,7 @@
     <CampaignByIdHeader
       v-if="campaignByIdJson.id"
       :campaignByIdJson="campaignByIdJson"
+      :campaignChannelJson="campaignChannelJson"
 
       @onUpdateCampaign="onUpdateCampaign"
     />
@@ -49,6 +50,9 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import CampaignByIdHeader from 'components/CampaignById/Header.vue';
 
+// constants
+import { CAMPAIGN_TYPES } from 'src/boot/campaign-constants';
+
 export default defineComponent({
   name: 'CampaignById',
 
@@ -83,6 +87,36 @@ export default defineComponent({
     // computed
     const campaignId = computed(() => convertStringToNumber($route.params.campaignId));
     const campaignByIdJsonFromStore = computed(() => storeExclusionsPinia.campaignByIdJson);
+
+    const isEmailOutreachCampaign = computed(
+      () => state.campaignByIdJson.type === CAMPAIGN_TYPES.EMAIL.value,
+    );
+    const isLinkedInOutreachCampaign = computed(
+      () => state.campaignByIdJson.type === CAMPAIGN_TYPES.LINKEDIN.value,
+    );
+    const isMultiChannelOutreachCampaign = computed(
+      () => state.campaignByIdJson.type === CAMPAIGN_TYPES.MULTI_CHANNEL.value,
+    );
+
+    const campaignChannelJson = computed(() => {
+      if (isEmailOutreachCampaign.value) {
+        return {
+          label: 'Single Channel',
+          icons: CAMPAIGN_TYPES.EMAIL.icons,
+        };
+      }
+      if (isLinkedInOutreachCampaign.value) {
+        return {
+          label: 'Single Channel',
+          icons: CAMPAIGN_TYPES.LINKEDIN.icons,
+        };
+      }
+
+      return {
+        label: 'Multi Channel',
+        icons: CAMPAIGN_TYPES.MULTI_CHANNEL.icons,
+      };
+    });
 
     // methods
     const makeApiCallOnMounted = async () => {
@@ -153,6 +187,11 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      campaignChannelJson,
+
+      isEmailOutreachCampaign,
+      isLinkedInOutreachCampaign,
+      isMultiChannelOutreachCampaign,
 
       // methods
       onUpdateCampaign,
