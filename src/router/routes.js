@@ -369,25 +369,25 @@ const routes = [
       {
         path: 'settings',
         component: () => import('pages/WorkspaceSettings/MainIndex.vue'),
-        redirect: '/settings/general',
+        redirect: '/settings/warmup-profiles',
         meta: { requiresAuth: true },
         children: [
           // general
-          {
-            path: 'general',
-            component: () => import('pages/WorkspaceSettings/General.vue'),
-            meta: { requiresAuth: true },
-          },
-          {
-            path: 'members/clients',
-            component: () => import('pages/WorkspaceSettings/ClientMembers.vue'),
-            meta: { requiresAuth: true },
-          },
-          {
-            path: 'theme',
-            component: () => import('pages/WorkspaceSettings/AppTheme.vue'),
-            meta: { requiresAuth: true },
-          },
+          // {
+          //   path: 'general',
+          //   component: () => import('pages/WorkspaceSettings/General.vue'),
+          //   meta: { requiresAuth: true },
+          // },
+          // {
+          //   path: 'members/clients',
+          //   component: () => import('pages/WorkspaceSettings/ClientMembers.vue'),
+          //   meta: { requiresAuth: true },
+          // },
+          // {
+          //   path: 'theme',
+          //   component: () => import('pages/WorkspaceSettings/AppTheme.vue'),
+          //   meta: { requiresAuth: true },
+          // },
 
           // contact fields
           // {
