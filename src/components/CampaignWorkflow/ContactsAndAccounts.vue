@@ -33,6 +33,18 @@
     </div>
 
     <div class="edit-sequence-footer">
+      <!-- Back -->
+      <q-btn
+        flat
+        no-caps
+
+        label="Back"
+        color="primary"
+        class="light-primary-btn"
+
+        @click="onGoBack"
+      />
+
       <!-- Next Button -->
       <q-btn
         no-caps
@@ -112,6 +124,11 @@ export default defineComponent({
       $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/settings`);
     };
 
+    const onGoBack = () => {
+      // route to contacts step
+      $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/sequence`);
+    };
+
     return {
       // state
       ...toRefs(state),
@@ -121,6 +138,7 @@ export default defineComponent({
       canManageLinkedInAccounts,
 
       // methods
+      onGoBack,
       onNextPage,
     };
   },

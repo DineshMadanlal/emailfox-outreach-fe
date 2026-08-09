@@ -2,7 +2,7 @@
   <div class="import-contacts">
     <!-- Discard confirmation popup -->
     <q-dialog
-      v-model="showDiscardConfirmationModal"
+      v-model="modals.showDiscardConfirmationModal"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
@@ -11,6 +11,19 @@
     >
       <DiscardConfirmation
         @onExit="onExitPage"
+      />
+    </q-dialog>
+
+    <!-- Dialog -->
+    <q-dialog
+      v-model="modals.showImportListPreferencesModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ImportListPreferences
+        @onSave="importContacts"
       />
     </q-dialog>
 
@@ -122,6 +135,7 @@ import StepSummary from 'components/ContactsManager/StepSummary.vue';
 import UploadFile from 'components/ContactsManager/UploadFile.vue';
 import MapFields from 'components/ContactsManager/MapFields.vue';
 import DiscardConfirmation from 'components/Modals/DiscardConfirmation.vue';
+import ImportListPreferences from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/ImportListPreferences.vue';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -145,6 +159,7 @@ export default defineComponent({
     UploadFile,
     MapFields,
     DiscardConfirmation,
+    ImportListPreferences,
   },
 
   props: {
@@ -181,13 +196,19 @@ export default defineComponent({
       csvDataJson: {},
 
       leaveRoutePath: '',
-      showDiscardConfirmationModal: false,
+
+      modals: {
+        showDiscardConfirmationModal: false,
+        showImportListPreferencesModal: false,
+      },
+
+      transformedContacts: [],
     });
 
     // methods
     const onExitPage = () => {
       state.formChanged = false;
-      state.showDiscardConfirmationModal = false;
+      state.modals.showDiscardConfirmationModal = false;
 
       if (props.fromCampaignWorkflow) {
         emit('closeModal');
@@ -201,7 +222,7 @@ export default defineComponent({
       if (state.formChanged) {
         state.leaveRoutePath = state.previousRoutePath;
 
-        state.showDiscardConfirmationModal = true;
+        state.modals.showDiscardConfirmationModal = true;
       } else {
         if (props.fromCampaignWorkflow) {
           emit('closeModal');
@@ -241,6 +262,7 @@ export default defineComponent({
     const addListToSequence = async () => {
       try {
         state.isSaveApiLoading = true;
+        state.modals.showImportListPreferencesModal = false;
 
         const payload = {
           list_ids: [state.csvDataJson.listId],
@@ -263,13 +285,13 @@ export default defineComponent({
       }
     };
 
-    const importContacts = async (transformedContacts) => {
+    const importContacts = async () => {
       try {
         state.isSaveApiLoading = true;
 
         // payload for the API call
         const payload = {
-          contacts: transformedContacts,
+          contacts: state.transformedContacts,
           merge_strategy: state.csvDataJson.mergeStrategy,
           source: CONTACTS_IMPORT_SOURCE_TYPE.CSV_UPLOAD,
           source_file_name: state.csvDataJson.fileName,
@@ -284,7 +306,6 @@ export default defineComponent({
         state.formChanged = false;
 
         if (props.fromCampaignWorkflow) {
-          // add list to the sequence
           addListToSequence();
         } else {
           // move to the contacts page after successful import
@@ -301,7 +322,7 @@ export default defineComponent({
     };
 
     const onCompleteMapFieldsStep = ({ mappedCsvHeaders }) => {
-      const transformedContacts = state.csvDataJson.csvData.map((row) => {
+      state.transformedContacts = state.csvDataJson.csvData.map((row) => {
         const contact = {
           custom_fields: {},
         };
@@ -337,7 +358,12 @@ export default defineComponent({
         return contact;
       });
 
-      importContacts(transformedContacts);
+      if (props.fromCampaignWorkflow) {
+        // import preferences
+        state.modals.showImportListPreferencesModal = true;
+      } else {
+        importContacts();
+      }
     };
 
     const onComponentMounted = async () => {
@@ -353,7 +379,7 @@ export default defineComponent({
     onBeforeRouteLeave((to, from, next) => {
       if (state.formChanged) {
         state.leaveRoutePath = to.fullPath;
-        state.showDiscardConfirmationModal = true;
+        state.modals.showDiscardConfirmationModal = true;
       } else {
         // No changes, allow route change
         next();
@@ -371,6 +397,7 @@ export default defineComponent({
       setStep,
       onExitPage,
       onClosePage,
+      importContacts,
       onCompleteUploadFileStep,
       onCompleteMapFieldsStep,
 

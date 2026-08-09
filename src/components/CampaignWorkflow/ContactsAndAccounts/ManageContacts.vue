@@ -51,6 +51,41 @@
       <p class="option-header-text">
         Add Contacts
       </p>
+
+      <q-space />
+
+      <div
+        class="manage-action-flex"
+
+        v-if="hasConnectedLists"
+      >
+        <!-- Button -->
+        <q-btn
+          flat
+          dense
+          no-caps
+          unelevated
+
+          color="primary"
+        >
+          <div class="flex no-wrap items-center">
+            <LocalSvgIcon
+              image="circle-plus"
+              classes="circle-plus-icon"
+            />
+
+            <div class="q-ml-sm">
+              Add
+            </div>
+          </div>
+
+          <!-- Menu -->
+          <CampaignsAddContactsMenu
+            @onUploadContacts="modals.showUploadContactsModal = true"
+            @onMapListsToCampaign="modals.showMapListsToCampaignModal = true"
+          />
+        </q-btn>
+      </div>
     </div>
 
     <!-- content -->
@@ -59,6 +94,13 @@
 
       v-if="hasConnectedLists"
     >
+      <!--  -->
+      <CampaignListItem
+        v-for="item in connectedLists"
+        :key="`each-connected-list-${item.list_id}`"
+
+        :listJson="item"
+      />
       <!-- Loader -->
       <div
         v-if="loaders.isFetchApi"
@@ -136,8 +178,11 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import CampaignListItem from 'components/CampaignWorkflow/ContactsAndAccounts/CampaignListItem.vue';
 import MapListsToCampaign from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/MapListsToCampaign.vue';
 import CampaignUploadContacts from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/CampaignUploadContacts.vue';
+
+import CampaignsAddContactsMenu from 'components/Menu/CampaignsAddContactsMenu.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -153,8 +198,10 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    CampaignListItem,
     MapListsToCampaign,
     CampaignUploadContacts,
+    CampaignsAddContactsMenu,
   },
 
   props: {
@@ -298,6 +345,17 @@ export default defineComponent({
 
     gap: 12px;
     border-bottom: 1px solid $grey-50;
+
+    .manage-action-flex {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    :deep(.circle-plus-icon) {
+      @include svg-icon-stroke('path, circle', $primary);
+    }
 
     .header-icon-squared {
       height: 26px;
