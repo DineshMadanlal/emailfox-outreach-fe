@@ -126,12 +126,8 @@ export default defineComponent({
         state.isApiLoading = true;
 
         await postApiCall({
-          endpoint: '/mailboxes/remove-mailboxes',
-          payload: {
-            domain_id: props.domainId,
-            ids: [props.mailboxId],
-            confirm_delete: true,
-          },
+          includeWorkspace: true,
+          endpoint: `/mailboxes/${props.mailboxId}`,
         });
 
         appContext.config.globalProperties.$toast({

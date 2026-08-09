@@ -774,3 +774,9 @@ export const EMAIL_METRICS = {
     value: 'REPLY_RATE',
   },
 };
+
+export const IMPORT_PREFERENCES_DEFAULTS = {
+  allow_blocklist_contacts: false,
+  include_unsubscribed_contacts: false,
+  skip_contact_already_in_other_sequence: true,
+};

@@ -168,6 +168,7 @@ export default defineComponent({
         if (size(props.selectedDomains) === 1) {
           // delete single domain
           await deleteApiCall({
+            includeWorkspace: true,
             endpoint: `/domains/${props.selectedDomains[0].id}`,
           });
         } else {
@@ -175,8 +176,9 @@ export default defineComponent({
 
           // delete multiple domains
           await deleteApiCall({
-            endpoint: '/domains/bulk-delete',
             data: payload,
+            includeWorkspace: true,
+            endpoint: '/domains/bulk-delete',
           });
         }
 

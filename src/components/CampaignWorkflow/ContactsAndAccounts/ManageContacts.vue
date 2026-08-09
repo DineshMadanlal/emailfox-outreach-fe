@@ -25,6 +25,22 @@
     </q-dialog>
 
     <!-- Map Lists -->
+    <q-dialog
+      v-model="modals.showMapListsToCampaignModal"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <MapListsToCampaign
+        :campaignId="campaignById.id"
+
+        @onListImported="onListsAddedToCampaign"
+      />
+    </q-dialog>
 
     <!-- header -->
     <div class="options-header">
@@ -75,7 +91,7 @@
       <!-- Map List -->
       <div
         class="contact-option-item"
-        @click="modals.showMapListModal = true"
+        @click="modals.showMapListsToCampaignModal = true"
       >
         <div class="header-icon-circled">
           <LocalSvgIcon image="folder" class="header--icon" />
@@ -120,6 +136,7 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import MapListsToCampaign from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/MapListsToCampaign.vue';
 import CampaignUploadContacts from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/CampaignUploadContacts.vue';
 
 // composables
@@ -136,6 +153,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    MapListsToCampaign,
     CampaignUploadContacts,
   },
 
@@ -163,8 +181,8 @@ export default defineComponent({
         resultsFetchedOnce: false,
       },
       modals: {
-        showMapListModal: false,
         showUploadContactsModal: false,
+        showMapListsToCampaignModal: false,
       },
 
       connectedLists: [],
@@ -235,7 +253,7 @@ export default defineComponent({
     };
 
     const onListsAddedToCampaign = () => {
-      state.modals.showMapListModal = false;
+      state.modals.showMapListsToCampaignModal = false;
       state.modals.showUploadContactsModal = false;
 
       // refetch connected accounts

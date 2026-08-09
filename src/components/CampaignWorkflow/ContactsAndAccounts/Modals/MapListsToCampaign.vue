@@ -1,13 +1,26 @@
 <template>
   <q-card
     flat
-    class="select-sender-accounts-card app-modal-card custom-scrollbar"
+    class="map-lists-accounts-card app-modal-card custom-scrollbar"
   >
+    <!-- Dialog -->
+    <q-dialog
+      v-model="modals.showImportListPreferencesModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ImportListPreferences
+        @onSave="onSubmitForm"
+      />
+    </q-dialog>
+
     <!-- modal header -->
     <div class="app-modal-header">
       <!-- header text -->
       <h4 class="modal-header-text">
-        Add LinkedIn Accounts
+        Map Lists to Campaign
       </h4>
 
       <q-space />
@@ -32,11 +45,11 @@
     <div class="app-modal-content">
       <!-- linkedin filters -->
       <div
-        class="linkedin-filters-content"
+        class="lists-filters-content"
       >
-        <p class="add-linkedin-desc-text">
-          Choose which LinkedIn account to add to this campaign.
-          Only LinkedIn accounts that aren't already part of this campaign are shown.
+        <p class="add-lists-desc-text">
+          Choose which lists to add to this campaign.
+          Only lists that aren't already part of this campaign are shown.
         </p>
 
         <!-- search input -->
@@ -44,9 +57,9 @@
           :debounce="500"
           v-model="filters.searchText"
 
-          class="linkedin-filter-input"
+          class="lists-filter-input"
           moreClasses="dead-small"
-          placeholder="Search LinkedIn account"
+          placeholder="Search list"
 
           @update:modelValue="onSearchInput"
         />
@@ -59,14 +72,14 @@
 
         separator="cell"
         selection="multiple"
-        class="app-table select-linkedin-table app-paginated-table sticky-first-col"
+        class="app-table select-lists-table app-paginated-table sticky-first-col"
 
         :rows="tableData"
         :columns="tableColumns"
 
         :loading="loaders.isFetchApi"
 
-        v-model:selected="selectedAccounts"
+        v-model:selected="selectedData"
 
         @request="onRequest"
       >
@@ -106,7 +119,7 @@
                   <!-- quasar list -->
                   <q-list style="min-width: 270px">
                     <TableMultiSelect
-                      multiSelectType="linkedin"
+                      multiSelectType="list"
                       :multiSelectOptionJson="multiSelectOptionJson"
 
                       :totalList="pagination.rowsNumber"
@@ -242,21 +255,8 @@
           <q-td
             :props="props"
           >
-            <div class="linkedin-name-text">
+            <div class="lists-name-text">
               {{ props.row.name }}
-            </div>
-          </q-td>
-        </template>
-
-        <!-- Status -->
-        <template v-slot:body-cell-status="props">
-          <q-td
-            :props="props"
-          >
-            <div
-              class="linkedin-status-text"
-            >
-              {{ props.row.status }}
             </div>
           </q-td>
         </template>
@@ -272,10 +272,10 @@
 
         label="Save"
         color="primary"
-        @click="onSubmitForm"
+        @click="modals.showImportListPreferencesModal = true"
 
         :loading="loaders.isSaveApi"
-        :disable="!selectedAccounts.length"
+        :disable="!selectedData.length"
       />
     </div>
   </q-card>
@@ -290,28 +290,33 @@ import {
 // Components
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
+import ImportListPreferences from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/ImportListPreferences.vue';
+
+// composition api
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { getNumeralAmount } from 'src/utils/numbers';
 import { getApiCall, postApiCall } from 'src/utils/apiRequests';
 
 // constants
-import { WARMUP_STATUS } from 'src/boot/warmup-constants';
+
 import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
 // hardcoded
-const linkedInFilters = {
+const filtersJson = {
   searchText: '',
 };
 
 export default defineComponent({
-  name: 'AddSenderLinkedIn',
+  name: 'MapListsToCampaign',
 
-  emits: ['onAddAccounts'],
+  emits: ['onListImported'],
 
   components: {
     AppSearchInput,
     TableMultiSelect,
+    ImportListPreferences,
   },
 
   props: {
@@ -322,21 +327,28 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // composables
+    const { isMobileDevice } = useAppHelpersApi();
+
     // app context
     const { appContext } = getCurrentInstance();
 
     // state
     const state = reactive({
       tableData: [],
-      selectedAccounts: [],
+      selectedData: [],
 
       loaders: {
         isFetchApi: false,
         isSaveApi: false,
       },
 
+      modals: {
+        showImportListPreferencesModal: false,
+      },
+
       filters: {
-        ...linkedInFilters,
+        ...filtersJson,
       },
 
       // pagination
@@ -357,20 +369,6 @@ export default defineComponent({
           label: 'Name',
           align: 'left',
         },
-
-        // status
-        // {
-        //   name: 'status',
-        //   label: 'Status',
-        //   align: 'left',
-        // },
-
-        // Campaign In Use
-        // {
-        //   name: 'campaignInUse',
-        //   label: 'Campaign In Use',
-        //   align: 'left',
-        // },
       ];
 
       return columns;
@@ -399,7 +397,7 @@ export default defineComponent({
 
         // filters
         const {
-          searchText, provider, warmupStatus, status,
+          searchText,
         } = state.filters || {};
 
         // search text
@@ -407,24 +405,9 @@ export default defineComponent({
           params.search_text = searchText;
         }
 
-        // provider
-        if (provider) {
-          params.provider = provider;
-        }
-
-        // warmup status
-        if (warmupStatus) {
-          params.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
-        }
-
-        // status
-        if (status) {
-          params.status = status;
-        }
-
         const response = await getApiCall({
           params,
-          endpoint: '/connected-accounts/linkedin',
+          endpoint: '/lists',
           includeWorkspace: true,
         });
 
@@ -433,7 +416,7 @@ export default defineComponent({
         // table data
         state.tableData = [...data];
 
-        state.selectedAccounts = [];
+        state.selectedData = [];
         state.multiSelectOptionJson = {};
 
         state.pagination.rowsNumber = count;
@@ -441,7 +424,7 @@ export default defineComponent({
         // Show a toaster that domain have been setup successfully
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message || 'Unexpected error occured. Unable to fetch linkedin accounts.',
+          message: error.message || 'Unexpected error occured. Unable to fetch lists.',
         });
       } finally {
         state.loaders.isFetchApi = false;
@@ -472,7 +455,7 @@ export default defineComponent({
     };
 
     const onTableRowSelect = () => {
-      if (state.tableData.length === state.selectedAccounts.length) {
+      if (state.tableData.length === state.selectedData.length) {
         state.multiSelectOptionJson = {
           limit: state.tableData.length,
           selectedOption: TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST,
@@ -485,7 +468,7 @@ export default defineComponent({
     const resetTableMultiSelect = () => {
       state.multiSelectOptionJson = {};
 
-      state.selectedAccounts = [];
+      state.selectedData = [];
     };
 
     const updateMultiSelect = (multiSelectOptionJson) => {
@@ -493,10 +476,10 @@ export default defineComponent({
 
       if (multiSelectOptionJson.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST
         || multiSelectOptionJson.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL) {
-        state.selectedAccounts = state.tableData;
+        state.selectedData = state.tableData;
       } else {
         // limit number
-        state.selectedAccounts = state.tableData
+        state.selectedData = state.tableData
           .slice(0, multiSelectOptionJson.limitNumber);
       }
 
@@ -510,26 +493,30 @@ export default defineComponent({
       onFetchAccounts();
     };
 
-    const onSubmitForm = async () => {
+    const onSubmitForm = async (preferences) => {
       try {
+        // close the modal
+        state.modals.showImportListPreferencesModal = false;
+
         state.loaders.isSaveApi = true;
 
         // account IDs
-        const accountIds = state.selectedAccounts.map((account) => account.id);
+        const listIds = state.selectedData.map((account) => account.id);
 
         await postApiCall({
           payload: {
-            linkedin_account_ids: accountIds,
+            list_ids: listIds,
+            preferences,
           },
           includeWorkspace: true,
-          endpoint: `sequences/${props.campaignId}/linkedin-accounts/add`,
+          endpoint: `sequences/${props.campaignId}/lists`,
         });
 
-        emit('onAddAccounts');
+        emit('onListImported');
       } catch (error) {
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message || 'Unexpected error occured. Unable to add linkedin accounts.',
+          message: error.message,
         });
       } finally {
         state.loaders.isSaveApi = false;
@@ -547,6 +534,7 @@ export default defineComponent({
 
       // computed
       tableColumns,
+      isMobileDevice,
       tablePaginationLabel,
 
       // methods
@@ -563,14 +551,14 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.select-sender-accounts-card {
+.map-lists-accounts-card {
   position: relative;
-  max-width: 650px;
+  max-width: 600px;
   $modalHeaderHeight: 68px;
 
   // sm min
   @media (min-width: $breakpoint-sm-min) {
-    width: 650px;
+    width: 600px;
     min-height: 100%;
 
     display: flex;
@@ -581,7 +569,7 @@ export default defineComponent({
     border-radius: 8px 0px 0px 8px !important;
   }
 
-  @media (min-width: 601px) and (max-width: 649px) {
+  @media (min-width: 601px) and (max-width: 632px) {
     // For medium screens, we can set a specific width or use a percentage
     width: calc(100vw - 32px);
   }
@@ -591,7 +579,7 @@ export default defineComponent({
     overflow-y: auto;
     padding: 0px;
 
-    .linkedin-filters-content {
+    .lists-filters-content {
       width: 100%;
       padding: 20px;
 
@@ -599,7 +587,7 @@ export default defineComponent({
       flex-direction: column;
       gap: 12px;
 
-      .add-linkedin-desc-text {
+      .add-lists-desc-text {
         color: $grey;
         font-size: 14px;
         font-weight: 400;
@@ -614,8 +602,8 @@ export default defineComponent({
       }
     }
 
-    .select-linkedin-table {
-      .linkedin-name-text {
+    .select-lists-table {
+      .lists-name-text {
         color: $black;
         font-size: 14px;
         font-weight: 500;
