@@ -124,6 +124,7 @@
 
           <SelectList
             v-model="listDetailsJson"
+            canCreateList
 
             class="upload-select-dd"
 

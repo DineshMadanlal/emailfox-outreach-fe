@@ -49,7 +49,7 @@
 
         <div class="flex no-wrap items-center">
           <p class="list-subtitle-text">
-            {{ listContactsLength }} Contacts
+            {{ listContactsLength }} {{ $pluralize('Contact', listContactsLength) }}
           </p>
 
           <LocalSvgIcon
@@ -168,7 +168,7 @@ export default defineComponent({
       ];
     });
 
-    const listContactsLength = computed(() => getNumeralAmount(props.listByJson.totalContacts));
+    const listContactsLength = computed(() => getNumeralAmount(props.listByJson.total_contacts));
 
     return {
       // computed

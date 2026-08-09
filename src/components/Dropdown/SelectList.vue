@@ -44,6 +44,8 @@
 
           class="dd-filter-search-input"
           placeholder="Search list"
+
+          @update:model-value="onSearchFilter"
         />
       </q-item>
 
@@ -58,8 +60,10 @@
       />
 
       <div
-        v-else
+        v-else-if="canCreateList"
         class="dd-no-create-new-result-found"
+
+        @click="onCreateNewList"
       >
         <!-- Create a new list -->
         <q-item
@@ -82,6 +86,13 @@
             + Create a new list
           </div>
         </q-item>
+      </div>
+
+      <div
+        v-else
+        class="dd-no-result-found-text"
+      >
+        No results found
       </div>
     </template>
 
@@ -152,6 +163,23 @@
         </q-item-section>
       </q-item>
     </template>
+
+    <!-- Dialog -->
+    <q-dialog
+      v-if="canCreateList"
+
+      v-model="modals.showSaveListNameModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SaveListName
+        :prefillListNameAndSave="searchFilterInput"
+
+        @newCreatedList="onNewCreatedList"
+      />
+    </q-dialog>
   </q-select>
 </template>
 
@@ -172,6 +200,10 @@ import { getApiCall } from 'src/utils/apiRequests';
 // Components
 import ApiLoader from 'src/components/General/ApiLoader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
+import SaveListName from 'components/Lists/Modals/SaveListName.vue';
+
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // constants
 import { DROPDOWN_MAX_FETCH_LIMIT } from 'boot/constants';
@@ -187,6 +219,7 @@ export default defineComponent({
   components: {
     ApiLoader,
     AppSearchInput,
+    SaveListName,
   },
 
   props: {
@@ -198,11 +231,18 @@ export default defineComponent({
       type: String,
       default: 'List',
     },
+    canCreateList: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   setup(props, { emit }) {
     // instance
     const { appContext } = getCurrentInstance();
+
+    // composables
+    const { isMobileDevice } = useAppHelpersApi();
 
     // Local state to manage the selected options
     const internalValue = computed({
@@ -226,6 +266,10 @@ export default defineComponent({
       totalListsCount: null,
 
       selectListRef: null,
+
+      modals: {
+        showSaveListNameModal: false,
+      },
     });
 
     // computed
@@ -357,6 +401,23 @@ export default defineComponent({
       }
     };
 
+    const onCreateNewList = () => {
+      state.modals.showSaveListNameModal = true;
+    };
+
+    const onNewCreatedList = (newListJson) => {
+      state.modals.showSaveListNameModal = false;
+
+      // add new list to the top of the list
+      state.allLists.unshift(newListJson);
+
+      // set the newly created list as selected
+      internalValue.value = {
+        id: newListJson.id,
+        name: newListJson.name,
+      };
+    };
+
     onMounted(() => {
       if (size(props.modelValue) && isEmpty(state.allLists)) {
         fetchListByIdBasicDetails();
@@ -374,14 +435,17 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed value
-      internalValue,
       isLoading,
+      internalValue,
       dropdownOptions,
+      isMobileDevice,
 
       // methods
       onDropdownFilter,
       loadMoreOptions,
       onSearchFilter,
+      onCreateNewList,
+      onNewCreatedList,
 
       validate() {
         return state.selectListRef?.validate();

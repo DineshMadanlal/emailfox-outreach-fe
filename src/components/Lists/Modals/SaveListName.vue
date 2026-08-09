@@ -104,6 +104,10 @@ export default defineComponent({
       type: Object,
       default: () => {},
     },
+    prefillListNameAndSave: {
+      type: String,
+      default: '',
+    },
   },
 
   setup(props, { emit }) {
@@ -128,9 +132,9 @@ export default defineComponent({
         };
 
         const response = await postApiCall({
-          includeWorkspace: true,
-          endpoint: '/lists',
           payload,
+          endpoint: '/lists',
+          includeWorkspace: true,
         });
 
         emit('newCreatedList', response);
@@ -187,7 +191,14 @@ export default defineComponent({
 
     onMounted(() => {
       // set initial name
-      state.listName = props.listJson?.name || '';
+      if (props.prefillListNameAndSave) {
+        state.listName = props.prefillListNameAndSave;
+
+        // auto save
+        onSaveName();
+      } else if (!isNewList.value) {
+        state.listName = props.listJson.name;
+      }
     });
 
     return {

@@ -228,6 +228,10 @@
 
   thead tr th {
     border-bottom: 0;
+
+    &:first-child {
+      z-index: 3;
+    }
   }
 
   tbody tr td {
