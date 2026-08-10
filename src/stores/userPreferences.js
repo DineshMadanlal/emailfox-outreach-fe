@@ -70,6 +70,13 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
       tableData: [],
       visibleColumns: [],
     },
+    // linkedin accounts
+    linkedInAccountsState: {
+      filters: {},
+      pagination: null,
+      tableData: [],
+      visibleColumns: [],
+    },
 
     integrationsCount: {},
 

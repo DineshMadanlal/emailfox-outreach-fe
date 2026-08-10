@@ -55,7 +55,7 @@
     </q-dialog>
 
     <!-- Header -->
-    <AppHeader :title="headerTitle">
+    <AppHeader title="Domains">
     </AppHeader>
 
     <!-- Loader -->
@@ -517,14 +517,6 @@ export default defineComponent({
     const localStoredPagination = computed(() => userStore.allDomainsState?.pagination
       || DEFAULT_TABLE_PAGINATION);
 
-    const headerTitle = computed(() => {
-      if (state.pagination.rowsNumber) {
-        return `Domains (${getNumeralAmount(state.pagination.rowsNumber)})`;
-      }
-
-      return 'Domains';
-    });
-
     const showApiLoader = computed(() => {
       if (state.areResultsFetchedOnce) {
         return false;
@@ -814,7 +806,6 @@ export default defineComponent({
 
       // computed
       tableColumns,
-      headerTitle,
       isMobileDevice,
       showApiLoader,
       tablePaginationLabel,

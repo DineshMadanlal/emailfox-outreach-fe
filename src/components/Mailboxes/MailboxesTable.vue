@@ -676,9 +676,6 @@ export default defineComponent({
       multiSelectOptionJson: {},
       showTableMultiSelectMenu: false,
 
-      // table ref
-      tableMaxHeight: '100%',
-
       selectedMailboxJson: null,
       showDeleteMailboxModal: false,
 

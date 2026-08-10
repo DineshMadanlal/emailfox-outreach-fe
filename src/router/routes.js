@@ -160,6 +160,11 @@ const routes = [
             meta: { requiresAuth: true },
           },
           {
+            path: 'linkedin/accounts',
+            component: () => import('src/pages/LinkedIn/Accounts.vue'),
+            meta: { requiresAuth: true },
+          },
+          {
             path: 'mailboxes/new',
             component: () => import('pages/Mailboxes/New.vue'),
             meta: { requiresAuth: true },

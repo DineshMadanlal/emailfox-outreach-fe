@@ -13,6 +13,24 @@
         <p class="workspace-text ellipsis">
           {{ activeWorkspaceName }}
         </p>
+
+        <!-- arrow icon -->
+        <LocalSvgIcon
+          v-if="!isClientLoggedIn"
+
+          image="plain-down-arrow"
+          class="arrow-icon"
+          :class="{ 'rotate-180': showWorkspaceSwitcherMenu }"
+        />
+
+        <!-- Menu -->
+        <q-menu
+          v-if="!isClientLoggedIn"
+          :offset="[0, 10]"
+          v-model="showWorkspaceSwitcherMenu"
+        >
+          <WorkspaceSwitcher />
+        </q-menu>
       </div>
 
       <q-btn
@@ -67,7 +85,7 @@
           >
             <LocalSvgIcon
               :image="page.icon"
-              class="sidebar-route-icon"
+              :class="`sidebar-route-icon ${page.iconClass || ''}`"
             />
 
             <!--  -->
@@ -107,6 +125,7 @@ import { useWorkspace } from 'src/composables/useWorkspace';
 
 // Components
 import AppTooltip from 'components/General/AppTooltip.vue';
+import WorkspaceSwitcher from 'components/Menu/WorkspaceSwitcher.vue';
 import SkyBoxSidebarContent from 'components/MasterInbox/Sidebar/Content.vue';
 
 export default defineComponent({
@@ -115,6 +134,7 @@ export default defineComponent({
   components: {
     AppTooltip,
     SkyBoxSidebarContent,
+    WorkspaceSwitcher,
   },
 
   setup() {
@@ -204,6 +224,15 @@ export default defineComponent({
           route: '/outreach/domains',
           isActive: activeRoutePath.value.includes('/outreach/domain'),
         },
+        // linkedin
+        {
+          name: 'linkedin',
+          label: 'LinkedIn',
+          icon: 'linkedin-1',
+          iconClass: 'linkedin-icon',
+          route: '/outreach/linkedin/accounts',
+          isActive: activeRoutePath.value.includes('/outreach/linkedin'),
+        },
       ];
 
       return routes;
@@ -227,6 +256,63 @@ export default defineComponent({
     });
 
     // workspace settings routes
+    const workspaceSettingsRoutes = computed(() => {
+      if (isClientLoggedIn.value) {
+        // clients should not see workspace settings
+        return [];
+      }
+
+      const routes = [
+        // general
+        {
+          name: 'general',
+          label: 'General',
+          icon: 'general',
+          route: '/settings/general',
+          isActive: activeRoutePath.value.includes('/settings/general'),
+        },
+      ];
+
+      if (isRoleAdminOrAbove.value) {
+        routes.push(
+          // members
+          {
+            name: 'members',
+            label: 'Client Members',
+            icon: 'people',
+            route: '/settings/members/clients',
+            isActive: activeRoutePath.value.includes('/settings/members'),
+          },
+        );
+      }
+
+      return routes;
+    });
+
+    const whitelabelSettingsRoutes = computed(() => {
+      if (isClientLoggedIn.value) {
+        // clients should not see whitelabel settings
+        return [];
+      }
+
+      const routes = [];
+
+      if (isRoleAdminOrAbove.value) {
+        routes.push(
+          // theme
+          {
+            name: 'theme',
+            label: 'Theme',
+            icon: 'theme',
+            route: '/settings/theme',
+            isActive: activeRoutePath.value.includes('/settings/theme'),
+          },
+        );
+      }
+
+      return routes;
+    });
+
     const deliveryControlRoutes = computed(() => {
       const routes = [
         // warmup profiles
@@ -331,6 +417,22 @@ export default defineComponent({
 
     const allWorkspaceSettingsRoutes = computed(() => {
       const settingsMenu = [];
+
+      // general settings
+      if (workspaceSettingsRoutes.value.length > 0) {
+        settingsMenu.push({
+          heading: 'Workspace Settings',
+          routes: workspaceSettingsRoutes.value,
+        });
+      }
+
+      // whitelabel settings
+      if (whitelabelSettingsRoutes.value.length > 0) {
+        settingsMenu.push({
+          heading: 'Whitelabel Settings',
+          routes: whitelabelSettingsRoutes.value,
+        });
+      }
 
       // delivery control
       settingsMenu.push({
@@ -518,6 +620,13 @@ export default defineComponent({
 
           :deep(.sidebar-route-icon) {
             @include svg-icon-stroke('path, circle, rect, ellipse', $black);
+
+            &.linkedin-icon {
+              path {
+                fill: $black;
+                stroke: unset;
+              }
+            }
           }
 
           &.active {
@@ -525,6 +634,13 @@ export default defineComponent({
 
             :deep(.sidebar-route-icon) {
               @include svg-icon-stroke('path, circle, rect, ellipse', $primary);
+
+              &.linkedin-icon {
+                path {
+                  fill: $primary;
+                  stroke: unset;
+                }
+              }
             }
 
             .page-label-text {
