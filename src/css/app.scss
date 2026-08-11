@@ -231,6 +231,7 @@
 
     &:first-child {
       z-index: 3;
+      left: 0px;
     }
   }
 
@@ -246,8 +247,6 @@
 
   // sm min
   @media (min-width: $breakpoint-sm-min) {
-
-    thead tr th,
     tbody tr td {
       &:first-child {
         left: 0;

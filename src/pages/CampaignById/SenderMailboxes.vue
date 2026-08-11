@@ -162,11 +162,11 @@
           >
             <div>
               <div class="mailbox-name-text">
-                {{ props.row.first_name }} {{ props.row.last_name }}
+                {{ props.row.mailbox_name }}
               </div>
 
               <div class="mailbox-email-text">
-                {{ props.row.email }}
+                {{ props.row.mailbox_email }}
               </div>
             </div>
           </router-link>

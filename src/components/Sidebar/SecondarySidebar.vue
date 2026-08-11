@@ -13,24 +13,6 @@
         <p class="workspace-text ellipsis">
           {{ activeWorkspaceName }}
         </p>
-
-        <!-- arrow icon -->
-        <LocalSvgIcon
-          v-if="!isClientLoggedIn"
-
-          image="plain-down-arrow"
-          class="arrow-icon"
-          :class="{ 'rotate-180': showWorkspaceSwitcherMenu }"
-        />
-
-        <!-- Menu -->
-        <q-menu
-          v-if="!isClientLoggedIn"
-          :offset="[0, 10]"
-          v-model="showWorkspaceSwitcherMenu"
-        >
-          <WorkspaceSwitcher />
-        </q-menu>
       </div>
 
       <q-btn
@@ -59,51 +41,111 @@
     <div
       class="secondary-settings-route"
     >
-      <div
-        v-for="(section, index) of sidebarRoutes"
-        :key="`each-sidebar-section-${section.heading}-${index}`"
+      <!--  -->
+      <template v-if="!drawerMiniState">
+        <q-expansion-item
+          v-for="(panel) in sidebarPanels"
+          :key="`each-sidebar-panel-${panel.label}`"
 
-        class="each-secondary-route-container"
-      >
-        <p class="secondary-route-heading">
-          {{ section.heading }}
-        </p>
+          dense
 
-        <!-- Each route -->
-        <div class="sidebar-all-routes-grid">
-          <q-item
-            v-for="(page, index) in section.routes"
-            :key="`secondary-sidebar-route-${index}-${page.label}`"
+          class="sidebar-expansion-panel"
+          header-class="sidebar-expansion-panel-header"
 
-            clickable
+          :name="panel.key"
+          :model-value="expandedSidebarPanel === panel.key"
 
-            class="sidebar-route-item"
+          @update:model-value="handleSidebarPanelToggle(panel.key, $event)"
+        >
+          <!-- header template -->
+          <template #header>
+            <div class="sidebar-expansion-header">
+              <div
+                class="panel-label-text"
+              >
+                {{ panel.label }}
+              </div>
+            </div>
+          </template>
 
-            :to="page.route"
-            :class="{ active: page.isActive }"
-            :style="{ animationDelay: `0.${250 * index}s` }"
+          <!-- panel sections -->
+          <div
+            v-for="(section, sectionIndex) of panel.sections"
+            :key="`each-sidebar-section-${panel.key}-${section.heading}-${sectionIndex}`"
+
+            class="each-secondary-route-container"
           >
-            <LocalSvgIcon
-              :image="page.icon"
-              :class="`sidebar-route-icon ${page.iconClass || ''}`"
-            />
-
-            <!--  -->
-            <p class="page-label-text">
-              {{ page.label }}
+            <!-- each section -->
+            <p class="secondary-route-heading">
+              {{ section.heading }}
             </p>
 
-            <!-- tooltip -->
-            <AppTooltip
-              anchor="center right"
-              self="center left"
-              :content="page.label"
+            <!-- Each route -->
+            <div class="sidebar-all-routes-grid">
+              <q-item
+                v-for="(page, index) in section.routes"
+                :key="`secondary-sidebar-route-${panel.key}-${index}-${page.label}`"
 
-              v-if="drawerMiniState"
-            />
-          </q-item>
+                clickable
+
+                class="sidebar-route-item"
+
+                :to="page.route"
+                :class="{ active: page.isActive }"
+                :style="{ animationDelay: `0.${250 * index}s` }"
+              >
+                <LocalSvgIcon
+                  :image="page.icon"
+                  :class="`sidebar-route-icon ${page.iconClass || ''}`"
+                />
+
+                <p class="page-label-text">
+                  {{ page.label }}
+                </p>
+              </q-item>
+            </div>
+          </div>
+        </q-expansion-item>
+      </template>
+
+      <template v-else>
+        <div
+          v-for="(section, index) of sidebarRoutes"
+          :key="`each-sidebar-mini-section-${section.heading}-${index}`"
+
+          class="each-secondary-route-container"
+        >
+          <div class="sidebar-all-routes-grid">
+            <q-item
+              v-for="(page, pageIndex) in section.routes"
+              :key="`secondary-sidebar-mini-route-${pageIndex}-${page.label}`"
+
+              clickable
+
+              class="sidebar-route-item"
+
+              :to="page.route"
+              :class="{ active: page.isActive }"
+            >
+              <LocalSvgIcon
+                :image="page.icon"
+                :class="`sidebar-route-icon ${page.iconClass || ''}`"
+              />
+
+              <p class="page-label-text">
+                {{ page.label }}
+              </p>
+
+              <!-- tooltip -->
+              <AppTooltip
+                anchor="center right"
+                self="center left"
+                :content="page.label"
+              />
+            </q-item>
+          </div>
         </div>
-      </div>
+      </template>
     </div>
   </aside>
 </template>
@@ -111,11 +153,11 @@
 <script>
 // vue
 import {
-  defineComponent, computed, reactive, toRefs,
+  defineComponent, computed, reactive, toRefs, watch,
 } from 'vue';
 
 // vue router
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 // pinia store
 import { useUserPreferencesStore } from 'src/stores/userPreferences.js';
@@ -125,7 +167,6 @@ import { useWorkspace } from 'src/composables/useWorkspace';
 
 // Components
 import AppTooltip from 'components/General/AppTooltip.vue';
-import WorkspaceSwitcher from 'components/Menu/WorkspaceSwitcher.vue';
 import SkyBoxSidebarContent from 'components/MasterInbox/Sidebar/Content.vue';
 
 export default defineComponent({
@@ -134,12 +175,12 @@ export default defineComponent({
   components: {
     AppTooltip,
     SkyBoxSidebarContent,
-    WorkspaceSwitcher,
   },
 
   setup() {
     // route
     const $route = useRoute();
+    const $router = useRouter();
 
     // composables
     const {
@@ -154,6 +195,7 @@ export default defineComponent({
     // state
     const state = reactive({
       showWorkspaceSwitcherMenu: false,
+      expandedSidebarPanel: 'outreach',
     });
 
     // computed
@@ -163,7 +205,6 @@ export default defineComponent({
     const isOutreachRoute = computed(() => activeRoutePath.value.includes('/outreach/'));
     const isMasterInboxRoute = computed(() => activeRoutePath.value.includes('/unibox/'));
     const isWorkspaceSettingsRoute = computed(() => activeRoutePath.value.includes('/settings/'));
-    const isUserSettingsRoute = computed(() => activeRoutePath.value.includes('/account/'));
 
     // outreach routes
     const engagementRoutes = computed(() => {
@@ -255,64 +296,6 @@ export default defineComponent({
       return routes;
     });
 
-    // workspace settings routes
-    const workspaceSettingsRoutes = computed(() => {
-      if (isClientLoggedIn.value) {
-        // clients should not see workspace settings
-        return [];
-      }
-
-      const routes = [
-        // general
-        {
-          name: 'general',
-          label: 'General',
-          icon: 'general',
-          route: '/settings/general',
-          isActive: activeRoutePath.value.includes('/settings/general'),
-        },
-      ];
-
-      if (isRoleAdminOrAbove.value) {
-        routes.push(
-          // members
-          {
-            name: 'members',
-            label: 'Client Members',
-            icon: 'people',
-            route: '/settings/members/clients',
-            isActive: activeRoutePath.value.includes('/settings/members'),
-          },
-        );
-      }
-
-      return routes;
-    });
-
-    const whitelabelSettingsRoutes = computed(() => {
-      if (isClientLoggedIn.value) {
-        // clients should not see whitelabel settings
-        return [];
-      }
-
-      const routes = [];
-
-      if (isRoleAdminOrAbove.value) {
-        routes.push(
-          // theme
-          {
-            name: 'theme',
-            label: 'Theme',
-            icon: 'theme',
-            route: '/settings/theme',
-            isActive: activeRoutePath.value.includes('/settings/theme'),
-          },
-        );
-      }
-
-      return routes;
-    });
-
     const deliveryControlRoutes = computed(() => {
       const routes = [
         // warmup profiles
@@ -343,58 +326,6 @@ export default defineComponent({
 
       return routes;
     });
-
-    const accountGeneralPageRoutes = computed(() => {
-      const routes = [
-        // profile
-        {
-          name: 'Profile',
-          icon: 'profile',
-          label: 'Profile',
-          route: '/account/profile',
-          isActive: activeRoutePath.value.includes('/account/profile'),
-        },
-        // billing
-        {
-          name: 'BillingSubscription',
-          icon: 'billing',
-          label: 'Billing & Subscription',
-          route: '/account/billing',
-          isActive: activeRoutePath.value.includes('/account/billing'),
-        },
-        // team members
-        {
-          name: 'TeamMembers',
-          icon: 'people',
-          label: 'Team Members',
-          route: '/account/team',
-          isActive: activeRoutePath.value.includes('/account/team'),
-        },
-      ];
-
-      return routes;
-    });
-
-    const developerPageRoutesByUser = computed(() => {
-      if (isClientLoggedIn.value) {
-        // clients should not see whitelabel settings
-        return [];
-      }
-
-      const routes = [
-        // api key
-        {
-          name: 'UserApi',
-          icon: 'api-key',
-          label: 'API Key',
-          route: '/account/api',
-          isActive: activeRoutePath.value.includes('/account/api'),
-        },
-      ];
-
-      return routes;
-    });
-
     const developerPageRoutesByWorkspace = computed(() => {
       if (isClientLoggedIn.value) {
         // clients should not see whitelabel settings
@@ -418,22 +349,6 @@ export default defineComponent({
     const allWorkspaceSettingsRoutes = computed(() => {
       const settingsMenu = [];
 
-      // general settings
-      if (workspaceSettingsRoutes.value.length > 0) {
-        settingsMenu.push({
-          heading: 'Workspace Settings',
-          routes: workspaceSettingsRoutes.value,
-        });
-      }
-
-      // whitelabel settings
-      if (whitelabelSettingsRoutes.value.length > 0) {
-        settingsMenu.push({
-          heading: 'Whitelabel Settings',
-          routes: whitelabelSettingsRoutes.value,
-        });
-      }
-
       // delivery control
       settingsMenu.push({
         heading: 'Delivery Control',
@@ -451,26 +366,24 @@ export default defineComponent({
       return settingsMenu;
     });
 
-    const allUserSettingsRoutes = computed(() => {
-      const settingsMenu = [];
+    const sidebarPanels = computed(() => {
+      const panels = [
+        {
+          key: 'outreach',
+          label: 'Outreach',
+          sections: allOutreachRoutes.value,
+        },
+      ];
 
-      // general settings
-      if (accountGeneralPageRoutes.value.length > 0) {
-        settingsMenu.push({
-          heading: 'General',
-          routes: accountGeneralPageRoutes.value,
+      if (allWorkspaceSettingsRoutes.value.length > 0) {
+        panels.push({
+          key: 'settings',
+          label: 'Settings',
+          sections: allWorkspaceSettingsRoutes.value,
         });
       }
 
-      // developer options
-      if (developerPageRoutesByUser.value.length > 0) {
-        settingsMenu.push({
-          heading: 'Developer Options',
-          routes: developerPageRoutesByUser.value,
-        });
-      }
-
-      return settingsMenu;
+      return panels;
     });
 
     const sidebarRoutes = computed(() => {
@@ -482,16 +395,41 @@ export default defineComponent({
         return allWorkspaceSettingsRoutes.value;
       }
 
-      if (isUserSettingsRoute.value) {
-        return allUserSettingsRoutes.value;
-      }
-
       return [];
     });
+
+    watch(
+      () => activeRoutePath.value,
+      () => {
+        if (isWorkspaceSettingsRoute.value && allWorkspaceSettingsRoutes.value.length > 0) {
+          state.expandedSidebarPanel = 'settings';
+          return;
+        }
+
+        state.expandedSidebarPanel = 'outreach';
+      },
+      { immediate: true },
+    );
 
     // methods
     const toggleDrawerMiniState = () => {
       userPreferencesStore.toggleDrawerMiniState();
+    };
+
+    const handleSidebarPanelToggle = (panelKey, isOpen) => {
+      if (isOpen) {
+        state.expandedSidebarPanel = panelKey;
+
+        // switch to the first route of the panel if not already on a route of that panel
+        const panel = sidebarPanels.value.find((p) => p.key === panelKey);
+        if (panel) {
+          const firstRoute = panel.sections[0].routes[0];
+          if (firstRoute && !activeRoutePath.value.includes(firstRoute.route)) {
+            // navigate to the first route of the panel
+            $router.push(firstRoute.route);
+          }
+        }
+      }
     };
 
     return {
@@ -504,6 +442,7 @@ export default defineComponent({
       activeRoutePath,
 
       sidebarRoutes,
+      sidebarPanels,
       engagementRoutes,
       isRoleAdminOrAbove,
       activeWorkspaceName,
@@ -513,6 +452,7 @@ export default defineComponent({
 
       // methods
       toggleDrawerMiniState,
+      handleSidebarPanelToggle,
     };
   },
 });
@@ -533,13 +473,12 @@ export default defineComponent({
 
   transition: width .16s ease, min-width .16s ease, padding .16s ease;
 
-  .drawer-resizer {
-    :deep(.resizer-icon) {
-      @include svg-icon-stroke('path, circle, rect', $grey-400);
-    }
-  }
+  flex-direction: column;
+  display: flex;
+  align-items: center;
 
   .workspaces-section {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -557,18 +496,6 @@ export default defineComponent({
 
       transition: display .25s ease;
 
-      :deep(.arrow-icon) {
-        width: 8px;
-        height: 8px;
-        @include svg-icon-stroke('path', $black);
-
-        transition: transform .16s ease;
-
-        &.rotate-180 {
-          transform: rotate(180deg);
-        }
-      }
-
       .workspace-text {
         color: $black;
         font-size: 15px;
@@ -580,12 +507,50 @@ export default defineComponent({
     }
   }
 
+  //
   .secondary-settings-route {
     width: 100%;
     display: grid;
-    grid-row-gap: 30px;
+    grid-row-gap: 10px;
+
+    :deep(.sidebar-expansion-panel) {
+      border-radius: 8px;
+      overflow: hidden;
+
+      &.q-expansion-item--expanded {
+        .sidebar-expansion-panel-header {
+          background: rgba($color: var(--grey-rgb), $alpha: 0.1);
+        }
+      }
+
+      .sidebar-expansion-panel-header {
+        display: flex;
+        min-height: unset;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 4px;
+        border-radius: 6px;
+        padding: 0 8px;
+
+        .sidebar-expansion-header {
+          .panel-label-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: $grey;
+            letter-spacing: 0.39px;
+          }
+        }
+      }
+    }
 
     .each-secondary-route-container {
+      margin-bottom: 18px;
+
+      // last child
+      &:last-child {
+        margin-bottom: 0px;
+      }
+
       .secondary-route-heading {
         color: $grey;
         font-size: 13px;
@@ -667,6 +632,10 @@ export default defineComponent({
 
     .secondary-settings-route {
       grid-row-gap: 0;
+
+      :deep(.sidebar-expansion-panel) {
+        display: none;
+      }
 
       .each-secondary-route-container {
         .secondary-route-heading {

@@ -8,20 +8,13 @@
   >
     <!-- Drak left Rail -->
     <q-drawer
-      show-if-above
-
-      :width="74"
-      :breakpoint="1023"
+      behavior="mobile"
 
       side="left"
       class="app-left-rail"
 
       v-model="storeExclusionsPinia.leftDrawerOpen"
     >
-      <LeftRail
-        :isPrimaryApp="isPrimaryApp"
-      />
-
       <SecondarySidebar />
     </q-drawer>
 
@@ -76,7 +69,6 @@ import {
 import { useRoute } from 'vue-router';
 
 // Components
-import LeftRail from 'components/Sidebar/LeftRail.vue';
 import WorkspaceLoader from 'components/Workspaces/Loader.vue';
 import SecondarySidebar from 'components/Sidebar/SecondarySidebar.vue';
 
@@ -104,7 +96,6 @@ export default defineComponent({
   name: 'AppLayout',
 
   components: {
-    LeftRail,
     SecondarySidebar,
     WorkspaceLoader,
   },
@@ -262,19 +253,18 @@ export default defineComponent({
 <style lang="scss" scoped>
 .app-layout {
   :deep(.app-left-rail) {
+    display: none;
     background: $white;
 
-    .secondary-sidebar {
-      display: none;
-    }
-
     // sm max
-    @media (max-width: $breakpoint-sm-max) {
+    @media (max-width: $breakpoint-xs-max) {
       display: flex;
       width: fit-content !important;
 
       .secondary-sidebar {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
     }
   }
