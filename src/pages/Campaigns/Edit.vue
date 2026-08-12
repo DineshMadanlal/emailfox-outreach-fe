@@ -310,6 +310,7 @@ export default defineComponent({
       flex: 1;
       display: flex;
       min-height: 0;
+      overflow-y: auto;
 
       // include custom scrollbar
       @include custom-scrollbar;
@@ -327,6 +328,7 @@ export default defineComponent({
       width: 100%;
       display: flex;
       align-items: center;
+      justify-content: flex-end;
       gap: 16px;
 
       position: sticky;

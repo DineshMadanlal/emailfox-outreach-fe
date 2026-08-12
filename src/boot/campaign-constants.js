@@ -780,3 +780,57 @@ export const IMPORT_PREFERENCES_DEFAULTS = {
   include_unsubscribed_contacts: false,
   skip_contact_already_in_other_sequence: true,
 };
+
+export const STOP_CONTACT_WHEN = {
+  ON_REPLY: {
+    label: 'Lead Replies',
+    value: 'ON_REPLY',
+  },
+  ON_CLICK: {
+    label: 'Lead Clicks Link',
+    value: 'ON_CLICK',
+  },
+  ON_OPEN: {
+    label: 'Lead Opens Email',
+    value: 'ON_OPEN',
+  },
+};
+
+export const VARIANT_SPINTAX_DISTRIBUTION = {
+  RANDOM: {
+    label: 'Random',
+    value: 'RANDOM',
+  },
+  PATTERN: {
+    label: 'Pattern',
+    value: 'PATTERN',
+  },
+};
+
+export const DEFAULT_CAMPAIGN_SETTINGS = {
+  new_contacts_per_day: 1000,
+  sending_schedule_id: null,
+
+  stop_contact_when: STOP_CONTACT_WHEN.ON_REPLY.value,
+
+  variant_spintax_distribution: VARIANT_SPINTAX_DISTRIBUTION.RANDOM.value,
+
+  stop_contact_on_company_level_reply: true,
+
+  follow_up_percent: 100,
+
+  ai_categorisation: true,
+
+  ignore_ooo_category_reply: false,
+  delay_reactivation_ooo_contact: null,
+
+  send_plain_text: true,
+  match_esp_contact: true,
+
+  block_previously_bounced_contact: true,
+  auto_optimize_ab_test: false,
+
+  pause_campaign_when_bounce_rate_at: 5,
+
+  include_unsubscribe_message: false,
+};

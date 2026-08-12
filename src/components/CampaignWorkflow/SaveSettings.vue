@@ -1,15 +1,49 @@
 <template>
   <div class="campaign-settings-section">
+
+    <!-- Dialog -->
+    <q-dialog
+      v-model="modals.showDailyLimitDialog"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SaveDailyNewContactsLimit
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateSettingsJson="updateSettingsJson"
+      />
+    </q-dialog>
+
     <!-- container -->
     <div class="campaign-settings-container">
       <!-- sending schedule -->
-      <SendingScheduleCard />
+      <SendingScheduleCard
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateCampaignSettings="updateCampaignSettings"
+
+        @editDailyLimit="modals.showDailyLimitDialog = true"
+      />
 
       <!-- sequence configuration -->
-      <SequenceConfigurationsCard />
+      <SequenceConfigurationsCard
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateCampaignSettings="updateCampaignSettings"
+      />
 
       <!-- smart ai -->
-      <SmartAiCategorizationCard />
+      <SmartAiCategorizationCard
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateCampaignSettings="updateCampaignSettings"
+      />
 
       <!-- Collapsible Advanced Configurations Toggle -->
       <div class="advanced-config-toggle">
@@ -36,9 +70,19 @@
           v-show="showAdvanced"
           class="advanced-configs"
         >
-          <DeliverabilitySafetyCard />
+          <DeliverabilitySafetyCard
+            :campaignId="campaignById.id"
+            :campaignSettings="campaignSettings"
 
-          <RiskControlCard />
+            @updateCampaignSettings="updateCampaignSettings"
+          />
+
+          <RiskControlCard
+            :campaignId="campaignById.id"
+            :campaignSettings="campaignSettings"
+
+            @updateCampaignSettings="updateCampaignSettings"
+          />
         </div>
       </q-slide-transition>
     </div>
@@ -65,6 +109,8 @@
         color="primary"
         :label="campaignCtaJson.label"
         :disable="campaignCtaJson.disable"
+
+        :loading="loaders.isSaving"
       />
     </div>
   </div>
@@ -85,8 +131,17 @@ import DeliverabilitySafetyCard from 'components/CampaignWorkflow/Settings/Deliv
 import SmartAiCategorizationCard from 'components/CampaignWorkflow/Settings/SmartAiCategorizationCard.vue';
 import SequenceConfigurationsCard from 'components/CampaignWorkflow/Settings/SequenceConfigurationsCard.vue';
 
+import SaveDailyNewContactsLimit from 'src/components/CampaignWorkflow/Settings/Modals/SaveDailyNewContactsLimit.vue';
+
+// Utils
+import { getApiCall } from 'src/utils/apiRequests';
+import { saveCampaignSettingsById } from 'src/utils/campaignApi';
+
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
+
 // constants
-import { CAMPAIGN_STATUS } from 'boot/campaign-constants';
+import { CAMPAIGN_STATUS, DEFAULT_CAMPAIGN_SETTINGS } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'CampaignWorkflowSaveSettings',
@@ -97,6 +152,9 @@ export default defineComponent({
     DeliverabilitySafetyCard,
     SequenceConfigurationsCard,
     SmartAiCategorizationCard,
+
+    // Modals
+    SaveDailyNewContactsLimit,
   },
 
   props: {
@@ -110,6 +168,9 @@ export default defineComponent({
     // app context
     const { appContext } = getCurrentInstance();
 
+    // composition API
+    const { isMobileDevice } = useAppHelpersApi();
+
     // router
     const $router = useRouter();
 
@@ -117,10 +178,21 @@ export default defineComponent({
     const state = reactive({
       showAdvanced: false,
 
-      campaignSettings: {},
+      campaignSettings: {
+        ...DEFAULT_CAMPAIGN_SETTINGS,
+      },
 
       loaders: {
-        isFetchApi: false,
+        isSaving: false,
+        isFetching: false,
+      },
+
+      modals: {
+        showDailyLimitDialog: false,
+      },
+
+      ui: {
+        hasChanges: false,
       },
     });
 
@@ -188,18 +260,78 @@ export default defineComponent({
       state.showAdvanced = !state.showAdvanced;
     };
 
-    const fetchCampaignSettings = () => {
+    const fetchCampaignSettings = async () => {
       try {
-        state.loaders.isFetchApi = true;
+        state.loaders.isFetching = true;
+
+        const response = await getApiCall({
+          includeWorkspace: true,
+          endpoint: `/sequences/${props.campaignById.id}/settings`,
+        });
+
+        state.campaignSettings = response || {};
 
         // fetch campaign settings
       } catch (error) {
-        appContext.config.globalProperties.$toast({
-          warning: true,
-          message: error.message,
-        });
+        // dont show error for 404 status
+        if (error?.response?.status !== 404) {
+          //
+        } else {
+          appContext.config.globalProperties.$toast({
+            warning: true,
+            message: error.message,
+          });
+        }
       } finally {
-        state.loaders.isFetchApi = false;
+        state.loaders.isFetching = false;
+      }
+    };
+
+    const updateCampaignSettings = async (inputJson) => {
+      state.loaders.isSaving = true;
+
+      const { seq_id, id, ...otherCampaignSettings } = state.campaignSettings;
+
+      const payload = {
+        ...otherCampaignSettings,
+        ...inputJson,
+      };
+
+      const response = await saveCampaignSettingsById({
+        payload,
+        campaignId: props.campaignById.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (response) {
+        state.ui.hasChanges = false;
+
+        //
+        state.campaignSettings = { ...payload };
+      }
+
+      state.loaders.isSaving = false;
+    };
+
+    const updateSettingsJson = ({ inputJson, callUpdateApi }) => {
+      // close the modals
+      Object.keys(state.modals).forEach((key) => {
+        state.modals[key] = false;
+      });
+
+      //
+      if (callUpdateApi) {
+        // has changes to be saved
+        state.ui.hasChanges = true;
+
+        updateCampaignSettings(inputJson);
+      } else {
+        state.ui.hasChanges = false;
+
+        state.campaignSettings = {
+          ...state.campaignSettings,
+          ...inputJson,
+        };
       }
     };
 
@@ -214,11 +346,14 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isMobileDevice,
       campaignCtaJson,
 
       // methods
       onGoBack,
       toggleAdvanced,
+      updateSettingsJson,
+      updateCampaignSettings,
     };
   },
 });
@@ -243,8 +378,6 @@ export default defineComponent({
     gap: 24px;
     padding: 20px 32px;
 
-    overflow-y: auto;
-
     // xs max
     @media (max-width: $breakpoint-xs-max) {
       padding: 20px 12px;
@@ -264,6 +397,7 @@ export default defineComponent({
       overflow: hidden;
       transition: all 0.2s ease-in-out;
 
+      // header
       .config-card-header {
         display: flex;
         align-items: center;
@@ -287,6 +421,75 @@ export default defineComponent({
           font-size: 16px;
           font-weight: 600;
           color: $black;
+        }
+      }
+
+      // each row
+      .config-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid $grey-50;
+        padding: 20px;
+        gap: 12px;
+
+        // last child
+        &:last-child {
+          border-bottom: none;
+        }
+
+        // left
+        .config-row-left {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          .config-label-line {
+            font-size: 14px;
+            font-weight: 500;
+            color: $black;
+            line-height: 16px;
+          }
+
+          .config-subtext {
+            font-size: 14px;
+            color: $black;
+            line-height: 16px;
+          }
+        }
+
+        .config-row-right {
+          .campaign-settings-dd {
+            max-width: 200px;
+
+            .q-field__control-container {
+              .q-field__native {
+                span {
+                  color: $primary;
+                  font-weight: 500;
+                }
+              }
+            }
+            .q-field__native {
+              color: $primary;
+              font-weight: 500;
+            }
+
+            .q-field__append {
+              i {
+                color: $primary;
+                font-weight: 500;
+              }
+            }
+          }
+        }
+
+        // xs max
+        @media (max-width: $breakpoint-xs-max) {
+          padding: 16px 12px;
+          flex-direction: column;
+          align-items: flex-start;
         }
       }
     }

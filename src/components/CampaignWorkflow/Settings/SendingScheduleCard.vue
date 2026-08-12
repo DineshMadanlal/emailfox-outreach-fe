@@ -14,120 +14,178 @@
 
     <!-- Row 1: Schedule -->
     <div class="config-row">
+      <!-- left -->
       <div class="config-row-left">
-        <div class="config-label-line">
-          <span>Schedule</span>
-        </div>
-        <div class="config-subtext">
-          Scheduled at {{ scheduleTimezone }} on {{ scheduleDays.join(', ') }}
-        </div>
-      </div>
-      <div class="config-row-right">
-        <q-btn-dropdown
-          flat
-          dense
-          no-caps
-          color="primary"
-          class="blue-link-btn"
-          icon="event"
-          :label="selectedSchedule"
+        <!--  -->
+        <p class="config-label-line">
+          Schedule
+        </p>
+
+        <p
+          v-if="scheduleAtText"
+          class="config-subtext"
         >
-          <q-list style="min-width: 180px">
-            <q-item clickable v-close-popup @click="selectedSchedule = 'Default Schedule'">
-              <q-item-section>Default Schedule</q-item-section>
-            </q-item>
-            <q-item clickable v-close-popup @click="selectedSchedule = 'European Schedule'">
-              <q-item-section>European Schedule</q-item-section>
-            </q-item>
-            <q-item clickable v-close-popup @click="selectedSchedule = 'Weekend Blast'">
-              <q-item-section>Weekend Blast</q-item-section>
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
+          {{ scheduleAtText }}
+        </p>
+      </div>
+
+      <!-- Right -->
+      <div class="config-row-right">
+        <!--  -->
+        <SelectSendingSchedule
+          v-model="ui.scheduleJson"
+
+          :borderless="true"
+          :outlined="false"
+          canCreateSchedule
+
+          class="campaign-settings-dd"
+
+          ref="sendingScheduleRef"
+
+          @update:modelValue="onUpdateScheduleJson"
+        />
       </div>
     </div>
 
     <!-- Row 2: Daily Limit -->
     <div class="config-row">
+      <!--  -->
       <div class="config-row-left">
-        <div class="config-label-line">
-          <span>Daily New Contacts Limit</span>
-        </div>
+        <!--  -->
+        <p class="config-label-line">
+          Daily New Contacts Limit
+        </p>
       </div>
+
       <div class="config-row-right">
         <q-btn
           flat
           dense
           no-caps
+
           color="primary"
-          class="blue-link-btn"
-          @click="showLimitDialog = true"
+          :label="newContactPerDayText"
+          @click="$emit('editDailyLimit')"
         >
-          {{ dailyLimit.toLocaleString() }}/Day
         </q-btn>
       </div>
     </div>
-
-    <!-- Dialog for Editing Daily Limit -->
-    <q-dialog v-model="showLimitDialog">
-      <q-card style="min-width: 320px; padding: 12px;">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6">Daily New Contacts Limit</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
-        </q-card-section>
-        <q-card-section class="q-pt-md">
-          <q-input
-            v-model.number="tempLimit"
-            type="number"
-            outlined
-            dense
-            suffix="/Day"
-            autofocus
-          />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="primary" v-close-popup />
-          <q-btn flat label="Save" color="primary" @click="saveDailyLimit" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-card>
 </template>
 
 <script>
 // vue
-import { defineComponent, reactive, toRefs } from 'vue';
+import {
+  defineComponent, reactive, toRefs, onMounted, watch, computed,
+} from 'vue';
+
+// Components
+import SelectSendingSchedule from 'src/components/Dropdown/SelectSendingSchedule.vue';
+
+// Utils
+import { getNumeralAmount } from 'src/utils/numbers';
+
+// constants
+import { SCHEDULE_DAYS_SHORT_LABEL, TIMEZONES_LIST } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'SendingScheduleCard',
 
-  setup() {
+  emits: ['editDailyLimit'],
+
+  components: {
+    SelectSendingSchedule,
+  },
+
+  props: {
+    campaignId: {
+      type: [String, Number],
+      required: true,
+    },
+    campaignSettings: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  setup(props, { emit }) {
     // state
     const state = reactive({
-      selectedSchedule: 'Default Schedule',
-      scheduleTimezone: 'Pacific SA Standard Time',
-      scheduleDays: ['Mon', 'Tue', 'Wed', 'Thr', 'Fri'],
-      dailyLimit: 1000,
-      showLimitDialog: false,
-      tempLimit: 1000,
+      sendingScheduleRef: null,
+
+      ui: {
+        scheduleJson: {},
+      },
+
+      loaders: {
+        isFetching: false,
+      },
     });
 
     // computed
+    const scheduleAtText = computed(() => {
+      if (state.ui.scheduleJson?.timezone) {
+        const { windows } = state.ui.scheduleJson;
+        const days = windows?.sort(
+          (a, b) => a.day_of_week - b.day_of_week,
+        )
+          .map((window) => SCHEDULE_DAYS_SHORT_LABEL[window.day_of_week])
+          .join(', ');
+
+        const selectedTimezone = TIMEZONES_LIST.find(
+          (tz) => tz.value === state.ui.scheduleJson.timezone,
+        );
+
+        return `Scheduled at ${selectedTimezone.label} on ${days}`;
+      }
+
+      return '';
+    });
+
+    const newContactPerDayText = computed(() => `${getNumeralAmount(props.campaignSettings.new_contacts_per_day)}/Day`);
 
     // methods
-    const saveDailyLimit = () => {
-      if (state.tempLimit > 0) {
-        state.dailyLimit = state.tempLimit;
+    const loadSettingsState = () => {
+      if (props.campaignSettings?.sending_schedule_id) {
+        state.ui.scheduleJson = {
+          id: props.campaignSettings.sending_schedule_id,
+        };
       }
     };
+
+    const onUpdateScheduleJson = () => {
+      if (props.campaignSettings.sending_schedule_id === state.ui.scheduleJson?.id) {
+        return;
+      }
+      emit('updateCampaignSettings', {
+        sending_schedule_id: state.ui.scheduleJson?.id,
+      });
+    };
+
+    // lifecycle hooks
+    onMounted(() => {
+      loadSettingsState();
+    });
+
+    // watchers
+    watch(
+      () => props.campaignSettings,
+      () => {
+        loadSettingsState();
+      },
+    );
 
     return {
       // state
       ...toRefs(state),
 
+      // computed
+      scheduleAtText,
+      newContactPerDayText,
+
       // methods
-      saveDailyLimit,
+      onUpdateScheduleJson,
     };
   },
 });

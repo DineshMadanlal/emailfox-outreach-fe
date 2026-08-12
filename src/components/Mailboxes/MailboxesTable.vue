@@ -74,7 +74,7 @@
     <!-- Header -->
     <AppHeader
       v-if="fromAllMailboxesPage"
-      :title="headerTitle"
+      title="Mailboxes"
     >
       <template v-slot:headerRightSection>
         <div
@@ -113,8 +113,6 @@
 
       <AllMailboxesIllustration
         v-if="showAllMailboxesIllustration"
-
-        :isCreditCardSubscribed="isCreditCardSubscribed"
       />
 
       <!-- Filter Header -->
@@ -574,7 +572,6 @@ import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 import ActionConfig from 'components/Mailboxes/Modals/ActionConfig.vue';
 
 // Import the Pinia store
-import { useAuthStore } from 'src/stores/auth.js';
 import { storeExclusions } from 'src/stores/storeExclusions.js';
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
@@ -654,7 +651,6 @@ export default defineComponent({
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
 
     // store
-    const authStorePinia = useAuthStore();
     const userStore = useUserPreferencesStore();
     const storeExclusionsPinia = storeExclusions();
 
@@ -694,20 +690,6 @@ export default defineComponent({
     });
 
     // computed
-    const localStoredPagination = computed(() => userStore.allMailboxesState?.pagination
-      || DEFAULT_TABLE_PAGINATION);
-
-    const headerTitle = computed(() => {
-      if (state.pagination.rowsNumber) {
-        return `Mailboxes (${getNumeralAmount(state.pagination.rowsNumber)})`;
-      }
-
-      return 'Mailboxes';
-    });
-
-    // computed
-    const isCreditCardSubscribed = computed(() => authStorePinia.isCreditCardSubscribed);
-
     const showApiLoader = computed(() => {
       if (state.areResultsFetchedOnce) {
         return false;
@@ -1002,12 +984,12 @@ export default defineComponent({
 
     const makeApiCallOnMounted = async () => {
       const {
-        tableData, filters, visibleColumns,
+        tableData, filters, visibleColumns, pagination,
       } = userStore.allMailboxesState || {};
 
       if (props.fromAllMailboxesPage) {
         //
-        state.pagination = localStoredPagination.value;
+        state.pagination = pagination || DEFAULT_TABLE_PAGINATION;
 
         state.tableData = tableData || [];
         state.filters = filters || mailboxFilters;
@@ -1020,10 +1002,6 @@ export default defineComponent({
       } else {
         // set from store
         state.visibleColumns = [...visibleColumns];
-
-        updateDataToStore({
-          visibleColumns: state.visibleColumns,
-        });
       }
 
       onRequest({
@@ -1126,12 +1104,10 @@ export default defineComponent({
 
       // computed
       tableColumns,
-      headerTitle,
       isMobileDevice,
       showApiLoader,
       showMailboxFilters,
       tablePaginationLabel,
-      isCreditCardSubscribed,
       selectedMailboxesLength,
       showAllMailboxesIllustration,
       isFilterApplied,

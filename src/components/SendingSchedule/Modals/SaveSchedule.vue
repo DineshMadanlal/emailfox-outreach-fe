@@ -257,6 +257,10 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    prefillScheduleName: {
+      type: String,
+      default: '',
+    },
   },
 
   setup(props, { emit }) {
@@ -392,9 +396,10 @@ export default defineComponent({
         }
 
         if (isNewSchedule.value) {
-          await createSchedule(payload);
-          emit('newCreated');
+          const response = await createSchedule(payload);
+          emit('newCreated', response);
         } else {
+          //
           await updateScheduleById({
             id: props.scheduleDetails.id,
             payload,
@@ -448,6 +453,11 @@ export default defineComponent({
           day.startTime = window.start_time?.slice(0, 5); // 09:00:00 -> 09:00
           day.endTime = window.end_time?.slice(0, 5); // 18:00:00 -> 18:00
         });
+      }
+
+      //
+      if (props.prefillScheduleName) {
+        state.name = props.prefillScheduleName;
       }
     });
 

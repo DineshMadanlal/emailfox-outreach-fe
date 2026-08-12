@@ -109,6 +109,29 @@ export const pauseCampaignById = async ({
   }
 };
 
+export const saveCampaignSettingsById = async ({
+  campaignId, payload, $toast,
+}) => {
+  try {
+    // API Call
+    const response = await putApiCall({
+      includeWorkspace: true,
+      endpoint: `/sequences/${campaignId}/settings`,
+      payload,
+    });
+
+    return response;
+  } catch (error) {
+    // show toast
+    $toast({
+      warning: true,
+      message: error.message,
+    });
+
+    return false;
+  }
+};
+
 export const cloneCampaignById = async ({
   campaignId, $toast,
 }) => {

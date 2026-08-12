@@ -1,14 +1,12 @@
 <template>
   <q-select
-    v-bind="$attrs"
-
     dense
     outlined
     emit-value
     map-options
     options-dense
 
-    ref="selectListRef"
+    ref="selectDataRef"
     class="app-filter-dropdown"
     menu-class="app-filter-dd-menu"
     popup-content-class="app-filter-dd-menu"
@@ -23,6 +21,8 @@
     :options="dropdownOptions"
 
     v-model="internalValue"
+
+    v-bind="$attrs"
 
     @filter="onDropdownFilter"
   >
@@ -43,7 +43,7 @@
           hide-bottom-space
 
           class="dd-filter-search-input"
-          placeholder="Search list"
+          placeholder="Search schedule"
 
           @update:model-value="onSearchFilter"
         />
@@ -60,12 +60,12 @@
       />
 
       <div
-        v-else-if="canCreateList"
+        v-else-if="canCreateSchedule"
         class="dd-no-create-new-result-found"
 
-        @click="onCreateNewList"
+        @click="onCreateNewSchedule"
       >
-        <!-- Create a new list -->
+        <!-- Create a new schedule -->
         <q-item
           clickable
           class="dd-create-new-item"
@@ -76,14 +76,14 @@
             class="dd-create-new-text"
           >
             Create "<span class="text-primary text-weight-medium">
-              {{ searchFilterInput }}</span>" List
+              {{ searchFilterInput }}</span>" Schedule
           </div>
 
           <div
             v-else
             class="text-weight-medium text-primary"
           >
-            + Create a new list
+            + Create a new schedule
           </div>
         </q-item>
       </div>
@@ -109,7 +109,7 @@
           hide-bottom-space
 
           class="dd-filter-search-input"
-          placeholder="Search list"
+          placeholder="Search schedule"
 
           @update:model-value="onSearchFilter"
         />
@@ -141,7 +141,7 @@
         <q-intersection
           @visibility="loadMoreOptions"
 
-          v-if="scope.index === allLists.length - 2"
+          v-if="scope.index === allData.length - 2"
         >
         </q-intersection>
       </q-item>
@@ -150,7 +150,7 @@
     <!-- After slot -->
     <template
       v-slot:after-options
-      v-if="isLoading && allLists.length > 0"
+      v-if="isLoading && allData.length > 0"
     >
       <q-item>
         <q-item-section>
@@ -167,34 +167,34 @@
     <!--  -->
     <template
       v-slot:after-options
-      v-else-if="canCreateList"
+      v-else-if="canCreateSchedule"
     >
       <q-item
         dense
         clickable
         class="dd-create-new-item"
-        @click="onCreateNewList"
+        @click="onCreateNewSchedule"
       >
         <q-item-section>
-          + Create New List
+          + Create a new Schedule
         </q-item-section>
       </q-item>
     </template>
 
     <!-- Dialog -->
     <q-dialog
-      v-if="canCreateList"
+      v-if="canCreateSchedule"
 
-      v-model="modals.showSaveListNameModal"
+      v-model="modals.showSaveScheduleModal"
       class="app-modal-dialog"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
-      <SaveListName
-        :prefillListNameAndSave="searchFilterInput"
+      <SaveSchedule
+        :prefillScheduleName="searchFilterInput"
 
-        @newCreatedList="onNewCreatedList"
+        @newCreated="onNewCreatedData"
       />
     </q-dialog>
   </q-select>
@@ -217,7 +217,7 @@ import { getApiCall } from 'src/utils/apiRequests';
 // Components
 import ApiLoader from 'src/components/General/ApiLoader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
-import SaveListName from 'components/Lists/Modals/SaveListName.vue';
+import SaveSchedule from 'components/SendingSchedule/Modals/SaveSchedule.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -226,7 +226,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 import { DROPDOWN_MAX_FETCH_LIMIT } from 'boot/constants';
 
 export default defineComponent({
-  name: 'SelectList',
+  name: 'SelectSendingSchedule',
 
   emits: ['update:modelValue'],
 
@@ -236,7 +236,7 @@ export default defineComponent({
   components: {
     ApiLoader,
     AppSearchInput,
-    SaveListName,
+    SaveSchedule,
   },
 
   props: {
@@ -246,9 +246,9 @@ export default defineComponent({
     },
     placeholderText: {
       type: String,
-      default: 'List',
+      default: 'Select Schedule',
     },
-    canCreateList: {
+    canCreateSchedule: {
       type: Boolean,
       default: false,
     },
@@ -271,7 +271,7 @@ export default defineComponent({
 
     // state
     const state = reactive({
-      allLists: [],
+      allData: [],
       previousSearchResults: [],
 
       isApiLoading: false,
@@ -280,12 +280,12 @@ export default defineComponent({
 
       canFetchMoreRecords: true,
 
-      totalListsCount: null,
+      totalDataCount: null,
 
-      selectListRef: null,
+      selectDataRef: null,
 
       modals: {
-        showSaveListNameModal: false,
+        showSaveScheduleModal: false,
       },
     });
 
@@ -297,41 +297,40 @@ export default defineComponent({
         return state.previousSearchResults;
       }
 
-      return state.allLists;
+      return state.allData;
     });
 
     // methods
     const resetStateVariables = () => {
-      state.allLists = [];
+      state.allData = [];
       state.searchFilterInput = '';
       state.canFetchMoreRecords = true;
     };
 
     // Fetches domains from backend with pagination and search term
-    const fetchLists = async ({
+    const fetchData = async ({
       loadingState = 'isApiLoading',
     }) => {
       try {
         state[loadingState] = true;
 
         const response = await getApiCall({
-          endpoint: '/lists',
+          endpoint: '/sending-schedules',
           includeWorkspace: true,
           params: {
             limit: DROPDOWN_MAX_FETCH_LIMIT,
-            offset: state.allLists.length,
+            offset: state.allData.length,
             search_text: state.searchFilterInput,
-            attributes: 'id,name',
           },
         });
 
-        state.totalListsCount = response.count;
+        state.totalDataCount = response.count;
 
-        state.allLists = [
-          ...state.allLists, ...response.data,
+        state.allData = [
+          ...state.allData, ...response.data,
         ];
 
-        if (state.allLists.length >= state.totalListsCount) {
+        if (state.allData.length >= state.totalDataCount) {
           state.canFetchMoreRecords = false;
         }
       } catch (error) {
@@ -353,15 +352,15 @@ export default defineComponent({
         return;
       }
 
-      if (size(state.allLists)) {
+      if (size(state.allData)) {
         update();
         return;
       }
 
       resetStateVariables();
 
-      // try catch is not required because fetchLists already has try catch
-      await fetchLists({
+      // try catch is not required because fetchData already has try catch
+      await fetchData({
         loadingState: 'isApiLoading',
       });
 
@@ -369,43 +368,42 @@ export default defineComponent({
     };
 
     const onSearchFilter = async (searchFilterInput) => {
-      state.previousSearchResults = [...state.allLists];
+      state.previousSearchResults = [...state.allData];
 
       resetStateVariables();
 
       state.searchFilterInput = searchFilterInput;
 
       // try catch is not required because the function already has try catch
-      await fetchLists({
+      await fetchData({
         loadingState: 'isSearchLoading',
       });
     };
 
     const loadMoreOptions = async () => {
       if (state.canFetchMoreRecords) {
-        // try catch is not required because fetchLists already has try catch
-        await fetchLists({
+        // try catch is not required because fetchData already has try catch
+        await fetchData({
           loadingState: 'isApiLoading',
         });
       }
     };
 
-    const fetchListByIdBasicDetails = async () => {
+    const fetchScheduleByIdBasicDetails = async () => {
       try {
         state.isApiLoading = true;
 
         const response = await getApiCall({
           includeWorkspace: true,
-          endpoint: `/lists/${props.modelValue.id}`,
+          endpoint: `/sending-schedules/${props.modelValue.id}`,
         });
 
-        state.allLists = [
+        state.allData = [
           response,
         ];
 
         internalValue.value = {
-          id: response.id,
-          name: response.name,
+          ...response,
         };
       } catch (error) {
         // show error toast
@@ -418,32 +416,31 @@ export default defineComponent({
       }
     };
 
-    const onCreateNewList = () => {
-      state.modals.showSaveListNameModal = true;
+    const onCreateNewSchedule = () => {
+      state.modals.showSaveScheduleModal = true;
     };
 
-    const onNewCreatedList = (newListJson) => {
-      state.modals.showSaveListNameModal = false;
+    const onNewCreatedData = (inputJson) => {
+      state.modals.showSaveScheduleModal = false;
 
-      // add new list to the top of the list
-      state.allLists.unshift(newListJson);
+      // add new to the top of the array
+      state.allData.unshift(inputJson);
 
-      // set the newly created list as selected
+      // set the newly created
       internalValue.value = {
-        id: newListJson.id,
-        name: newListJson.name,
+        ...inputJson,
       };
     };
 
     onMounted(() => {
-      if (size(props.modelValue) && isEmpty(state.allLists)) {
-        fetchListByIdBasicDetails();
+      if (size(props.modelValue) && isEmpty(state.allData)) {
+        fetchScheduleByIdBasicDetails();
       }
     });
 
     watch(() => props.modelValue, (newValue, oldValue) => {
-      if (isEmpty(oldValue) && size(newValue) && isEmpty(state.allLists)) {
-        fetchListByIdBasicDetails();
+      if (isEmpty(oldValue) && size(newValue) && isEmpty(state.allData)) {
+        fetchScheduleByIdBasicDetails();
       }
     });
 
@@ -461,14 +458,14 @@ export default defineComponent({
       onDropdownFilter,
       loadMoreOptions,
       onSearchFilter,
-      onCreateNewList,
-      onNewCreatedList,
+      onCreateNewSchedule,
+      onNewCreatedData,
 
       validate() {
-        return state.selectListRef?.validate();
+        return state.selectDataRef?.validate();
       },
       resetValidation() {
-        return state.selectListRef?.resetValidation();
+        return state.selectDataRef?.resetValidation();
       },
     };
   },

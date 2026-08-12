@@ -288,7 +288,7 @@ export default defineComponent({
         },
         // mail infra
         {
-          heading: 'Mail Infra',
+          heading: 'Infra',
           routes: mailInfraRoutes.value,
         },
       ];

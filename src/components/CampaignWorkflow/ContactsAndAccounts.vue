@@ -163,8 +163,6 @@ export default defineComponent({
     gap: 24px;
     padding: 20px 32px;
 
-    overflow-y: auto;
-
     .contacts-header-text {
       color: $black;
       font-size: 16px;
