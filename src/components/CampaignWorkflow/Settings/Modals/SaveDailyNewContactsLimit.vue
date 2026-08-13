@@ -64,6 +64,8 @@
           label="Save"
           type="submit"
           color="primary"
+
+          :loading="isSaving"
         />
       </div>
     </q-form>
@@ -109,10 +111,14 @@ export default defineComponent({
       dailyLimit: 1000,
 
       saveDailyLimitFormRef: null,
+
+      isSaving: false,
     });
 
     // methods
     const onSubmit = async () => {
+      state.isSaving = true;
+
       const payload = {
         ...props.campaignSettings,
         new_contacts_per_day: state.dailyLimit,
@@ -129,6 +135,8 @@ export default defineComponent({
           callUpdateApi: false,
         });
       }
+
+      state.isSaving = false;
     };
 
     const onInputChange = () => {

@@ -5,13 +5,14 @@
   >
     <!-- Card Header -->
     <div class="config-card-header">
+      <!-- icon -->
       <div class="config-card-icon-wrap">
-        <q-icon name="smart_toy" size="20px" />
+        <LocalSvgIcon image="stars" class="config-row-icon fill" />
       </div>
 
-      <div class="config-card-title">
+      <p class="config-card-title">
         Smart AI Contact Categorization
-      </div>
+      </p>
     </div>
 
     <!-- Row 1: AI Auto-categorise toggle -->

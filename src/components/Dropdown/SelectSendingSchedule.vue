@@ -390,6 +390,10 @@ export default defineComponent({
     };
 
     const fetchScheduleByIdBasicDetails = async () => {
+      if (!props.modelValue.id) {
+        console.warn('No schedule id provided to fetch the schedule details');
+        return;
+      }
       try {
         state.isApiLoading = true;
 

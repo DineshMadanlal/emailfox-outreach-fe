@@ -6,7 +6,9 @@
     <!-- Card Header -->
     <div class="config-card-header">
       <div class="config-card-icon-wrap">
-        <q-icon name="event" size="20px" />
+        <LocalSvgIcon
+          image="seq-schedule"
+        />
       </div>
 
       <div class="config-card-title">Sending Schedule</div>
@@ -65,6 +67,7 @@
           no-caps
 
           color="primary"
+          class="btn-font-weight-500"
           :label="newContactPerDayText"
           @click="$emit('editDailyLimit')"
         >
@@ -147,7 +150,9 @@ export default defineComponent({
 
     // methods
     const loadSettingsState = () => {
-      if (props.campaignSettings?.sending_schedule_id) {
+      if (props.campaignSettings?.sending_schedule_id
+        !== state.ui.scheduleJson?.id
+      ) {
         state.ui.scheduleJson = {
           id: props.campaignSettings.sending_schedule_id,
         };
@@ -165,7 +170,7 @@ export default defineComponent({
 
     // lifecycle hooks
     onMounted(() => {
-      loadSettingsState();
+      // loadSettinxwgsState();
     });
 
     // watchers

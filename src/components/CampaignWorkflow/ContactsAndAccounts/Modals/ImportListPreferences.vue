@@ -53,17 +53,8 @@
 
           <q-space />
 
-          <q-toggle
-            dense
-            left-label
-
-            color="primary"
-            checked-icon="check"
-            unchecked-icon="clear"
-            class="import-toggle"
-
+          <ToggleInput
             v-model="preferences[option.value]"
-            :label="option.checked ? 'Enabled' : 'Disabled'"
           />
         </div>
       </div>
@@ -91,6 +82,9 @@ import {
   defineComponent, reactive, toRefs, computed,
 } from 'vue';
 
+// Components
+import ToggleInput from 'components/Input/ToggleInput.vue';
+
 // constants
 import { IMPORT_PREFERENCES_DEFAULTS } from 'src/boot/campaign-constants';
 
@@ -98,6 +92,10 @@ export default defineComponent({
   name: 'ImportListPreferences',
 
   emits: ['onSave'],
+
+  components: {
+    ToggleInput,
+  },
 
   setup() {
     // state
@@ -115,7 +113,6 @@ export default defineComponent({
           label: 'Skip contacts already in other sequences',
           value: 'skip_contact_already_in_other_sequence',
           description: 'Skip contacts that are already in other sequences to avoid duplicates.',
-          checked: state.preferences.skip_contact_already_in_other_sequence,
         },
 
         // allow blocklist contacts
@@ -123,7 +120,6 @@ export default defineComponent({
           label: 'Allow blocklist contacts',
           value: 'allow_blocklist_contacts',
           description: 'Include contacts that are on your blocklist in the import.',
-          checked: state.preferences.allow_blocklist_contacts,
         },
 
         // include unsubscribed contacts
@@ -131,7 +127,6 @@ export default defineComponent({
           label: 'Include unsubscribed contacts',
           value: 'include_unsubscribed_contacts',
           description: 'Include contacts that have unsubscribed from your emails in the import.',
-          checked: state.preferences.include_unsubscribed_contacts,
         },
       ];
 
@@ -196,18 +191,6 @@ export default defineComponent({
           font-weight: 400;
           color: $grey;
           margin-top: 8px;
-        }
-
-        :deep(.import-toggle) {
-          height: fit-content;
-
-          // aria-checked
-          &[aria-checked='true'] {
-            .q-toggle__label {
-              color: $primary;
-              font-weight: 500;
-            }
-          }
         }
 
         // xs max

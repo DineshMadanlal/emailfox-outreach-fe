@@ -457,8 +457,10 @@ export default defineComponent({
       padding: 12px;
       border-radius: 6px;
       border: 1px solid $grey-50;
+      transition: all 0.2s ease-in-out;
 
       &:hover {
+        border-color: rgba(var(--primary-rgb), 0.2);
         background: rgba(var(--primary-rgb), 0.05);
       }
 

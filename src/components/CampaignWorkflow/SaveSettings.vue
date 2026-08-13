@@ -1,5 +1,8 @@
 <template>
   <div class="campaign-settings-section">
+    <ApiLoader
+      :show="loaders.isFetching"
+    />
 
     <!-- Dialog -->
     <q-dialog
@@ -125,6 +128,8 @@ import {
 import { useRouter } from 'vue-router';
 
 // Components
+import ApiLoader from 'components/General/ApiLoader.vue';
+
 import RiskControlCard from 'components/CampaignWorkflow/Settings/RiskControlCard.vue';
 import SendingScheduleCard from 'components/CampaignWorkflow/Settings/SendingScheduleCard.vue';
 import DeliverabilitySafetyCard from 'components/CampaignWorkflow/Settings/DeliverabilitySafetyCard.vue';
@@ -147,6 +152,8 @@ export default defineComponent({
   name: 'CampaignWorkflowSaveSettings',
 
   components: {
+    ApiLoader,
+
     RiskControlCard,
     SendingScheduleCard,
     DeliverabilitySafetyCard,
@@ -297,6 +304,8 @@ export default defineComponent({
         ...inputJson,
       };
 
+      payload.categories = payload.categories || {};
+
       const response = await saveCampaignSettingsById({
         payload,
         campaignId: props.campaignById.id,
@@ -405,6 +414,16 @@ export default defineComponent({
         padding: 16px 20px;
         border-bottom: 1px solid $grey-50;
         background-color: $white;
+
+        .config-row-icon {
+          &.stroke {
+            @include svg-icon-stroke('path', $grey);
+          }
+
+          &.fill {
+            @include svg-icon-fill('path', $grey);
+          }
+        }
 
         .config-card-icon-wrap {
           width: 26px;

@@ -798,32 +798,53 @@ export const STOP_CONTACT_WHEN = {
 
 export const VARIANT_SPINTAX_DISTRIBUTION = {
   RANDOM: {
-    label: 'Random',
+    label: 'Randomized',
     value: 'RANDOM',
+    description: 'Randomly select a variant for each lead.',
   },
   PATTERN: {
-    label: 'Pattern',
+    label: 'Pattern-Based',
     value: 'PATTERN',
+    description: 'Variants are sent in a round-robin pattern.',
+  },
+};
+
+export const SENDING_VOLUME_OPTIONS = {
+  FOLLOW_UPS_FIRST: {
+    label: 'Follow-ups First',
+    value: 100,
+    description: 'Clear follow-up backlogs first.',
+  },
+  BALANCED: {
+    label: 'Balanced',
+    value: 50,
+    description: 'Equal weights to follow-up and new sends.',
+  },
+  NEW_LEADS_FIRST: {
+    label: 'New Leads First',
+    value: 0,
+    description: 'Prioritize new leads first, then continue with follow-ups.',
   },
 };
 
 export const DEFAULT_CAMPAIGN_SETTINGS = {
+  // sending schedule configuration
   new_contacts_per_day: 1000,
   sending_schedule_id: null,
 
+  // sequence configuration
   stop_contact_when: STOP_CONTACT_WHEN.ON_REPLY.value,
-
   variant_spintax_distribution: VARIANT_SPINTAX_DISTRIBUTION.RANDOM.value,
-
   stop_contact_on_company_level_reply: true,
-
   follow_up_percent: 100,
 
+  // smart AI categorization configuration
   ai_categorisation: true,
-
+  categories: {},
   ignore_ooo_category_reply: false,
   delay_reactivation_ooo_contact: null,
 
+  //
   send_plain_text: true,
   match_esp_contact: true,
 
@@ -833,4 +854,13 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
   pause_campaign_when_bounce_rate_at: 5,
 
   include_unsubscribe_message: false,
+};
+
+export const CONNECTED_ACCOUNT_STATUS = {
+  ACTIVE: 'ACTIVE',
+  CREDENTIALS: 'CREDENTIALS',
+  ERROR: 'ERROR',
+  STOPPED: 'STOPPED',
+  INITIALIZING: 'INITIALIZING',
+  DELETED: 'DELETED',
 };

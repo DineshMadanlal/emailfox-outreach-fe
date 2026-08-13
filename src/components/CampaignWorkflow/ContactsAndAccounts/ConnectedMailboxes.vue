@@ -9,14 +9,23 @@
       <!--  -->
       <div class="name-and-email-container">
         <div>
+          <!-- name -->
           <div class="account-name-text">
-            {{ account.name || 'Dummy' }}
+            {{ account.mailbox_name }}
           </div>
 
+          <!-- email -->
           <div class="account-email-text">
-            {{ account.email || 'dummy@dummy.com' }}
+            {{ account.mailbox_email }}
           </div>
         </div>
+      </div>
+
+      <!-- mailbox ESP -->
+      <div class="mailbox-esp">
+        <EspProvider
+          :provider="account.provider"
+        />
       </div>
     </div>
   </div>
@@ -26,8 +35,15 @@
 // vue
 import { defineComponent } from 'vue';
 
+// Components
+import EspProvider from 'components/Mailboxes/EspProvider.vue';
+
 export default defineComponent({
   name: 'ConnectedMailboxes',
+
+  components: {
+    EspProvider,
+  },
 
   props: {
     accounts: {
@@ -46,9 +62,20 @@ export default defineComponent({
     padding: 16px 20px;
     border-bottom: 1px solid rgba(var(--grey-50-rgb), 0.5);
 
+    display: flex;
+    gap: 16px;
+    align-items: center;
+
+    // xs max
+    @media (max-width: $breakpoint-xs-max) {
+      flex-wrap: wrap;
+    }
+
+    //
     .name-and-email-container {
       display: flex;
       gap: 16px;
+      width: 100%;
 
       .account-name-text {
         color: $black;
@@ -65,6 +92,11 @@ export default defineComponent({
 
         margin-top: 4px;
       }
+    }
+
+    //
+    .mailbox-esp {
+      width: 100%;
     }
 
     // xs max
