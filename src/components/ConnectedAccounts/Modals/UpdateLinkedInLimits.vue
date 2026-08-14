@@ -1,15 +1,19 @@
 <template>
-  <q-card flat class="app-modal-card daily-limit-card">
+  <q-card
+    flat
+    class="update-linkedin-limits-card app-modal-card"
+  >
     <q-form
       class="full-width"
-      ref="saveDailyLimitFormRef"
+      ref="saveApiRateLimitFormRef"
 
       @submit.prevent.stop="onSubmit"
     >
+      <!-- header -->
       <div class="app-modal-header">
         <!-- header text -->
         <h4 class="modal-header-text">
-          Daily New Contacts Limit
+          Update Account Limits
         </h4>
 
         <q-space />
@@ -31,15 +35,15 @@
         </q-btn>
       </div>
 
-      <!-- content -->
+      <!-- Content -->
       <div class="app-modal-content">
         <InputLabel
           isImportant
-          label="Daily New Contacts Limit"
+          label="API Rate Limit per Day"
         />
 
         <q-input
-          v-model.number="dailyLimit"
+          v-model.number="apiRateLimit"
           dense
           outlined
 
@@ -49,21 +53,21 @@
           type="number"
           lazy-rules="ondemand"
           class="daily-limit-input"
-          placeholder="Enter daily new contacts limit"
+          placeholder="Enter API rate limit per day"
 
           @update:model-value="onInputChange"
         />
       </div>
 
-      <!-- footer -->
+      <!-- Footer -->
       <div class="app-modal-footer">
         <q-btn
           no-caps
           unelevated
 
-          label="Save"
           type="submit"
           color="primary"
+          label="Update Rate Limit"
 
           :loading="isSaving"
         />
@@ -75,78 +79,76 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, onMounted,
+  defineComponent, reactive, toRefs, getCurrentInstance,
 } from 'vue';
 
 // Components
-import InputLabel from 'components/Form/InputLabel.vue';
+import InputLabel from 'src/components/Form/InputLabel.vue';
 
-// utils
-import { saveCampaignSettingsById } from 'src/utils/campaignApi';
+// Utils
+import { postApiCall } from 'src/utils/apiRequests.js';
 
 export default defineComponent({
-  name: 'SaveDailyNewContactsLimit',
+  name: 'UpdateLinkedInLimits',
 
-  emits: ['updateSettingsJson'],
+  emits: ['rateLimitsUpdated'],
 
   components: {
     InputLabel,
   },
 
   props: {
-    campaignId: {
-      type: [String, Number],
-      required: true,
-    },
-    campaignSettings: {
-      type: Object,
-      default: () => ({}),
+    selectedRows: {
+      type: Array,
+      default: () => [],
     },
   },
 
   setup(props, { emit }) {
+    // get current instance
+    const { appContext } = getCurrentInstance();
+
     // state
     const state = reactive({
-      // 1000 is default
-      dailyLimit: 1000,
-
-      saveDailyLimitFormRef: null,
-
+      apiRateLimit: 100,
       isSaving: false,
+
+      saveApiRateLimitFormRef: null,
     });
-
-    // methods
-    const onSubmit = async () => {
-      state.isSaving = true;
-
-      const payload = {
-        ...props.campaignSettings,
-        new_contacts_per_day: state.dailyLimit,
-      };
-
-      const response = await saveCampaignSettingsById({
-        payload,
-        campaignId: props.campaignId,
-      });
-
-      if (response) {
-        emit('updateSettingsJson', {
-          inputJson: payload,
-          callUpdateApi: false,
-        });
-      }
-
-      state.isSaving = false;
-    };
 
     const onInputChange = () => {
-      state.saveDailyLimitFormRef.resetValidation();
+      state.saveApiRateLimitFormRef.resetValidation();
     };
 
-    // lifecycle hooks
-    onMounted(() => {
-      state.dailyLimit = props.campaignSettings.new_contacts_per_day;
-    });
+    const onSubmit = async () => {
+      try {
+        state.isSaving = true;
+
+        const payload = {
+          api_rate_limit: state.apiRateLimit,
+          linkedin_ids: props.selectedRows.map((row) => row.id),
+        };
+
+        await postApiCall({
+          payload,
+          includeWorkspace: true,
+          endpoint: 'connected-accounts/linkedin/bulk-update',
+        });
+
+        emit('rateLimitsUpdated');
+
+        appContext.config.globalProperties.$toast({
+          message: 'API Rate Limit updated successfully',
+        });
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+      } finally {
+        state.isSaving = false;
+      }
+    };
 
     return {
       // state
@@ -161,7 +163,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.daily-limit-card {
+.update-linkedin-limits-card {
   max-width: 640px;
 
   .app-modal-content {

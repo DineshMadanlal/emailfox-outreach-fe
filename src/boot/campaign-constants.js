@@ -857,10 +857,40 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
 };
 
 export const CONNECTED_ACCOUNT_STATUS = {
-  ACTIVE: 'ACTIVE',
-  CREDENTIALS: 'CREDENTIALS',
-  ERROR: 'ERROR',
-  STOPPED: 'STOPPED',
-  INITIALIZING: 'INITIALIZING',
-  DELETED: 'DELETED',
+  ACTIVE: {
+    label: 'Connected',
+    value: 'ACTIVE',
+    color: 'positive',
+  },
+
+  CREDENTIALS: {
+    label: 'Reconnect Required',
+    value: 'CREDENTIALS',
+    color: 'warning',
+    canReconnect: true,
+  },
+
+  ERROR: {
+    label: 'Error',
+    value: 'ERROR',
+    color: 'negative',
+  },
+
+  STOPPED: {
+    label: 'Stopped',
+    value: 'STOPPED',
+    color: 'warning',
+  },
+
+  INITIALIZING: {
+    label: 'Initializing',
+    value: 'INITIALIZING',
+    color: 'primary',
+  },
+
+  DELETED: {
+    label: 'Deleted',
+    value: 'DELETED',
+    color: 'negative',
+  },
 };

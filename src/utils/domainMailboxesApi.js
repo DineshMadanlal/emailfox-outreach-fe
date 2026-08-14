@@ -50,11 +50,20 @@ const handleOAuthFlow = async (authUrl) => new Promise((resolve, reject) => {
     if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
       if (checkClosedInterval) clearInterval(checkClosedInterval);
       window.removeEventListener('message', messageHandler);
+      // 🔥 Force browser focus back to your main window / iframe!
+      if (window.top && window.top.focus) {
+        window.top.focus();
+      } else if (window.focus) {
+        window.focus();
+      }
       if (popup && !popup.closed) popup.close();
       resolve(event.data.payload);
     } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
       if (checkClosedInterval) clearInterval(checkClosedInterval);
       window.removeEventListener('message', messageHandler);
+      if (window.top && window.top.focus) {
+        window.top.focus();
+      }
       if (popup && !popup.closed) popup.close();
       reject(new Error(event.data.error || 'Authentication failed'));
     }
@@ -120,6 +129,32 @@ export const connectOutlookAccount = async (redirectUrl) => {
     const response = await getApiCall({
       includeWorkspace: true,
       endpoint: `/mailboxes/connect/outlook?redirect_uri=${redirectUrl}&return_auth_url=${true}`,
+    });
+
+    return await handleOAuthFlow(response.auth_url);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const connectNewLinkedInAccount = async (redirectUrl) => {
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: `/connected-accounts/linkedin/connect?redirect_uri=${redirectUrl}`,
+    });
+
+    return await handleOAuthFlow(response.auth_url);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const reconnectLinkedInAccount = async ({ linkedInId, redirectUrl }) => {
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: `/connected-accounts/linkedin/${linkedInId}/reconnect?redirect_uri=${redirectUrl}`,
     });
 
     return await handleOAuthFlow(response.auth_url);

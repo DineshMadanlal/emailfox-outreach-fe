@@ -57,7 +57,7 @@ export const ESP_PROVIDERS = {
 };
 
 export const GOOGLE_API = {
-  CLIENT_ID: '927572967434-8e766e2edbv81frcupeucoq4o6pee6v5.apps.googleusercontent.com',
+  CLIENT_ID: '207877469190-eoe2a1h7k0o553e413hn5urv4tsu224t.apps.googleusercontent.com',
 };
 
 export const MAILBOX_ACTIONS = {

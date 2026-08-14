@@ -30,6 +30,8 @@
           no-caps
           unelevated
 
+          :loading="loading"
+
           color="primary"
           label="Connect LinkedIn"
 
@@ -48,6 +50,13 @@ export default defineComponent({
   name: 'LinkedInAccountsIllustration',
 
   emits: ['connectAccount'],
+
+  props: {
+    loading: {
+      type: Boolean,
+      default: false,
+    },
+  },
 });
 </script>
 

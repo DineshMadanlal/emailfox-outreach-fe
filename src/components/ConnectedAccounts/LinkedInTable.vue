@@ -20,6 +20,55 @@
       />
     </q-dialog>
 
+    <q-dialog
+      v-model="modals.showUpdateLinkedInLimitsModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <UpdateLinkedInLimits
+        :selectedRows="tableState.selectedRows"
+
+        @rateLimitsUpdated="onFetchLinkedInRecords"
+      />
+    </q-dialog>
+
+    <!-- Delete LinkedIn -->
+    <q-dialog
+      v-model="modals.showDeleteLinkedInModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <DeleteLinkedIn
+        :filters="tableState.filters"
+        :selectedRows="tableState.selectedRows"
+        :multiSelectOptionJson="tableState.multiSelectOptionJson"
+
+        @onSuccessfulDelete="onFetchLinkedInRecords"
+      />
+    </q-dialog>
+
+    <!--  -->
+    <q-dialog
+      seamless
+      :model-value="!!selectedRowsCount"
+
+      position="bottom"
+      class="app-table-selection-dialog"
+    >
+      <LinkedInActionSummary
+        :totalCount="tableState.pagination.rowsNumber"
+        :numberOfSelectedRows="selectedRowsCount"
+
+        @onCancel="tableState.selectedRows = []"
+        @delete="modals.showDeleteLinkedInModal = true"
+        @setApiRateLimit="modals.showUpdateLinkedInLimitsModal = true"
+      />
+    </q-dialog>
+
     <!-- Header -->
     <AppHeader
       v-if="fromAllLinkedInPage"
@@ -33,6 +82,8 @@
 
           color="primary"
           label="Connect LinkedIn"
+
+          :loading="loaders.isConnectApi"
 
           @click="onConnectLinkedInAccount"
 
@@ -61,6 +112,8 @@
 
       <LinkedInAccountsIllustration
         v-if="showLinkedInIllustration"
+
+        :loading="loaders.isConnectApi"
 
         @connectAccount="onConnectLinkedInAccount"
       />
@@ -99,7 +152,7 @@
 
         separator="cell"
         selection="multiple"
-        class="app-table all-accounts-table app-paginated-table sticky-first-col"
+        class="app-table all-accounts-table app-table-rows-fixed app-paginated-table"
 
         :rows="tableState.data"
         :columns="tableColumns"
@@ -208,7 +261,7 @@
                 :options="[5, 10, 20, 30, 50]"
                 v-model="tableState.pagination.rowsPerPage"
 
-                @update:model-value="onFetchMailboxRecords"
+                @update:model-value="onFetchLinkedInRecords"
 
                 class="records-per-page-select"
               >
@@ -301,77 +354,31 @@
               :to="`/outreach/linkedin/${props.row.id}`"
               class="account-route-link"
             >
+              <!--  -->
+              <ConnectionStatus
+                :status="props.row.status"
+              />
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- API Rate Limit per day -->
+        <template v-slot:body-cell-apiRateLimit="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
               <div>
-                {{ props.row.status }}
+                {{ props.row.api_rate_limit }} / Day
               </div>
+
             </router-link>
           </q-td>
         </template>
 
-        <!-- Profile Views -->
-        <template v-slot:body-cell-profileViews="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/linkedin/${props.row.id}`"
-              class="account-route-link"
-            >
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Connection Requests -->
-        <template v-slot:body-cell-connectionRequest="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/linkedin/${props.row.id}`"
-              class="account-route-link"
-            >
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Messages -->
-        <template v-slot:body-cell-messages="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/linkedin/${props.row.id}`"
-              class="account-route-link"
-            >
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Likes -->
-        <template v-slot:body-cell-likes="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/linkedin/${props.row.id}`"
-              class="account-route-link"
-            >
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Inmails -->
-        <template v-slot:body-cell-inmails="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/linkedin/${props.row.id}`"
-              class="account-route-link"
-            >
-            </router-link>
-          </q-td>
-        </template>
       </q-table>
     </div>
   </div>
@@ -387,6 +394,9 @@ import {
   defineComponent, toRefs, reactive, getCurrentInstance, onMounted, computed,
 } from 'vue';
 
+// router
+import { useRoute, useRouter } from 'vue-router';
+
 // quasar
 import { useMeta } from 'quasar';
 
@@ -397,14 +407,20 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppHeader from 'components/Headers/AppHeader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
+import ConnectionStatus from 'components/ConnectedAccounts/ConnectionStatus.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
 import LinkedInAccountsIllustration from 'components/Illustrations/LinkedInAccounts.vue';
 
+import DeleteLinkedIn from 'components/ConnectedAccounts/Modals/DeleteLinkedIn.vue';
+import UpdateLinkedInLimits from 'components/ConnectedAccounts/Modals/UpdateLinkedInLimits.vue';
+import LinkedInActionSummary from 'components/ConnectedAccounts/Modals/LinkedInActionSummary.vue';
+
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount } from 'src/utils/numbers';
+import { connectNewLinkedInAccount } from 'src/utils/domainMailboxesApi.js';
 
 // Import the pinia store
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
@@ -420,11 +436,15 @@ export default defineComponent({
   components: {
     ApiLoader,
     AppHeader,
+    ConnectionStatus,
     AppSearchInput,
     TableMultiSelect,
     ColumnsVisibility,
+    LinkedInActionSummary,
     ColumnsVisibilityButton,
     LinkedInAccountsIllustration,
+    UpdateLinkedInLimits,
+    DeleteLinkedIn,
   },
 
   props: {
@@ -446,6 +466,10 @@ export default defineComponent({
     // instance
     const { appContext } = getCurrentInstance();
 
+    // route
+    const $route = useRoute();
+    const $router = useRouter();
+
     // composition API
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
 
@@ -456,6 +480,7 @@ export default defineComponent({
     const state = reactive({
       loaders: {
         isFetchApi: false,
+        isConnectApi: false,
       },
 
       tableState: {
@@ -477,6 +502,8 @@ export default defineComponent({
 
       modals: {
         showColumnsVisibilityModal: false,
+        showUpdateLinkedInLimitsModal: false,
+        showDeleteLinkedInModal: false,
       },
     });
 
@@ -541,28 +568,8 @@ export default defineComponent({
     const dynamicColumns = computed(() => {
       const columns = [
         // {
-        //   name: 'profileViews',
-        //   label: 'Profile Views per Day',
-        //   align: 'left',
-        // },
-        // {
-        //   name: 'connectionRequest',
-        //   label: 'Connection Request per Day',
-        //   align: 'left',
-        // },
-        // {
-        //   name: 'messages',
-        //   label: 'Messages Sent per Day',
-        //   align: 'left',
-        // },
-        // {
-        //   name: 'likes',
-        //   label: 'Likes per Day',
-        //   align: 'left',
-        // },
-        // {
-        //   name: 'inmails',
-        //   label: 'InMails Sent per Day',
+        //   name: 'apiRateLimit',
+        //   label: 'API Rate Limit per Day',
         //   align: 'left',
         // },
       ];
@@ -663,6 +670,14 @@ export default defineComponent({
     };
 
     const onFetchLinkedInRecords = () => {
+      // close the modals
+      if (state.modals.showDeleteLinkedInModal || state.modals.showUpdateLinkedInLimitsModal) {
+        state.modals.showDeleteLinkedInModal = false;
+        state.modals.showUpdateLinkedInLimitsModal = false;
+
+        state.tableState.selectedRows = [];
+      }
+
       onRequest({
         pagination: state.tableState.pagination,
       });
@@ -725,13 +740,70 @@ export default defineComponent({
       });
     };
 
-    const onConnectLinkedInAccount = () => {
+    const onConnectLinkedInAccount = async () => {
+      try {
+        state.loaders.isConnectApi = true;
 
+        const currentOrigin = window.location.origin;
+
+        const redirectUrl = encodeURIComponent(`${currentOrigin}/outreach/linkedin/accounts`);
+
+        await connectNewLinkedInAccount(redirectUrl);
+
+        appContext.config.globalProperties.$toast({
+          message: 'Account connected successfully.',
+        });
+
+        //
+        // $router.push(`/outreach/linkedin/${response.account_id}`);
+        $router.push('/outreach/linkedin/accounts');
+        onFetchLinkedInRecords();
+      } catch (error) {
+        // Show a toaster
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+      } finally {
+        state.loaders.isConnectApi = false;
+      }
     };
 
     // lifecycle hook
     onMounted(() => {
-      makeApiCallOnMounted();
+      const {
+        connectionSuccess, account_id, error,
+      } = $route.query;
+
+      if (error || (connectionSuccess && account_id)) {
+        if (window.opener) {
+          // 1. Focus back to the main app tab
+          try {
+            window.opener.focus();
+          } catch (e) {
+            // ignore cross-origin focus errors
+          }
+          // 2. Post error or success message
+          if (error) {
+            window.opener.postMessage({
+              type: 'OAUTH_AUTH_ERROR',
+              error: error || 'Authentication failed',
+            }, '*');
+          } else if (connectionSuccess && account_id) {
+            window.opener.postMessage({
+              type: 'OAUTH_AUTH_SUCCESS',
+              payload: {
+                account_id,
+              },
+            }, '*');
+          }
+        }
+        // 3. CLOSE THE POPUP TAB NOW!
+        window.close();
+      } else {
+        // make api call
+        makeApiCallOnMounted();
+      }
     });
 
     //

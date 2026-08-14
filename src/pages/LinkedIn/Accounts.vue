@@ -17,7 +17,7 @@ import { useMeta } from 'quasar';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // Components
-import LinkedInTable from 'components/LinkedIn/LinkedInTable.vue';
+import LinkedInTable from 'components/ConnectedAccounts/LinkedInTable.vue';
 
 export default defineComponent({
   name: 'LinkedInAccounts',
