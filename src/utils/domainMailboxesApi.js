@@ -4,6 +4,75 @@ import {
 } from 'src/utils/apiRequests';
 import { formatDate1 } from 'src/utils/dates';
 
+// Helper to center the popup window on screen
+const openOAuthPopup = (url, title = 'Connect Account', w = 600, h = 700) => {
+  const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+  const dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+
+  const width = window.innerWidth
+    ? window.innerWidth
+    : document.documentElement.clientWidth
+      ? document.documentElement.clientWidth
+      : window.screen.width;
+  const height = window.innerHeight
+    ? window.innerHeight
+    : document.documentElement.clientHeight
+      ? document.documentElement.clientHeight
+      : window.screen.height;
+
+  const systemZoom = width / window.screen.availWidth;
+  const left = (width - w) / 2 / systemZoom + dualScreenLeft;
+  const top = (height - h) / 2 / systemZoom + dualScreenTop;
+
+  const popup = window.open(
+    url,
+    title,
+    `scrollbars=yes,width=${w / systemZoom},height=${h / systemZoom},top=${top},left=${left}`,
+  );
+
+  if (window.focus && popup) popup.focus();
+  return popup;
+};
+
+// Return a promise that resolves when postMessage signals success or rejects on close/error
+// Return a promise that resolves when postMessage signals success or rejects on close/error
+const handleOAuthFlow = async (authUrl) => new Promise((resolve, reject) => {
+  const popup = openOAuthPopup(authUrl);
+
+  if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+    reject(new Error('Popup blocked. Please allow popups for this site.'));
+    return;
+  }
+
+  let checkClosedInterval = null;
+
+  const messageHandler = (event) => {
+    if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+      if (checkClosedInterval) clearInterval(checkClosedInterval);
+      window.removeEventListener('message', messageHandler);
+      if (popup && !popup.closed) popup.close();
+      resolve(event.data.payload);
+    } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+      if (checkClosedInterval) clearInterval(checkClosedInterval);
+      window.removeEventListener('message', messageHandler);
+      if (popup && !popup.closed) popup.close();
+      reject(new Error(event.data.error || 'Authentication failed'));
+    }
+  };
+
+  // 1. Listen for postMessage from popup
+  window.addEventListener('message', messageHandler);
+
+  // 2. Poll every 500ms to detect if user manually closes popup tab
+  checkClosedInterval = setInterval(() => {
+    if (popup.closed) {
+      if (checkClosedInterval) clearInterval(checkClosedInterval);
+      window.removeEventListener('message', messageHandler);
+      reject(new Error('Authentication window closed. Please try again.'));
+    }
+  }, 500);
+});
+
 // domain by ID
 export const getDomainById = async (domainId) => {
   try {
@@ -50,30 +119,26 @@ export const connectOutlookAccount = async (redirectUrl) => {
   try {
     const response = await getApiCall({
       includeWorkspace: true,
-      endpoint: `/mailboxes/connect/outlook?redirect_uri=${redirectUrl}`,
+      endpoint: `/mailboxes/connect/outlook?redirect_uri=${redirectUrl}&return_auth_url=${true}`,
     });
 
-    window.location.href = response.auth_url;
+    return await handleOAuthFlow(response.auth_url);
   } catch (error) {
     throw new Error(error);
   }
-
-  return true;
 };
 
 export const connectGoogleAccount = async (redirectUrl) => {
   try {
     const response = await getApiCall({
       includeWorkspace: true,
-      endpoint: `/mailboxes/connect/gmail?redirect_uri=${redirectUrl}`,
+      endpoint: `/mailboxes/connect/gmail?redirect_uri=${redirectUrl}&return_auth_url=${true}`,
     });
 
-    window.location.href = response.auth_url;
+    return await handleOAuthFlow(response.auth_url);
   } catch (error) {
     throw new Error(error);
   }
-
-  return true;
 };
 
 export const bulkUpdateMailboxes = async (payload) => {

@@ -116,6 +116,9 @@ import {
   computed, defineComponent, getCurrentInstance, toRefs, reactive,
 } from 'vue';
 
+// vue router
+import { useRouter } from 'vue-router';
+
 // quasar
 import { copyToClipboard } from 'quasar';
 
@@ -142,6 +145,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // router
+    const $router = useRouter();
+
     // instance
     const { appContext } = getCurrentInstance();
 
@@ -197,7 +203,7 @@ export default defineComponent({
     const appName = computed(() => {
       const isPrimaryPlatform = isMainApp();
       if (isPrimaryPlatform) {
-        return 'EmailFox';
+        return 'Skysenders';
       }
 
       return partnerBranding.value?.name || '';
@@ -285,11 +291,20 @@ export default defineComponent({
 
         const redirectUrl = encodeURIComponent(`${currentOrigin}/outreach/mailboxes`);
 
+        let response;
+
         if (isGoogleOauth.value) {
-          await connectGoogleAccount(redirectUrl);
+          response = await connectGoogleAccount(redirectUrl);
         } else if (isOutlookOauth.value) {
-          await connectOutlookAccount(redirectUrl);
+          response = await connectOutlookAccount(redirectUrl);
         }
+
+        // move to the mailbox by ID page
+        $router.push(`/outreach/mailbox/${response?.mailbox_id}`);
+
+        appContext.config.globalProperties.$toast({
+          message: `${response?.email} connected successfully`,
+        });
       } catch (error) {
         // show error toast
         appContext.config.globalProperties.$toast({

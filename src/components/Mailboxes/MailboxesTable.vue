@@ -527,10 +527,10 @@ import {
 } from 'vue';
 
 // quasar
-import { useMeta, useQuasar } from 'quasar';
+import { useMeta } from 'quasar';
 
 // vue router
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -640,12 +640,8 @@ export default defineComponent({
     // instance
     const { appContext } = getCurrentInstance();
 
-    // quasar
-    const $q = useQuasar();
-
     // route
     const $route = useRoute();
-    const $router = useRouter();
 
     // composition API
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
@@ -1068,29 +1064,20 @@ export default defineComponent({
       } = $route.query;
 
       if (error) {
-        $router.replace({ query: {} });
-
-        setTimeout(() => {
-          $q.dialog({
-            title: 'Connection Failed',
-            message: error,
-            ok: {
-              'no-caps': true,
-              unelevated: true,
-              label: 'Ok, got it',
-            },
-          });
-        }, 500);
+        window.opener.postMessage({
+          type: 'OAUTH_AUTH_ERROR',
+          error: error || 'Authentication failed',
+        }, '*');
       }
 
       if (connectionSuccess && mailbox_id) {
-        // push to mailbox by ID
-        $router.push(`/outreach/mailbox/${mailbox_id}`);
-
-        // toaster
-        appContext.config.globalProperties.$toast({
-          message: `${email} connected successfully`,
-        });
+        window.opener.postMessage({
+          type: 'OAUTH_AUTH_SUCCESS',
+          payload: {
+            mailbox_id,
+            email,
+          },
+        }, '*');
       } else {
         makeApiCallOnMounted();
 

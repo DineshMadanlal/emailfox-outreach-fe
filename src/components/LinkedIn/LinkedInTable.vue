@@ -397,6 +397,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppHeader from 'components/Headers/AppHeader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
+import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
 import LinkedInAccountsIllustration from 'components/Illustrations/LinkedInAccounts.vue';
@@ -420,6 +421,7 @@ export default defineComponent({
     ApiLoader,
     AppHeader,
     AppSearchInput,
+    TableMultiSelect,
     ColumnsVisibility,
     ColumnsVisibilityButton,
     LinkedInAccountsIllustration,
