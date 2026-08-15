@@ -328,3 +328,27 @@ export const getWorkspaceSlugFromUrl = () => {
 
   return workspaceSlug;
 };
+
+export const primaryAppRouteToLoginPage = () => {
+  const rootDomain = getRootDomain();
+
+  window.location.href = process.env.DEV_MODE
+    ? 'http://app.skysenders.local:8080/login'
+    : `https://app.${rootDomain}/login`;
+};
+
+export const isSlackWebhookUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+
+  try {
+    const parsedUrl = new URL(url);
+
+    return (
+      parsedUrl.protocol === 'https:'
+      && parsedUrl.hostname.toLowerCase() === 'hooks.slack.com'
+      && parsedUrl.pathname.startsWith('/services/')
+    );
+  } catch {
+    return false;
+  }
+};

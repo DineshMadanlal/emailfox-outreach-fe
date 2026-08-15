@@ -63,6 +63,8 @@ export default defineComponent({
 
     // state
     const state = reactive({
+      isApiLoading: false,
+
       domainsStat: {
         connected_count: 0,
         authentication_error_count: 0,

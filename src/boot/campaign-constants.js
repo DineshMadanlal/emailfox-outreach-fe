@@ -259,47 +259,88 @@ export const PRODUCT_VARIABLES_VALUES = [...DEFAULT_SYSTEM_FIELDS,
   ...SENDER_VARIABLES].flatMap((field) => field.value);
 
 export const CONTEXT_VARIABLES = [
-  // Time of day
+  // ------------------------------------
+  // TIME PERIOD (Morning, Afternoon, Evening)
+  // ------------------------------------
   {
-    label: 'Time of Day',
-    value: 'time_of_day',
+    label: 'Time Period (Lowercase)',
+    value: 'time_period "today"',
     example: 'morning',
   },
   {
-    label: 'Time of Day (Capitalized)',
-    value: 'time_of_day_capitalized',
+    label: 'Time Period (Capitalized)',
+    value: 'capitalize (time_period "today")',
     example: 'Morning',
   },
 
-  // Day of week
+  // ------------------------------------
+  // ACTUAL TIME
+  // ------------------------------------
+  {
+    label: 'Current Time',
+    value: 'time_of_day "today" "hh:mm a"',
+    example: '03:30 PM',
+  },
+
+  // ------------------------------------
+  // DAY OF WEEK
+  // ------------------------------------
   {
     label: 'Day of Week',
-    value: 'day_of_week',
-    example: 'monday',
+    value: 'day_of_week "today"',
+    example: 'Friday',
   },
   {
-    label: 'Day of Week (Capitalized)',
-    value: 'day_of_week_capitalized',
+    label: 'Day of Week (Lowercase)',
+    value: 'lower (day_of_week "today")',
+    example: 'friday',
+  },
+
+  // ------------------------------------
+  // MONTH & YEAR
+  // ------------------------------------
+  {
+    label: 'Current Month',
+    value: 'format_date "today" "MMMM"',
+    example: 'August',
+  },
+  {
+    label: 'Current Year',
+    value: 'format_date "today" "yyyy"',
+    example: '2026',
+  },
+
+  // ------------------------------------
+  // COMMON DATES (Now utilizing our new defaults!)
+  // ------------------------------------
+  {
+    label: 'Today\'s Date',
+    value: 'format_date "today"', // Uses the 'dd MMM yyyy' default
+    example: '14 Aug 2026',
+  },
+  {
+    label: 'Next Working Day (Date)',
+    value: 'next_working_day "today"', // No more nested format_date!
+    example: '17 Aug 2026',
+  },
+  {
+    label: 'Next Working Day (Name)',
+    value: 'next_working_day "today" "EEEE"', // Passing the format directly
     example: 'Monday',
   },
 
-  // Month
+  // ------------------------------------
+  // DATE MATH
+  // ------------------------------------
   {
-    label: 'Month',
-    value: 'month',
-    example: 'january',
+    label: 'Add 3 Days',
+    value: 'add_date "today" 3 "days"',
+    example: '17 Aug 2026',
   },
   {
-    label: 'Month (Capitalized)',
-    value: 'month_capitalized',
-    example: 'January',
-  },
-
-  // Year (useful for planning / context)
-  {
-    label: 'Year',
-    value: 'year',
-    example: '2026',
+    label: 'Subtract 1 Month',
+    value: 'subtract_date "today" 1 "months"',
+    example: '14 Jul 2026',
   },
 ];
 
@@ -893,4 +934,64 @@ export const CONNECTED_ACCOUNT_STATUS = {
     value: 'DELETED',
     color: 'negative',
   },
+};
+
+export const WEBHOOK_EVENT_TYPE = {
+  'email.reply': {
+    label: 'Email Reply',
+    value: 'email.reply',
+  },
+  'linkedin.connection_accepted': {
+    label: 'LinkedIn Connection Accepted',
+    value: 'linkedin.connection_accepted',
+  },
+  'linkedin.reply': {
+    label: 'LinkedIn Reply',
+    value: 'linkedin.reply',
+  },
+  'email.reply_sent': {
+    label: 'Email Reply Sent',
+    value: 'email.reply_sent',
+  },
+  'email.sent': {
+    label: 'Email Sent',
+    value: 'email.sent',
+  },
+  'email.opened': {
+    label: 'Email Opened',
+    value: 'email.opened',
+  },
+  'email.link_clicked': {
+    label: 'Email Link Clicked',
+    value: 'email.link_clicked',
+  },
+  'email.bounced': {
+    label: 'Email Bounced',
+    value: 'email.bounced',
+  },
+  'email.unsubscribed': {
+    label: 'Email Unsubscribed',
+    value: 'email.unsubscribed',
+  },
+  'campaign.status_changed': {
+    label: 'Campaign Status Changed',
+    value: 'campaign.status_changed',
+  },
+  'linkedin.connection_sent': {
+    label: 'LinkedIn Connection Sent',
+    value: 'linkedin.connection_sent',
+  },
+  'linkedin.message_sent': {
+    label: 'LinkedIn Message Sent',
+    value: 'linkedin.message_sent',
+  },
+  'linkedin.inmail_sent': {
+    label: 'LinkedIn InMail Sent',
+    value: 'linkedin.inmail_sent',
+  },
+};
+
+export const WEBHOOK_TYPES = {
+  HTTP: 'Http',
+  SLACK: 'Slack',
 };

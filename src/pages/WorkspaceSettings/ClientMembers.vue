@@ -64,7 +64,7 @@
         ref="clientMembersTableRef"
         @inviteMember="showCreateClientMemberModal = true"
 
-        v-if="showTeamMembersTable"
+        v-if="showClientMembersTable"
       />
     </div>
   </div>
@@ -107,7 +107,7 @@ export default defineComponent({
     const state = reactive({
       showNewClientDetailsModal: false,
       showCreateClientMemberModal: false,
-      showTeamMembersTable: true,
+      showClientMembersTable: true,
 
       newClientDetails: {},
 
@@ -134,11 +134,11 @@ export default defineComponent({
       state.showNewClientDetailsModal = true;
 
       // show team members table
-      state.showTeamMembersTable = false;
+      state.showClientMembersTable = false;
 
       // re-render team members table logic
       setTimeout(() => {
-        state.showTeamMembersTable = true;
+        state.showClientMembersTable = true;
       }, 100);
     };
 

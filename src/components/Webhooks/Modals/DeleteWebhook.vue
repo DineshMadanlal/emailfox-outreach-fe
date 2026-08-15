@@ -1,10 +1,10 @@
 <template>
-  <q-card flat class="app-modal-card delete-accounts-card">
+  <q-card flat class="app-modal-card delete-webook-card">
     <!-- header -->
     <div class="app-modal-header">
       <!--  -->
       <h4 class="modal-header-text">
-        Delete {{ deleteMultipleAccounts ? 'Multiple Accounts' : 'Account' }}
+        Delete Webhook
       </h4>
 
       <q-space />
@@ -29,7 +29,7 @@
     <!-- Content -->
     <div class="app-modal-content">
       <p class="delete-warning-text">
-        Deleting the {{ deleteMultipleAccounts ? 'selected accounts' : 'account' }} will
+        Deleting the webhook will
         <span class="permanent-delete-text">
           permanently delete
         </span>
@@ -45,7 +45,7 @@
         v-model="agreeToDelete"
 
         color="primary"
-        label="I understand the consequences of deleting the selected account(s)"
+        label="I understand the consequences of deleting the webhook"
       />
     </div>
 
@@ -62,7 +62,7 @@
         :loading="isApiLoading"
         :disabled="!agreeToDelete"
 
-        @click="onDeleteAccount"
+        @click="onConfirmDelete"
       />
 
       <!-- Delete -->
@@ -84,37 +84,23 @@
 </template>
 
 <script>
-// lodash
-import size from 'lodash/size';
-
 // vue
 import {
-  defineComponent, reactive, toRefs, computed, getCurrentInstance,
+  defineComponent, reactive, toRefs, getCurrentInstance,
 } from 'vue';
 
 // Utils
 import { deleteApiCall } from 'src/utils/apiRequests';
 
-// constants
-import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
-
 export default defineComponent({
-  name: 'DeleteLinkedIn',
+  name: 'DeleteWebhook',
 
   emits: ['onSuccessfulDelete'],
 
   props: {
-    filters: {
+    editWebhookJson: {
       type: Object,
-      default: () => ({}),
-    },
-    selectedRows: {
-      type: Array,
-      default: () => [],
-    },
-    multiSelectOptionJson: {
-      type: Object,
-      default: () => ({}),
+      required: true,
     },
   },
 
@@ -129,56 +115,19 @@ export default defineComponent({
       isApiLoading: false,
     });
 
-    // computed
-    const deleteMultipleAccounts = computed(() => size(props.selectedRows) > 1);
-
-    const isAllSelected = computed(() => props.multiSelectOptionJson?.selectedOption
-      === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL);
-
     // methods
-    const getAccountsPayload = () => {
-      const filterJson = {};
-
-      const {
-        searchText,
-      } = props.filters;
-
-      if (searchText) {
-        filterJson.search_text = searchText;
-      }
-
-      if (isAllSelected.value) {
-        filterJson.select_all = true;
-      } else {
-        filterJson.ids = props.selectedRows.map((domain) => domain.id);
-      }
-
-      return filterJson;
-    };
-
-    const onDeleteAccount = async () => {
+    const onConfirmDelete = async () => {
       try {
         state.isApiLoading = true;
 
-        if (size(props.selectedRows) === 1) {
-          // delete single domain
-          await deleteApiCall({
-            includeWorkspace: true,
-            endpoint: `/connected-accounts/linkedin/${props.selectedRows[0].id}`,
-          });
-        } else {
-          const payload = getAccountsPayload();
-
-          // delete multiple domains
-          await deleteApiCall({
-            data: payload,
-            includeWorkspace: true,
-            endpoint: '/connected-accounts/linkedin/bulk-delete',
-          });
-        }
+        // delete multiple domains
+        await deleteApiCall({
+          includeWorkspace: true,
+          endpoint: `/webhooks/${props.editWebhookJson.id}`,
+        });
 
         appContext.config.globalProperties.$toast({
-          message: `${deleteMultipleAccounts.value ? 'Accounts' : 'Account'} deleted successfully`,
+          message: 'Webhook deleted successfully',
         });
 
         emit('onSuccessfulDelete');
@@ -197,18 +146,15 @@ export default defineComponent({
       // state
       ...toRefs(state),
 
-      // computed
-      deleteMultipleAccounts,
-
       // methods
-      onDeleteAccount,
+      onConfirmDelete,
     };
   },
 });
 </script>
 
 <style lang="scss" scoped>
-.delete-accounts-card {
+.delete-webook-card {
   max-width: 600px;
 
   .light-negative-btn {

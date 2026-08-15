@@ -23,7 +23,7 @@
         <!-- Icon -->
         <LocalSvgIcon
           :image="provider.icon"
-          class="mailbox-provider-icon"
+          :class="`mailbox-provider-icon ${provider.iconClasses || ''}`"
         />
 
         <!-- Provider details -->
@@ -76,6 +76,13 @@ export default defineComponent({
           description: 'Microsoft auth will open. Quickest way to add mailboxes',
           icon: 'outlook',
         },
+        // {
+        //   label: 'IMAP / SMTP',
+        //   value: ESP_PROVIDERS.CUSTOM_SMTP,
+        //   description: 'Set up your mailbox using IMAP/SMTP settings',
+        //   icon: 'smtp',
+        //   iconClasses: 'smtp-icon',
+        // },
       ];
 
       return providers;
@@ -135,10 +142,14 @@ export default defineComponent({
       cursor: pointer;
       position: relative;
 
-      .mailbox-provider-icon {
+      :deep(.mailbox-provider-icon) {
         width: 100%;
         height: 36px;
         max-width: 36px;
+
+        &.smtp-icon {
+          @include svg-icon-stroke('path, circle, rect', $warning);
+        }
       }
 
       .provider-details {

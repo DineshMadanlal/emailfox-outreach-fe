@@ -625,6 +625,10 @@ export default defineComponent({
           limit: perPage,
         };
 
+        if (state.tableState.filters.searchText) {
+          params.search_text = state.tableState.filters.searchText;
+        }
+
         const response = await getApiCall({
           params,
           endpoint: '/connected-accounts/linkedin',
