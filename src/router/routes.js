@@ -428,6 +428,12 @@ const routes = [
             component: () => import('pages/WorkspaceSettings/Webhooks.vue'),
             meta: { requiresAuth: true },
           },
+          // reply categorization
+          {
+            path: 'reply-categorization',
+            component: () => import('pages/WorkspaceSettings/ReplyCategorization.vue'),
+            meta: { requiresAuth: true },
+          },
         ],
       },
 

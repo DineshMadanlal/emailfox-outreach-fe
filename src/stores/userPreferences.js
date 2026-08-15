@@ -86,7 +86,11 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
       tableData: [],
     },
 
-    integrationsCount: {},
+    replyCategorizationState: {
+      filters: {},
+      pagination: null,
+      tableData: [],
+    },
 
     allWorkspaces: [],
   });

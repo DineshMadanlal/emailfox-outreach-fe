@@ -995,3 +995,21 @@ export const WEBHOOK_TYPES = {
   HTTP: 'Http',
   SLACK: 'Slack',
 };
+
+export const REPLY_SENTIMENT = {
+  Positive: {
+    label: 'Positive',
+    value: 'Positive',
+    color: 'positive',
+  },
+  Negative: {
+    label: 'Negative',
+    value: 'Negative',
+    color: 'negative',
+  },
+  Neutral: {
+    label: 'Neutral',
+    value: 'Neutral',
+    color: 'warning',
+  },
+};

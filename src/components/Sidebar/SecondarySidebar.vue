@@ -335,6 +335,14 @@ export default defineComponent({
           route: '/settings/suppression-list',
           isActive: activeRoutePath.value.includes('/settings/suppression-list'),
         },
+        // reply categorization
+        {
+          name: 'ReplyCategorization',
+          icon: 'medal',
+          label: 'Reply Categorization',
+          route: '/settings/reply-categorization',
+          isActive: activeRoutePath.value.includes('/settings/reply-categorization'),
+        },
       ];
 
       return routes;
