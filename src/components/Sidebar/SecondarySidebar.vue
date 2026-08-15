@@ -257,14 +257,6 @@ export default defineComponent({
           route: '/outreach/mailboxes',
           isActive: activeRoutePath.value.includes('/outreach/mailbox'),
         },
-        // domains
-        {
-          name: 'domains',
-          label: 'Domains',
-          icon: 'domains',
-          route: '/outreach/domains',
-          isActive: activeRoutePath.value.includes('/outreach/domain'),
-        },
         // linkedin
         {
           name: 'linkedin',
@@ -273,6 +265,22 @@ export default defineComponent({
           iconClass: 'linkedin-icon',
           route: '/outreach/linkedin/accounts',
           isActive: activeRoutePath.value.includes('/outreach/linkedin'),
+        },
+      ];
+
+      return routes;
+    });
+
+    const analyticsRoutes = computed(() => {
+      const routes = [
+        // domain
+        // domains
+        {
+          name: 'domains',
+          label: 'Domains',
+          icon: 'domains',
+          route: '/outreach/domains',
+          isActive: activeRoutePath.value.includes('/outreach/domain'),
         },
       ];
 
@@ -290,6 +298,11 @@ export default defineComponent({
         {
           heading: 'Infra',
           routes: mailInfraRoutes.value,
+        },
+        // analytics
+        {
+          heading: 'Analytics',
+          routes: analyticsRoutes.value,
         },
       ];
 

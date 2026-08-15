@@ -75,7 +75,7 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, onMounted,
+  defineComponent, reactive, toRefs, onMounted, getCurrentInstance,
 } from 'vue';
 
 // Components
@@ -105,6 +105,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // app context
+    const { appContext } = getCurrentInstance();
+
     // state
     const state = reactive({
       // 1000 is default
@@ -127,6 +130,7 @@ export default defineComponent({
       const response = await saveCampaignSettingsById({
         payload,
         campaignId: props.campaignId,
+        $toast: appContext.config.globalProperties.$toast,
       });
 
       if (response) {

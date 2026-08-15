@@ -61,9 +61,6 @@ import { formatDate1 } from 'src/utils/dates';
 import { getBrandColorByName } from 'src/utils/quasarHelpers';
 import { getMailboxWarmupDailyStats } from 'src/utils/warmupApi';
 
-// constants
-import { WARMUP_RESPONSE } from 'src/boot/warmup-constants';
-
 export default defineComponent({
   name: 'WarmupGrowthPlacement',
 
@@ -316,7 +313,7 @@ export default defineComponent({
         });
 
         // state.backendResponse = response;
-        state.backendResponse = WARMUP_RESPONSE || response;
+        state.backendResponse = response;
       } catch (error) {
         if (error.message.includes('No warmup')) {
           state.backendResponse = {};
