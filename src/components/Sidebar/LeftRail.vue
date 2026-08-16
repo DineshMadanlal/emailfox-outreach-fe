@@ -108,7 +108,7 @@ export default defineComponent({
         icon: 'settings',
         iconClasses: 'settings-icon',
         route: isClientLoggedIn.value ? '/settings/warmup-profiles' : '/settings',
-        routeCheck: '/settings',
+        routeCheck: '/settings/',
       }];
 
       return routes;

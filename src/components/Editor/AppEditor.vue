@@ -33,7 +33,6 @@
 
       <EditorMenuOptions
         :target="menuAnchor"
-        :variableMenuOptions="variableMenuOptions"
 
         v-model="showVariableMenu"
 
@@ -106,7 +105,9 @@
       v-if="sequenceEditor && showPersonalisationError && false"
       class="personalisation-error-toolbar"
     >
-      <p class="issue-found-text">
+      <p
+        class="issue-found-text"
+      >
         ⚠ {{ personalisationIssues.length }}
         {{ $pluralize('issue', personalisationIssues.length) }}
         found
@@ -166,7 +167,6 @@ import EditorMenuOptions from 'components/Menu/EditorMenuOptions.vue';
 
 // constants
 import { MAX_FILE_SIZE_IN_MB } from 'src/boot/constants';
-import { DEFAULT_SYSTEM_FIELDS } from 'src/boot/campaign-constants';
 
 export default defineComponent({
   name: 'EmailBodyEditor',
@@ -276,15 +276,10 @@ export default defineComponent({
 
     const componentUid = computed(() => getCurrentInstance().uid);
 
-    const variableMenuOptions = computed(() => DEFAULT_SYSTEM_FIELDS.map((field) => ({
-      label: field.label,
-      value: `{{${field.value}}}`,
-    })));
-
     const personalisationIssues = computed(() => {
       const issues = findTemplateIssues(
         editorModelValue.value,
-        variableMenuOptions.value.map((opt) => opt.value),
+        [],
       );
 
       return issues;
@@ -673,7 +668,6 @@ export default defineComponent({
       // computed
       componentUid,
       editorModelValue,
-      variableMenuOptions,
       personalisationIssues,
       showPersonalisationError,
 

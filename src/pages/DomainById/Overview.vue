@@ -140,7 +140,7 @@ export default defineComponent({
         state.showEmailEngagementLoader = true;
 
         const response = await fetchSequenceDateStats({
-          endpoint: `/stats/domains/${props.domainByJson.id}/sequence-date-stats`,
+          endpoint: `/stats/domains/${props.domainByJson.id}/date-stats`,
           params: {
             start_date: state.dateRangeInputJson.from,
             end_date: state.dateRangeInputJson.to,
@@ -165,7 +165,7 @@ export default defineComponent({
         state.isLoadingEspPerformanceMetrics = true;
 
         const response = await fetchSequenceEspStats({
-          endpoint: `stats/domains/${props.domainByJson.id}/sequence-esp-stats`,
+          endpoint: `stats/domains/${props.domainByJson.id}/esp-stats`,
         });
 
         // update the value
@@ -187,7 +187,7 @@ export default defineComponent({
         state.showOverallEngagementLoader = true;
 
         const response = await fetchSequenceOverallStats({
-          endpoint: `stats/domains/${props.domainByJson.id}/sequence-overall-stats`,
+          endpoint: `stats/domains/${props.domainByJson.id}/overall-stats`,
         });
 
         state.overallEngagementMetrics = response;

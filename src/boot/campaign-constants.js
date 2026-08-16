@@ -885,15 +885,13 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
   ignore_ooo_category_reply: false,
   delay_reactivation_ooo_contact: null,
 
-  //
+  // deliverability configuration
   send_plain_text: true,
   match_esp_contact: true,
-
   block_previously_bounced_contact: true,
-  auto_optimize_ab_test: false,
 
+  // risk management configuration
   pause_campaign_when_bounce_rate_at: 5,
-
   include_unsubscribe_message: false,
 };
 
@@ -1011,5 +1009,28 @@ export const REPLY_SENTIMENT = {
     label: 'Neutral',
     value: 'Neutral',
     color: 'warning',
+  },
+};
+
+export const CONTACT_ESP_PROVIDERS = {
+  GMAIL: {
+    label: 'Gmail',
+    value: 'GMAIL',
+  },
+  OUTLOOK: {
+    label: 'Outlook',
+    value: 'OUTLOOK',
+  },
+  ZOHO: {
+    label: 'Zoho',
+    value: 'ZOHO',
+  },
+  YAHOO: {
+    label: 'Yahoo',
+    value: 'YAHOO',
+  },
+  OTHERS: {
+    label: 'Others',
+    value: 'OTHERS',
   },
 };

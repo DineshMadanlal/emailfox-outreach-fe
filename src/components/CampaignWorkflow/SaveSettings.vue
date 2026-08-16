@@ -8,7 +8,6 @@
     <q-dialog
       v-model="modals.showDailyLimitDialog"
       class="app-modal-dialog"
-
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
@@ -20,15 +19,29 @@
       />
     </q-dialog>
 
+    <q-dialog
+      v-model="modals.showPauseCampaignBounceRateDialog"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SavePauseCampaignBounceRate
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateSettingsJson="updateSettingsJson"
+      />
+    </q-dialog>
+
     <!-- container -->
-    <div class="campaign-settings-container">
+    <div
+      class="campaign-settings-container"
+    >
       <!-- sending schedule -->
       <SendingScheduleCard
         :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
-
         @updateCampaignSettings="updateCampaignSettings"
-
         @editDailyLimit="modals.showDailyLimitDialog = true"
       />
 
@@ -36,7 +49,6 @@
       <SequenceConfigurationsCard
         :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
-
         @updateCampaignSettings="updateCampaignSettings"
       />
 
@@ -44,7 +56,6 @@
       <SmartAiCategorizationCard
         :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
-
         @updateCampaignSettings="updateCampaignSettings"
       />
 
@@ -76,7 +87,6 @@
           <DeliverabilitySafetyCard
             :campaignId="campaignById.id"
             :campaignSettings="campaignSettings"
-
             @updateCampaignSettings="updateCampaignSettings"
           />
 
@@ -85,7 +95,10 @@
             :campaignSettings="campaignSettings"
 
             @updateCampaignSettings="updateCampaignSettings"
+            @showPauseCampaignBounceRateDialog="modals.showPauseCampaignBounceRateDialog = true"
           />
+
+          <div ref="riskControlCardRef" />
         </div>
       </q-slide-transition>
     </div>
@@ -96,11 +109,9 @@
       <q-btn
         flat
         no-caps
-
         label="Back"
         color="primary"
         class="light-primary-btn"
-
         @click="onGoBack"
       />
 
@@ -108,21 +119,23 @@
       <q-btn
         no-caps
         unelevated
-
         color="primary"
         :label="campaignCtaJson.label"
         :disable="campaignCtaJson.disable"
-
         :loading="loaders.isSaving"
       />
     </div>
   </div>
 </template>
+
 <script>
 // vue
 import {
-  defineComponent, computed, reactive, toRefs, getCurrentInstance, onMounted,
+  defineComponent, computed, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted,
 } from 'vue';
+
+// quasar
+import { debounce } from 'quasar';
 
 // router
 import { useRouter } from 'vue-router';
@@ -137,6 +150,7 @@ import SmartAiCategorizationCard from 'components/CampaignWorkflow/Settings/Smar
 import SequenceConfigurationsCard from 'components/CampaignWorkflow/Settings/SequenceConfigurationsCard.vue';
 
 import SaveDailyNewContactsLimit from 'src/components/CampaignWorkflow/Settings/Modals/SaveDailyNewContactsLimit.vue';
+import SavePauseCampaignBounceRate from 'src/components/CampaignWorkflow/Settings/Modals/SavePauseCampaignBounceRate.vue';
 
 // Utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -162,6 +176,7 @@ export default defineComponent({
 
     // Modals
     SaveDailyNewContactsLimit,
+    SavePauseCampaignBounceRate,
   },
 
   props: {
@@ -185,6 +200,9 @@ export default defineComponent({
     const state = reactive({
       showAdvanced: false,
 
+      // ref
+      riskControlCardRef: null,
+
       campaignSettings: {
         ...DEFAULT_CAMPAIGN_SETTINGS,
       },
@@ -196,6 +214,7 @@ export default defineComponent({
 
       modals: {
         showDailyLimitDialog: false,
+        showPauseCampaignBounceRateDialog: false,
       },
 
       ui: {
@@ -207,7 +226,6 @@ export default defineComponent({
     const campaignCtaJson = computed(() => {
       const campaignStatus = props.campaignById?.status;
 
-      // drafted
       if (campaignStatus === CAMPAIGN_STATUS.DRAFTED.value) {
         return {
           disable: false,
@@ -216,7 +234,6 @@ export default defineComponent({
         };
       }
 
-      // active
       if (campaignStatus === CAMPAIGN_STATUS.ACTIVE.value) {
         return {
           disable: true,
@@ -224,7 +241,6 @@ export default defineComponent({
         };
       }
 
-      // Completed
       if (campaignStatus === CAMPAIGN_STATUS.COMPLETED.value) {
         return {
           disable: true,
@@ -232,7 +248,6 @@ export default defineComponent({
         };
       }
 
-      // paused
       if (campaignStatus === CAMPAIGN_STATUS.PAUSED.value
         || campaignStatus === CAMPAIGN_STATUS.AUTO_PAUSED.value
         || campaignStatus === CAMPAIGN_STATUS.PAUSED_SUB_FAILED.value
@@ -243,7 +258,6 @@ export default defineComponent({
         };
       }
 
-      // Archived
       if (campaignStatus === CAMPAIGN_STATUS.ARCHIVED.value) {
         return {
           disable: true,
@@ -257,14 +271,88 @@ export default defineComponent({
       };
     });
 
-    // methods
+    // --- API Save Execution ---
+    const executeSaveApi = async () => {
+      state.loaders.isSaving = true;
+
+      try {
+        const { seq_id, id, ...otherCampaignSettings } = state.campaignSettings;
+
+        const payload = {
+          ...otherCampaignSettings,
+          categories: otherCampaignSettings.categories || {},
+        };
+
+        const response = await saveCampaignSettingsById({
+          payload,
+          campaignId: props.campaignById.id,
+          $toast: appContext.config.globalProperties.$toast,
+        });
+
+        if (response) {
+          state.ui.hasChanges = false;
+        }
+      } catch (error) {
+        // handle error
+      } finally {
+        state.loaders.isSaving = false;
+      }
+    };
+
+    // Create debounced version of API save (500ms delay)
+    const debouncedSaveSettings = debounce(executeSaveApi, 500);
+
+    // --- Centralized Settings Updater ---
+    const updateCampaignSettings = (inputJson, options = {}) => {
+      // 1. Instantly update local state so UI fields respond immediately
+      state.campaignSettings = {
+        ...state.campaignSettings,
+        ...inputJson,
+      };
+
+      state.ui.hasChanges = true;
+
+      // 2. Immediate save (e.g. from modals) vs Debounced save (inputs/toggles)
+      if (options?.immediate) {
+        debouncedSaveSettings.cancel();
+        executeSaveApi();
+      } else {
+        debouncedSaveSettings();
+      }
+    };
+
+    const updateSettingsJson = ({ inputJson, callUpdateApi }) => {
+      // close modals
+      Object.keys(state.modals).forEach((key) => {
+        state.modals[key] = false;
+      });
+
+      if (callUpdateApi) {
+        updateCampaignSettings(inputJson, { immediate: true });
+      } else {
+        state.ui.hasChanges = false;
+        state.campaignSettings = {
+          ...state.campaignSettings,
+          ...inputJson,
+        };
+      }
+    };
+
     const onGoBack = () => {
-      // route to contacts step
       $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
     };
 
     const toggleAdvanced = () => {
       state.showAdvanced = !state.showAdvanced;
+
+      if (state.showAdvanced) {
+        setTimeout(() => {
+          state.riskControlCardRef?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }, 500);
+      }
     };
 
     const fetchCampaignSettings = async () => {
@@ -277,10 +365,7 @@ export default defineComponent({
         });
 
         state.campaignSettings = response || {};
-
-        // fetch campaign settings
       } catch (error) {
-        // dont show error for 404 status
         if (error?.response?.status !== 404) {
           //
         } else {
@@ -294,60 +379,14 @@ export default defineComponent({
       }
     };
 
-    const updateCampaignSettings = async (inputJson) => {
-      state.loaders.isSaving = true;
-
-      const { seq_id, id, ...otherCampaignSettings } = state.campaignSettings;
-
-      const payload = {
-        ...otherCampaignSettings,
-        ...inputJson,
-      };
-
-      payload.categories = payload.categories || {};
-
-      const response = await saveCampaignSettingsById({
-        payload,
-        campaignId: props.campaignById.id,
-        $toast: appContext.config.globalProperties.$toast,
-      });
-
-      if (response) {
-        state.ui.hasChanges = false;
-
-        //
-        state.campaignSettings = { ...payload };
-      }
-
-      state.loaders.isSaving = false;
-    };
-
-    const updateSettingsJson = ({ inputJson, callUpdateApi }) => {
-      // close the modals
-      Object.keys(state.modals).forEach((key) => {
-        state.modals[key] = false;
-      });
-
-      //
-      if (callUpdateApi) {
-        // has changes to be saved
-        state.ui.hasChanges = true;
-
-        updateCampaignSettings(inputJson);
-      } else {
-        state.ui.hasChanges = false;
-
-        state.campaignSettings = {
-          ...state.campaignSettings,
-          ...inputJson,
-        };
-      }
-    };
-
     // lifecycle hooks
     onMounted(() => {
-      // fetch campaign settings
       fetchCampaignSettings();
+    });
+
+    onUnmounted(() => {
+      // Cancel pending timers when navigating away
+      debouncedSaveSettings.cancel();
     });
 
     return {

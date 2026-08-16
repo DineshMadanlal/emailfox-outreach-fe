@@ -30,6 +30,7 @@ import { defineComponent, computed } from 'vue';
 
 // Constants
 import { MAILBOX_PROVIDERS } from 'boot/mailbox-constants';
+import { CONTACT_ESP_PROVIDERS } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'SelectProvider',
@@ -48,6 +49,10 @@ export default defineComponent({
       type: String,
       default: 'Provider',
     },
+    isContactEsp: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   setup(props, { emit }) {
@@ -59,7 +64,13 @@ export default defineComponent({
       },
     });
 
-    const dropdownOptions = computed(() => Object.values(MAILBOX_PROVIDERS));
+    const dropdownOptions = computed(() => {
+      if (props.isContactEsp) {
+        return Object.values(CONTACT_ESP_PROVIDERS);
+      }
+
+      return Object.values(MAILBOX_PROVIDERS);
+    });
 
     return {
       // computed

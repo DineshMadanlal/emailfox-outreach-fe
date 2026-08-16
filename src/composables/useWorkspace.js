@@ -1,5 +1,6 @@
 // lodash
 import size from 'lodash/size';
+import startCase from 'lodash/startCase';
 
 // vue
 import {
@@ -42,7 +43,7 @@ export function useWorkspace() {
 
     const parts = host.split('.');
 
-    // workspace.app.emailfox.ai -> app.emailfox.ai
+    // workspace.app.skysenders.ai -> app.skysenders.ai
     if (parts.length > 3) {
       return `/${parts.slice(1).join('.')}`;
     }
@@ -122,6 +123,32 @@ export function useWorkspace() {
       return true;
     } catch (error) {
       throw new Error(error.message || 'Failed to fetch workspaces');
+    } finally {
+      state.isWorkspaceApiLoading = false;
+    }
+  };
+
+  const getWorkspaceCustomFields = async () => {
+    try {
+      state.isWorkspaceApiLoading = true;
+
+      const response = await getApiCall({
+        endpoint: '/custom-fields',
+        includeWorkspace: true,
+      });
+
+      const customFields = Object.keys(response.custom_fields).map((value) => ({
+        label: startCase(value),
+        value,
+      }));
+
+      // store in pinia
+      userPreferencesStore.setField({
+        field: 'workspaceCustomFields',
+        value: customFields,
+      });
+    } catch (error) {
+      console.error('Failed to fetch workspace custom fields', error);
     } finally {
       state.isWorkspaceApiLoading = false;
     }
@@ -222,7 +249,7 @@ export function useWorkspace() {
 
     let baseHostname = hostname;
 
-    // anotherworkspace.app.emailfox.ai -> app.emailfox.ai
+    // anotherworkspace.app.skysenders.ai -> app.skysenders.ai
     if (parts.length > 3) {
       baseHostname = parts.slice(1).join('.');
     }
@@ -251,7 +278,7 @@ export function useWorkspace() {
 
     let baseHostname = hostname;
 
-    // anotherworkspace.app.emailfox.ai -> app.emailfox.ai
+    // anotherworkspace.app.skysenders.ai -> app.skysenders.ai
     if (parts.length > 3) {
       baseHostname = parts.slice(1).join('.');
     }
@@ -356,5 +383,6 @@ export function useWorkspace() {
     fetchWorkspaceDetailsBySlug,
     fetchWorkspaceDetailsByWhitelabelUrl,
     getAppDomainFromHostname,
+    getWorkspaceCustomFields,
   };
 }

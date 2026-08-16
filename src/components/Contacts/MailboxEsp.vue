@@ -3,7 +3,7 @@
     <LocalSvgIcon :image="espLogo" classes="esp-icon" />
 
     <div class="esp-text">
-      {{ esp }}
+      {{ esp?.toLowerCase() }}
     </div>
   </div>
 </template>

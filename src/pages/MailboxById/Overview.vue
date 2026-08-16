@@ -168,7 +168,7 @@ export default defineComponent({
         state.showEmailEngagementLoader = true;
 
         const response = await fetchSequenceDateStats({
-          endpoint: `/stats/mailboxes/${props.mailboxByJson.id}/sequence-date-stats`,
+          endpoint: `/stats/mailboxes/${props.mailboxByJson.id}/date-stats`,
           params: {
             start_date: state.dateRangeInputJson.from,
             end_date: state.dateRangeInputJson.to,
@@ -193,7 +193,7 @@ export default defineComponent({
         state.isLoadingEspPerformanceMetrics = true;
 
         const response = await fetchSequenceEspStats({
-          endpoint: `stats/mailboxes/${props.mailboxByJson.id}/sequence-esp-stats`,
+          endpoint: `stats/mailboxes/${props.mailboxByJson.id}/esp-stats`,
         });
 
         // update the value
@@ -223,7 +223,7 @@ export default defineComponent({
         state.isLoadingOverallEngagementMetrics = true;
 
         const response = await fetchSequenceOverallStats({
-          endpoint: `stats/mailboxes/${props.mailboxByJson.id}/sequence-overall-stats`,
+          endpoint: `stats/mailboxes/${props.mailboxByJson.id}/overall-stats`,
         });
 
         // update the value

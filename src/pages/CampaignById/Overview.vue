@@ -4,13 +4,19 @@
     <div class="left-section">
       <!-- Cards grid -->
       <div class="cards-grid">
-        <CampaignOverview />
+        <CampaignOverview
+          :campaignId="campaignByIdJson.id"
+        />
 
-        <CampaignConfiguration />
+        <CampaignConfiguration
+          :campaignId="campaignByIdJson.id"
+        />
       </div>
 
       <!-- Recent Activity -->
-      <SequenceByIdRecentActivity />
+      <SequenceByIdRecentActivity
+        v-if="false"
+      />
     </div>
 
     <!-- Right -->
@@ -43,6 +49,13 @@ export default defineComponent({
 
     SendingProgress,
     ContactCoverageSummary,
+  },
+
+  props: {
+    campaignByIdJson: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 });
 </script>

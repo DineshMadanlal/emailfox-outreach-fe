@@ -107,10 +107,11 @@
 <script>
 // lodash
 import size from 'lodash/size';
+import debounce from 'lodash/debounce';
 
 // vue
 import {
-  defineComponent, computed, reactive, toRefs,
+  defineComponent, computed, reactive, toRefs, watch, onUnmounted,
 } from 'vue';
 
 // components
@@ -142,19 +143,61 @@ export default defineComponent({
       type: String,
       default: 'contact',
     },
+    debounceDelay: {
+      type: Number,
+      default: 300,
+    },
   },
 
   setup(props, { emit }) {
     // state
     const state = reactive({
       searchText: '',
+      localVisibleColumns: props.visibleColumns,
     });
+
+    // debounced emit logic
+    let debouncedEmit = debounce((value) => {
+      emit('update:visibleColumns', value);
+    }, props.debounceDelay);
+
+    watch(
+      () => props.debounceDelay,
+      (newDelay) => {
+        debouncedEmit.flush();
+        debouncedEmit = debounce((value) => {
+          emit('update:visibleColumns', value);
+        }, newDelay);
+      },
+    );
+
+    watch(
+      () => props.visibleColumns,
+      (newVal) => {
+        state.localVisibleColumns = newVal;
+      },
+      { deep: true },
+    );
+
+    onUnmounted(() => {
+      debouncedEmit.flush();
+    });
+
+    const updateVisibleColumns = (value) => {
+      state.localVisibleColumns = value;
+
+      if (props.debounceDelay > 0) {
+        debouncedEmit(value);
+      } else {
+        emit('update:visibleColumns', value);
+      }
+    };
 
     // computed
     const computedVisibleColumns = computed({
-      get: () => props.visibleColumns,
+      get: () => state.localVisibleColumns,
       set: (value) => {
-        emit('update:visibleColumns', value);
+        updateVisibleColumns(value);
       },
     });
 
@@ -169,7 +212,7 @@ export default defineComponent({
     });
 
     const areAllColumnsSelected = computed(() => {
-      const visibleColumnsLength = size(props.visibleColumns);
+      const visibleColumnsLength = size(state.localVisibleColumns);
 
       if (visibleColumnsLength > 0) {
         return visibleColumnsLength === size(filteredDynamicColumns.value);
@@ -181,13 +224,13 @@ export default defineComponent({
     // methods
     const toggleSelectAll = () => {
       if (areAllColumnsSelected.value) {
-        emit('update:visibleColumns', []);
+        updateVisibleColumns([]);
       } else {
         const updatedVisibleColumns = filteredDynamicColumns.value.map(
           (objectParam) => objectParam.name,
         );
 
-        emit('update:visibleColumns', updatedVisibleColumns);
+        updateVisibleColumns(updatedVisibleColumns);
       }
     };
 

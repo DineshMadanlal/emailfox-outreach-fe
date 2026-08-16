@@ -19,6 +19,8 @@
         label="Manage"
 
         class="action-btn"
+
+        :to="campaignSettingsRoute"
       />
     </div>
 
@@ -44,8 +46,17 @@ import { computed, defineComponent } from 'vue';
 export default defineComponent({
   name: 'CampaignConfiguration',
 
-  setup() {
+  props: {
+    campaignId: {
+      type: Number,
+      default: null,
+    },
+  },
+
+  setup(props) {
     // computed
+    const campaignSettingsRoute = computed(() => `/outreach/campaigns/${props.campaignId}/edit/settings`);
+
     const configurationDetails = computed(() => {
       const details = [
         'Stop Messaging the Same Company',
@@ -58,6 +69,7 @@ export default defineComponent({
     return {
       // computed
       configurationDetails,
+      campaignSettingsRoute,
     };
   },
 });

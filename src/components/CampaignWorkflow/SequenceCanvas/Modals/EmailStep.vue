@@ -169,6 +169,7 @@ import ContentPerformance from 'components/CampaignWorkflow/Workflows/Modals/Con
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 import useSpamAnalytics from 'src/composables/spamAnalytics';
+import { useWorkspace } from 'src/composables/useWorkspace';
 
 // constants
 import { SEQUENCE_VARIANT_NAME } from 'boot/campaign-constants';
@@ -201,6 +202,8 @@ export default defineComponent({
   setup(props, { emit }) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+
+    const { getWorkspaceCustomFields } = useWorkspace();
 
     // inject
     const workflowContext = inject('workflowContext');
@@ -250,6 +253,9 @@ export default defineComponent({
 
     // life cycle hooks
     onMounted(() => {
+      // Fetch custom fields when the component is mounted
+      getWorkspaceCustomFields();
+
       // any initialization logic can go here
       state.showSequenceEditor = true;
 

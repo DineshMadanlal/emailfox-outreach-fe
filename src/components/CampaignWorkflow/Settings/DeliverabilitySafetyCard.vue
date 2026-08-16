@@ -2,89 +2,83 @@
   <q-card class="config-card" flat>
     <!-- Card Header -->
     <div class="config-card-header">
+      <!-- Icon -->
       <div class="config-card-icon-wrap">
-        <q-icon name="mail" size="20px" />
+        <!--  -->
+        <LocalSvgIcon
+          image="inbox"
+          classes="config-card-icon"
+        />
       </div>
-      <div class="config-card-title">Deliverability & Safety</div>
+
+      <!-- title -->
+      <p class="config-card-title">
+        Deliverability & Safety
+      </p>
     </div>
 
     <!-- Row 1: Send Emails in Plain Text -->
     <div class="config-row">
+      <!-- left -->
       <div class="config-row-left">
-        <div class="config-label-line">
-          <span>Send Emails in Plain Text (No HTML)</span>
-        </div>
+        <p class="config-label-line">
+          Send Emails in Plain Text (No HTML)
+        </p>
       </div>
+
+      <!-- right -->
       <div class="config-row-right">
-        <div class="toggle-group">
-          <span :class="['toggle-state-text', { disabled: !plainTextOnly }]">
-            {{ plainTextOnly ? 'Enabled' : 'Disabled' }}
-          </span>
-          <q-toggle v-model="plainTextOnly" color="primary" dense />
-        </div>
+        <ToggleInput
+          v-model="deliverabilitySafetySettings.plainTextOnly"
+
+          @update:modelValue="onUpdateCampaignSettings"
+        />
       </div>
     </div>
 
     <!-- Row 2: Auto-Match Leads ESP -->
     <div class="config-row">
+      <!-- Left -->
       <div class="config-row-left">
-        <div class="config-label-line">
-          <span>Auto-Match Leads ESP (e.g., Gmail &rarr; Gmail)</span>
-          <q-icon name="info" class="info-icon">
-            <q-tooltip anchor="top middle" self="bottom middle">
-              Automatically pair senders and leads on matching email service providers
-              (e.g. Gmail to Gmail, Outlook to Outlook) for better inbox placement.
-            </q-tooltip>
-          </q-icon>
+        <div class="flex no-wrap q-gutter-sm items-center">
+          <p class="config-label-line">
+            Auto-Match Leads ESP (e.g., Gmail &rarr; Gmail)
+          </p>
+
+          <InfoTooltip
+            iconName="circle-question"
+            tooltipText="Automatically pair senders and leads on matching email service providers
+            (e.g. Gmail to Gmail, Outlook to Outlook) for better inbox placement."
+          />
         </div>
       </div>
+
+      <!-- right -->
       <div class="config-row-right">
-        <div class="toggle-group">
-          <span :class="['toggle-state-text', { disabled: !autoMatchEsp }]">
-            {{ autoMatchEsp ? 'Enabled' : 'Disabled' }}
-          </span>
-          <q-toggle v-model="autoMatchEsp" color="primary" dense />
-        </div>
+        <ToggleInput
+          v-model="deliverabilitySafetySettings.autoMatchEsp"
+
+          @update:modelValue="onUpdateCampaignSettings"
+        />
       </div>
     </div>
 
     <!-- Row 3: Avoid sending to bounced accounts -->
     <div class="config-row">
+      <!-- Left -->
       <div class="config-row-left">
-        <div class="config-label-line">
-          <span>Avoid sending emails to email accounts previously bounced.</span>
-        </div>
+        <p class="config-label-line">
+          Avoid sending emails to email accounts previously bounced.
+        </p>
       </div>
-      <div class="config-row-right">
-        <div class="toggle-group">
-          <span :class="['toggle-state-text', { disabled: !avoidBounced }]">
-            {{ avoidBounced ? 'Enabled' : 'Disabled' }}
-          </span>
-          <q-toggle v-model="avoidBounced" color="primary" dense />
-        </div>
-      </div>
-    </div>
 
-    <!-- Row 4: Auto-Optimize A/Z Testing -->
-    <div class="config-row">
-      <div class="config-row-left">
-        <div class="config-label-line">
-          <span>Auto-Optimize A/Z Testing</span>
-          <q-icon name="info" class="info-icon">
-            <q-tooltip anchor="top middle" self="bottom middle">
-              Dynamically shift traffic towards
-              top-performing email variants based on reply metrics.
-            </q-tooltip>
-          </q-icon>
-        </div>
-      </div>
+      <!-- Right -->
       <div class="config-row-right">
-        <div class="toggle-group">
-          <span :class="['toggle-state-text', { disabled: !autoOptimizeAz }]">
-            {{ autoOptimizeAz ? 'Enabled' : 'Disabled' }}
-          </span>
-          <q-toggle v-model="autoOptimizeAz" color="primary" dense />
-        </div>
+        <ToggleInput
+          v-model="deliverabilitySafetySettings.avoidBounced"
+
+          @update:modelValue="onUpdateCampaignSettings"
+        />
       </div>
     </div>
   </q-card>
@@ -92,26 +86,78 @@
 
 <script>
 // vue
-import { defineComponent, reactive, toRefs } from 'vue';
+import {
+  defineComponent, reactive, toRefs, onMounted, watch,
+} from 'vue';
+
+// Components
+import ToggleInput from 'components/Input/ToggleInput.vue';
+import InfoTooltip from 'components/General/InfoTooltip.vue';
 
 export default defineComponent({
   name: 'DeliverabilitySafetyCard',
 
-  setup() {
+  emits: ['updateCampaignSettings'],
+
+  components: {
+    ToggleInput,
+    InfoTooltip,
+  },
+
+  props: {
+    campaignSettings: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  setup(props, { emit }) {
     // state
     const state = reactive({
-      plainTextOnly: true,
-      autoMatchEsp: true,
-      avoidBounced: true,
-      autoOptimizeAz: true,
+      deliverabilitySafetySettings: {
+        plainTextOnly: true,
+        autoMatchEsp: true,
+        avoidBounced: true,
+      },
     });
 
     // computed
 
     // methods
+    const loadSettingsState = () => {
+      state.deliverabilitySafetySettings = {
+        plainTextOnly: props.campaignSettings.send_plain_text ?? true,
+        autoMatchEsp: props.campaignSettings.match_esp_contact ?? true,
+        avoidBounced: props.campaignSettings.block_previously_bounced_contact ?? true,
+      };
+    };
+
+    const onUpdateCampaignSettings = () => {
+      emit('updateCampaignSettings', {
+        send_plain_text: state.deliverabilitySafetySettings.plainTextOnly,
+        match_esp_contact: state.deliverabilitySafetySettings.autoMatchEsp,
+        block_previously_bounced_contact: state.deliverabilitySafetySettings.avoidBounced,
+      });
+    };
+
+    onMounted(() => {
+      loadSettingsState();
+    });
+
+    // watchers
+    watch(
+      () => props.campaignSettings,
+      () => {
+        loadSettingsState();
+      },
+    );
 
     return {
+      // state
       ...toRefs(state),
+
+      // methods
+      onUpdateCampaignSettings,
     };
   },
 });

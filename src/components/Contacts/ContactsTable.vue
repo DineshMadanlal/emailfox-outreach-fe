@@ -11,6 +11,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <ColumnsVisibility
+        :debounceDelay="500"
         :baseColumns="baseColumns"
         :dynamicColumns="dynamicColumns"
         v-model:visibleColumns="visibleColumns"
@@ -86,6 +87,7 @@
         <!-- Provider -->
         <SelectProvider
           :clearable="true"
+          isContactEsp
           v-model="filters.provider"
 
           class="dead-small dd-filter"
@@ -146,6 +148,7 @@
 
       <!--  -->
       <q-table
+        virtual-scroll
         v-model:pagination="pagination"
 
         separator="cell"
@@ -211,7 +214,7 @@
           <!-- ESP -->
           <q-td
             :props="props"
-            v-else-if="props.col.name === 'esp'"
+            v-else-if="props.col.name === 'esp_provider'"
           >
             <MailboxEsp :esp="props.value" />
           </q-td>
@@ -394,6 +397,7 @@ import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount } from 'src/utils/numbers';
 
 // composables
+import { useWorkspace } from 'src/composables/useWorkspace';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // store
@@ -460,6 +464,7 @@ export default defineComponent({
 
     // composables
     const { isMobileDevice } = useAppHelpersApi();
+    const { getWorkspaceCustomFields } = useWorkspace();
 
     // state
     const state = reactive({
@@ -542,17 +547,20 @@ export default defineComponent({
         field: 'email',
       },
       {
-        name: 'esp',
+        name: 'esp_provider',
         label: 'ESP',
         align: 'left',
+        field: 'esp_provider',
       },
-      {
-        name: 'campaigns_added',
-        label: 'Campaigns Added',
-        align: 'left',
-        field: 'campaigns_added',
-      },
+      // {
+      //   name: 'campaigns_added',
+      //   label: 'Campaigns Added',
+      //   align: 'left',
+      //   field: 'campaigns_added',
+      // },
     ];
+
+    const workspaceCustomFields = computed(() => userStore.workspaceCustomFields || []);
 
     const dynamicColumns = computed(() => {
       const otherColumns = [
@@ -570,9 +578,17 @@ export default defineComponent({
         },
       ];
 
+      const customFieldColumns = workspaceCustomFields.value.map((field) => ({
+        name: `custom_fields.${field.value}`,
+        label: field.label,
+        field: `custom_fields.${field.value}`,
+        align: 'left',
+      }));
+
       return [
         ...otherColumns,
         ...CONTACTS_TABLE_SUPPORTED_COLUMNS,
+        ...customFieldColumns,
       ];
     });
 
@@ -643,9 +659,15 @@ export default defineComponent({
       try {
         state.isApiProcessing = true;
 
+        const attributes = [
+          ...baseColumns.map((col) => col.name),
+          ...state.visibleColumns,
+        ];
+
         const params = {
           limit: perPage,
           offset: (page - 1) * perPage,
+          attributes,
         };
 
         // search contact input
@@ -759,12 +781,8 @@ export default defineComponent({
     const onSuccessfulDeleteContact = () => {
       state.showDeleteContactModal = false;
 
-      // remove the entry from the table
-      state.tableData = state.tableData.filter(
-        (contact) => contact.id !== state.selectedContactJson.id,
-      );
-
-      state.selectedContactJson = null;
+      // refetch data
+      onFetchAllContacts();
     };
 
     const onSearchContactInput = () => {
@@ -807,9 +825,13 @@ export default defineComponent({
 
     const onUpdateVisibleColumns = () => {
       updateDataToStore();
+
+      onFetchAllContacts();
     };
 
     onMounted(() => {
+      getWorkspaceCustomFields();
+
       state.isMounted = true;
 
       makeApiCallOnMounted();
@@ -937,7 +959,6 @@ export default defineComponent({
     .all-contacts-table {
       width: 100%;
       border-top: 0px;
-      display: grid;
       min-height: 0;
 
       :deep(.q-table__middle) {

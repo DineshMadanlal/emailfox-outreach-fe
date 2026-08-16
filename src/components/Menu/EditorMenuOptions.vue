@@ -19,9 +19,13 @@
     @keydown.enter.prevent="selectCurrentItem"
     @keydown.right.prevent="handleRightArrow"
   >
+    <!--  -->
     <q-list style="min-width: 290px" class="editor-menu-list">
       <!-- Menu Items -->
-      <template v-for="(field, index) in allOptions" :key="`menu-item-${index}`">
+      <template
+        v-for="(field, index) in allOptions"
+        :key="`menu-item-${index}`"
+      >
         <!-- Spintax Option -->
         <q-item
           v-if="!isLinkedInWorkflow && field.type === MENU_ITEM_TYPES.SPINTAX"
@@ -183,6 +187,35 @@
           </q-item>
         </template>
 
+        <!-- Custom Fields Sub-menu -->
+        <template
+          v-else-if="field.type === MENU_ITEM_TYPES.CUSTOM_FIELD"
+        >
+          <div
+            v-if="index === customFieldsIndexCount"
+            class="full-width"
+          >
+            <div class="list-separator" />
+            <div class="lead-fields-text">
+              Custom Fields
+            </div>
+          </div>
+
+          <!-- Custom Fields Item -->
+          <q-item
+            clickable
+            v-close-popup
+            class="editor-variable-option"
+            :class="{ 'is-focused': activeIndex === index }"
+            @click="$emit('insertVariable', field.value)"
+            @mousedown.prevent
+          >
+            <p class="variable-label-text">{{ field.label }}</p>
+            <q-space />
+            <p class="variable-value-text">{{ field.value }}</p>
+          </q-item>
+        </template>
+
       </template>
     </q-list>
   </q-menu>
@@ -194,8 +227,11 @@ import {
   computed, defineComponent, reactive, toRefs, watch, nextTick,
 } from 'vue';
 
+// pinia
+import { useUserPreferencesStore } from 'stores/userPreferences';
+
 // constants
-import { CONTEXT_VARIABLES, SENDER_VARIABLES } from 'src/boot/campaign-constants';
+import { CONTEXT_VARIABLES, SENDER_VARIABLES, DEFAULT_SYSTEM_FIELDS } from 'src/boot/campaign-constants';
 
 // constants
 const MENU_ITEM_TYPES = {
@@ -203,6 +239,7 @@ const MENU_ITEM_TYPES = {
   SENDER_VARIABLES: 'sender',
   CONTEXT_VARIABLES: 'context',
   LEAD_VARIABLE: 'lead',
+  CUSTOM_FIELD: 'custom_field',
 };
 
 export default defineComponent({
@@ -219,10 +256,6 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    variableMenuOptions: {
-      type: Array,
-      default: () => [],
-    },
     isLinkedInWorkflow: {
       type: Boolean,
       default: false,
@@ -230,6 +263,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // access the store
+    const userPreferencesStore = useUserPreferencesStore();
+
     // state
     const state = reactive({
       // sub-menu states
@@ -253,12 +289,41 @@ export default defineComponent({
       set: (val) => emit('update:modelValue', val),
     });
 
-    const allOptions = computed(() => [
-      { type: MENU_ITEM_TYPES.SPINTAX },
-      { type: MENU_ITEM_TYPES.SENDER_VARIABLES },
-      { type: MENU_ITEM_TYPES.CONTEXT_VARIABLES },
-      ...props.variableMenuOptions.map((opt) => ({ ...opt, type: MENU_ITEM_TYPES.LEAD_VARIABLE })),
-    ]);
+    const variableMenuOptions = computed(() => DEFAULT_SYSTEM_FIELDS.map((field) => ({
+      label: field.label,
+      value: `{{${field.value}}}`,
+      type: MENU_ITEM_TYPES.LEAD_VARIABLE,
+    })));
+
+    const customFieldsIndexCount = computed(() => variableMenuOptions.value.length + 3);
+
+    const customFieldOptions = computed(() => {
+      const options = [];
+
+      if (userPreferencesStore.workspaceCustomFields?.length > 0) {
+        userPreferencesStore.workspaceCustomFields.forEach((field) => {
+          options.push({
+            label: field.label,
+            value: `{{${field.value}}}`,
+            type: MENU_ITEM_TYPES.CUSTOM_FIELD,
+          });
+        });
+      }
+
+      return options;
+    });
+
+    const allOptions = computed(() => {
+      const options = [
+        { type: MENU_ITEM_TYPES.SPINTAX },
+        { type: MENU_ITEM_TYPES.SENDER_VARIABLES },
+        { type: MENU_ITEM_TYPES.CONTEXT_VARIABLES },
+        ...variableMenuOptions.value,
+        ...customFieldOptions.value,
+      ];
+
+      return options;
+    });
 
     const senderVariables = computed(() => SENDER_VARIABLES.map((f) => ({ label: f.label, value: `{{${f.value}}}` })));
     const contextVariables = computed(() => CONTEXT_VARIABLES.map((f) => ({ label: f.label, value: `{{${f.value}}}`, example: f.example })));
@@ -389,6 +454,7 @@ export default defineComponent({
       allOptions,
       senderVariables,
       contextVariables,
+      customFieldsIndexCount,
       computedShowVariableMenu,
 
       // hardcoded types

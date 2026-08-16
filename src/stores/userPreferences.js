@@ -93,6 +93,8 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
     },
 
     allWorkspaces: [],
+
+    workspaceCustomFields: [],
   });
 
   // computed
