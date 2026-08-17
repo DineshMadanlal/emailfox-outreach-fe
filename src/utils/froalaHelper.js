@@ -302,21 +302,49 @@ export const bindTokenDelete = (editor) => {
 };
 
 export const bindPlainPasteShortcut = (editor) => {
-  editor.el.addEventListener('keydown', async (e) => {
-    const isPlainPaste = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'v';
+  let isPlainPasteRequested = false;
 
-    if (!isPlainPaste) return;
+  // Detect plain paste shortcut (Cmd+Shift+V or Ctrl+Shift+V)
+  editor.el.addEventListener('keydown', (e) => {
+    const isPlainPaste = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'v';
+    if (isPlainPaste) {
+      isPlainPasteRequested = true;
+    }
+  });
+
+  // Handle paste event using standard synchronous clipboardData
+  editor.el.addEventListener('paste', async (e) => {
+    if (!isPlainPasteRequested) return;
+    isPlainPasteRequested = false;
 
     e.preventDefault();
 
-    try {
-      const text = await navigator.clipboard.readText();
-      editor.selection.restore();
-      editor.html.insert(text.replace(/\n/g, '<br>'));
-    } catch (err) {
-      console.error(err);
+    let text = '';
+
+    if (e.clipboardData) {
+      text = e.clipboardData.getData('text/plain');
+    } else if (window.clipboardData) {
+      text = window.clipboardData.getData('Text');
+    } else if (navigator.clipboard?.readText) {
+      try {
+        text = await navigator.clipboard.readText();
+      } catch (err) {
+        // clipboard read exception fallback
+      }
     }
-  });
+
+    if (text) {
+      const formattedHtml = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
+
+      editor.selection.restore();
+      editor.html.insert(formattedHtml);
+      editor.events.trigger('contentChanged');
+    }
+  }, true);
 };
 
 export const bindEditorCopy = (editor) => {
@@ -334,7 +362,7 @@ export const bindEditorCopy = (editor) => {
     const html = div.innerHTML;
     const text = div.textContent || '';
 
-    // Clean up the temporary div
+    // Clean up temporary div
     div.remove();
 
     e.clipboardData.setData('text/html', cleanEditorHtmlForSave(html));
@@ -457,7 +485,6 @@ export const getCleanText = (html) => {
   if (!html) return '';
 
   // 1. Insert newlines before extracting text to prevent block merging
-  //    <div>Hello</div><div>World</div> becomes "Hello\nWorld" instead of "HelloWorld"
   const formattedHtml = html
     .replace(/<\/div>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
@@ -588,8 +615,8 @@ export const findTemplateIssues = (html = '', variableMenuOptions = []) => {
   const rawSpintaxMatches = [...text.matchAll(/{([^{}]*\|[^{}]*)}/g)];
 
   rawSpintaxMatches.forEach((match) => {
-    const fullValue = match[0]; // {dedede|}
-    const inside = match[1]; // dedede|
+    const fullValue = match[0];
+    const inside = match[1];
 
     const parts = inside.split('|').map((part) => part.trim());
 

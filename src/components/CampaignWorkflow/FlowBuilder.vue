@@ -372,12 +372,14 @@ export default defineComponent({
           //
           saveWorkflowStepsFromApi(response);
 
-          // move to the contacts step
-          $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
-        }
+          //
+          setTimeout(() => {
+            state.ui.hasChanges = false;
 
-        state.workflow.archivedStepIds = [];
-        state.ui.hasChanges = false;
+            // move to the contacts step
+            $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
+          }, 500);
+        }
       } catch (error) {
         // show error warning
         appContext.config.globalProperties.$toast({

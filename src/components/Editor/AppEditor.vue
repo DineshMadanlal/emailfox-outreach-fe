@@ -148,6 +148,7 @@ import FroalaEditor from 'froala-editor';
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
 import { loadFroalaAssets } from 'src/utils/loadFroala';
+import { cleanEditorHtmlForSave } from 'src/utils/helperFunctions';
 
 import {
   highlightVariablesAndSpintax,
@@ -290,11 +291,14 @@ export default defineComponent({
     const showPersonalisationError = computed(() => personalisationIssues.value?.length > 0);
 
     const emitValueDebounced = debounce((html) => {
+      // Clean HTML token chips before emitting to v-model
+      const cleanHtml = cleanEditorHtmlForSave(html);
+
       if (props.subjectEditor) {
         // return plain text
-        emit('update:modelValue', getCleanText(html));
+        emit('update:modelValue', getCleanText(cleanHtml));
       } else {
-        emit('update:modelValue', html);
+        emit('update:modelValue', cleanHtml);
       }
     }, 0);
 
@@ -305,12 +309,7 @@ export default defineComponent({
       const highlightedHtml = highlightVariablesAndSpintax(html);
 
       if (html !== highlightedHtml) {
-        // Pro-tip: Save cursor position before setting HTML,
-        // otherwise the cursor jumps to the start.
-        // const selection = state.editorInstance.selection.get();
-
         state.editorInstance.html.set(highlightedHtml);
-
         state.editorInstance.selection.restore();
         emitValueDebounced(highlightedHtml);
       }
@@ -351,7 +350,6 @@ export default defineComponent({
 
     const setEditorContent = (html) => {
       if (state.editorInstance) {
-        //
         state.editorInstance.html.set(html || '');
       }
     };
@@ -441,12 +439,9 @@ export default defineComponent({
               'align',
               'formatOL', 'formatUL',
               'outdent', 'indent',
-              // 'quote',
-              // 'clearFormatting',
             ],
-            buttonsVisible: 3, // 👈 controls how many show before collapsing
+            buttonsVisible: 3,
           },
-          // 'insertImage',
           moreMisc: {
             buttons: ['insertLink', 'undo', 'redo', 'html'],
             buttonsVisible: 5,
@@ -505,7 +500,6 @@ export default defineComponent({
               });
             }
 
-            //
             bindEditorCopy(this);
 
             // for allowing plain text paste with ctrl/cmd + shift + v
@@ -523,15 +517,13 @@ export default defineComponent({
               setTimeout(() => {
                 const rect = this.selection.get().getRangeAt(0).getBoundingClientRect();
 
-                // Move our hidden anchor to the cursor position
+                // Move hidden anchor to the cursor position
                 state.menuAnchor.style.top = `${rect.bottom}px`;
                 state.menuAnchor.style.left = `${rect.left}px`;
 
                 state.showVariableMenu = true;
               }, 0);
             } else if (state.showVariableMenu) {
-              // 2. AUTO-CLOSE: If the menu is open and they type anything else
-              // List of keys that SHOULD NOT close the menu (optional)
               const ignoreKeys = ['Shift', 'Control', 'Alt', 'Meta'];
               if (!ignoreKeys.includes(e.key)) {
                 state.showVariableMenu = false;
@@ -545,7 +537,6 @@ export default defineComponent({
           },
 
           blur() {
-            // To ensure the latest content is emitted on blur as well
             if (props.sequenceEditor || props.subjectEditor || props.signatureEditor) {
               setTimeout(() => {
                 applyHighlighting();
@@ -561,7 +552,6 @@ export default defineComponent({
             const file = files[0];
 
             if (file.size > MAX_FILE_SIZE_IN_MB * 1e6) {
-              // Show a toaster that domain have been setup successfully
               appContext.config.globalProperties.$toast({
                 warning: true,
                 message: 'Max 15MB file',
@@ -589,14 +579,12 @@ export default defineComponent({
       // Save cursor before Quasar menu takes focus
       state.editorInstance.selection.save();
 
-      // 2. Wait for DOM to update, then calculate position
       nextTick(() => {
         const selection = state.editorInstance.selection.get();
         if (selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
           const rect = range.getBoundingClientRect();
 
-          // 3. Position the anchor and show Quasar menu
           state.menuAnchor.style.top = `${rect.bottom}px`;
           state.menuAnchor.style.left = `${rect.left}px`;
           state.showVariableMenu = true;
@@ -606,7 +594,6 @@ export default defineComponent({
 
     const onInsertHtmlFromVariable = (html) => {
       if (state.editorInstance) {
-        // 1. Ensure editor is focused
         state.editorInstance.events.focus();
 
         removePreviousOpeningBrace();
@@ -618,10 +605,9 @@ export default defineComponent({
       }
     };
 
-    // Helper to insert the variable and close the menu
+    // Helper to insert the variable with UI highlight pill wrapper
     const insertVariable = (variableValue) => {
       if (state.editorInstance) {
-        // 2. Insert the variable at the cursor position
         const wrappedVariable = wrapVariable(variableValue);
 
         onInsertHtmlFromVariable(wrappedVariable);
@@ -651,7 +637,6 @@ export default defineComponent({
     });
 
     onUnmounted(() => {
-      // Remove the event listener when the component is unmounted
       window.removeEventListener('resize', adjustIframeHeight);
     });
 

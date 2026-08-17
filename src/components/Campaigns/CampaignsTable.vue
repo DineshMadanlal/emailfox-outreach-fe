@@ -578,6 +578,7 @@ export default defineComponent({
       );
 
       state.selectedCampaignJson = null;
+      state.pagination.rowsNumber -= 1;
 
       // update the store
       updateDataToStore({
