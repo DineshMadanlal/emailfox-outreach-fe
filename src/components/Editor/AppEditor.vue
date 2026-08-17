@@ -87,6 +87,8 @@
 
         color="black"
         class="seq-toolbar-btn"
+
+        @click="$emit('previewEmail')"
       >
         <div class="toolbar-btn-content">
           <LocalSvgIcon
@@ -171,7 +173,7 @@ import { MAX_FILE_SIZE_IN_MB } from 'src/boot/constants';
 export default defineComponent({
   name: 'EmailBodyEditor',
 
-  emits: ['update:modelValue', 'addNewAttachment'],
+  emits: ['update:modelValue', 'addNewAttachment', 'previewEmail'],
 
   components: {
     EditorMenuOptions,

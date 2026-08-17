@@ -33,6 +33,34 @@
       />
     </q-dialog>
 
+    <q-dialog
+      v-model="modals.showManageCategoriesDialog"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ManageCampaignCategories
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateSettingsJson="updateSettingsJson"
+      />
+    </q-dialog>
+
+    <q-dialog
+      v-model="modals.showEditReactivateDaysDialog"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SaveEditReactivateDays
+        :campaignId="campaignById.id"
+        :campaignSettings="campaignSettings"
+
+        @updateSettingsJson="updateSettingsJson"
+      />
+    </q-dialog>
+
     <!-- container -->
     <div
       class="campaign-settings-container"
@@ -56,7 +84,10 @@
       <SmartAiCategorizationCard
         :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
+
         @updateCampaignSettings="updateCampaignSettings"
+        @manageCategories="modals.showManageCategoriesDialog = true"
+        @editReactivateDays="modals.showEditReactivateDaysDialog = true"
       />
 
       <!-- Collapsible Advanced Configurations Toggle -->
@@ -151,6 +182,8 @@ import SequenceConfigurationsCard from 'components/CampaignWorkflow/Settings/Seq
 
 import SaveDailyNewContactsLimit from 'src/components/CampaignWorkflow/Settings/Modals/SaveDailyNewContactsLimit.vue';
 import SavePauseCampaignBounceRate from 'src/components/CampaignWorkflow/Settings/Modals/SavePauseCampaignBounceRate.vue';
+import ManageCampaignCategories from 'src/components/CampaignWorkflow/Settings/Modals/ManageCampaignCategories.vue';
+import SaveEditReactivateDays from 'src/components/CampaignWorkflow/Settings/Modals/SaveEditReactivateDays.vue';
 
 // Utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -175,6 +208,8 @@ export default defineComponent({
     SmartAiCategorizationCard,
 
     // Modals
+    ManageCampaignCategories,
+    SaveEditReactivateDays,
     SaveDailyNewContactsLimit,
     SavePauseCampaignBounceRate,
   },
@@ -215,6 +250,9 @@ export default defineComponent({
       modals: {
         showDailyLimitDialog: false,
         showPauseCampaignBounceRateDialog: false,
+
+        showManageCategoriesDialog: false,
+        showEditReactivateDaysDialog: false,
       },
 
       ui: {

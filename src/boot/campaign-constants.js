@@ -249,8 +249,7 @@ export const CONTACT_STATUS_LABELS = {
 };
 
 export const SENDER_VARIABLES = [
-  { label: 'First Name', value: 'sender_firstname' },
-  { label: 'Last Name', value: 'sender_lastname' },
+  { label: 'Name', value: 'sender_name' },
   { label: 'Email', value: 'sender_email' },
   { label: 'Signature', value: 'sender_signature' },
 ];
@@ -881,7 +880,16 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
 
   // smart AI categorization configuration
   ai_categorisation: true,
-  categories: {},
+  categories: {
+    1: true,
+    2: true,
+    3: true,
+    4: true,
+    5: true,
+    6: true,
+    7: true,
+    8: true,
+  },
   ignore_ooo_category_reply: false,
   delay_reactivation_ooo_contact: null,
 
@@ -1034,3 +1042,5 @@ export const CONTACT_ESP_PROVIDERS = {
     value: 'OTHERS',
   },
 };
+
+export const MAX_AI_CATEGORIES_ALLOWED = 15;

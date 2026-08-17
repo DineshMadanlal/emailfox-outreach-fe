@@ -5,7 +5,7 @@
   >
     <!-- Content Performance -->
     <q-dialog
-      v-model="showContentPerformanceModal"
+      v-model="modals.showContentPerformanceModal"
       class="app-modal-dialog"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
@@ -14,6 +14,22 @@
       <ContentPerformance
         :spamAnalysis="spamAnalysis"
         :spamResultJson="spamResultJson"
+      />
+    </q-dialog>
+
+    <!-- Email Preview -->
+    <q-dialog
+      v-model="modals.showEmailPreviewModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <EmailPreview
+        :subject="subject"
+        :message="message"
+
+        @testEmailsent="modals.showEmailPreviewModal = false"
       />
     </q-dialog>
 
@@ -40,7 +56,7 @@
           clickable
           class="each-spam-section"
 
-          @click="showContentPerformanceModal = true"
+          @click="modals.showContentPerformanceModal = true"
         >
           <div class="flex no-wrap items-center">
             <div class="count-label-text char-text">
@@ -60,7 +76,7 @@
           clickable
           class="each-spam-section"
 
-          @click="showContentPerformanceModal = true"
+          @click="modals.showContentPerformanceModal = true"
         >
           <div class="flex no-wrap items-center">
             <div class="count-label-text spam-text">
@@ -80,7 +96,7 @@
           clickable
           class="each-spam-section"
 
-          @click="showContentPerformanceModal = true"
+          @click="modals.showContentPerformanceModal = true"
         >
           <div class="flex no-wrap items-center">
 
@@ -137,6 +153,8 @@
         placeholderText="Enter your emai here..."
 
         v-model="message"
+
+        @previewEmail="modals.showEmailPreviewModal = true"
       />
     </div>
 
@@ -164,6 +182,7 @@ import {
 } from 'vue';
 
 // Components
+import EmailPreview from 'components/CampaignWorkflow/SequenceCanvas/Modals/EmailPreview.vue';
 import ContentPerformance from 'components/CampaignWorkflow/Workflows/Modals/ContentPerformance.vue';
 
 // composables
@@ -180,6 +199,7 @@ export default defineComponent({
   emits: ['closeModal'],
 
   components: {
+    EmailPreview,
     ContentPerformance,
     AppEditor: defineAsyncComponent(() => import('components/Editor/AppEditor.vue')),
   },
@@ -216,8 +236,11 @@ export default defineComponent({
       message: '',
       showSequenceEditor: false,
 
-      // modal
-      showContentPerformanceModal: false,
+      // modals
+      modals: {
+        showEmailPreviewModal: false,
+        showContentPerformanceModal: false,
+      },
     });
 
     // Pass it to the hook

@@ -289,10 +289,7 @@
               class="campaigns-route-link"
             >
               <CampaignStats
-                :statsJson="{
-                  value: getNumeralAmount(3049),
-                  label: getNumeralAmount(2186) + ' Active',
-                }"
+                :statsJson="getContactsStats(props.row)"
 
                 showDraftedMessage
                 :campaignStatus="props.row.status"
@@ -309,12 +306,7 @@
               class="campaigns-route-link"
             >
               <CampaignStats
-                :statsJson="{
-                  icon: 'seq-replied',
-                  class: 'information',
-                  value: 44.7 + '%',
-                  label: `${getNumeralAmount(1362)} Response Rate`,
-                }"
+                :statsJson="getRepliesStats(props.row)"
 
                 :campaignStatus="props.row.status"
               />
@@ -330,11 +322,7 @@
               class="campaigns-route-link"
             >
               <CampaignStats
-                :statsJson="{
-                  icon: 'positive-reply',
-                  value: 35.7 + '%',
-                  label: `${getNumeralAmount(485)} Qualified`,
-                }"
+                :statsJson="getPositiveRepliesStats(props.row)"
 
                 :campaignStatus="props.row.status"
               />
@@ -597,6 +585,103 @@ export default defineComponent({
       });
     };
 
+    const fetchSequenceStats = async (sequenceIds) => {
+      if (isEmpty(sequenceIds)) {
+        return {};
+      }
+
+      try {
+        const response = await getApiCall({
+          endpoint: '/stats/sequences/list-stats',
+          params: {
+            seq_ids: sequenceIds,
+          },
+          includeWorkspace: true,
+        });
+
+        const statsList = Array.isArray(response)
+          ? response
+          : (response?.data || []);
+
+        const statsMap = {};
+        statsList.forEach((statItem) => {
+          if (statItem && statItem.seq_id != null) {
+            statsMap[statItem.seq_id] = statItem;
+          }
+        });
+
+        return statsMap;
+      } catch (error) {
+        // return empty object on stats fetch failure
+        return {};
+      }
+    };
+
+    const getContactsStats = (row) => {
+      const stats = row?.stats || {};
+      const total = row?.total_leads
+        || row?.contacts_count
+        || stats.total_leads
+        || stats.email_sent || 0;
+      const active = row?.active_leads || row?.active_contacts || stats.active_leads || 0;
+
+      return {
+        value: getNumeralAmount(total),
+        label: `${getNumeralAmount(active)} Active`,
+      };
+    };
+
+    const getRepliesStats = (row) => {
+      const stats = row?.stats || {};
+
+      // email replies
+      const emailReplies = stats.email_replies || 0;
+
+      // linkedin replies
+      const liReplies = stats.li_replies || 0;
+
+      // total replies
+      const totalReplies = emailReplies + liReplies;
+
+      // email sent
+      const emailSent = stats.email_sent || 0;
+
+      // linkedin sent
+      const liSent = (stats.li_messages_sent || 0)
+        + (stats.li_inmails_sent || 0);
+      const totalSent = emailSent + liSent;
+
+      //
+      const rate = totalSent > 0 ? findPercentage(totalReplies, totalSent) : 0;
+
+      return {
+        icon: 'seq-replied',
+        class: 'information',
+        value: `${rate}%`,
+        label: `${getNumeralAmount(totalReplies)} Response Rate`,
+      };
+    };
+
+    const getPositiveRepliesStats = (row) => {
+      const stats = row?.stats || {};
+
+      const emailPositive = stats.email_positive_replies || 0;
+      const liPositive = stats.li_positive_replies || 0;
+      const totalPositive = emailPositive + liPositive;
+
+      const emailReplies = stats.email_replies || 0;
+      const liReplies = stats.li_replies || 0;
+      const totalReplies = emailReplies + liReplies;
+
+      const rate = totalReplies > 0 ? findPercentage(totalPositive, totalReplies) : 0;
+
+      return {
+        icon: 'positive-reply',
+        value: `${rate}%`,
+        label: `${getNumeralAmount(totalPositive)} Qualified`,
+      };
+    };
+
     const fetchData = async (page = 1, perPage = 10) => {
       try {
         state.isApiProcessing = true;
@@ -625,7 +710,15 @@ export default defineComponent({
 
         const { data, count } = response;
 
-        state.tableData = data;
+        // Fetch sequence stats for all sequence IDs
+        const sequenceIds = (data || []).map((sequence) => sequence.id).filter(Boolean);
+        const statsMap = await fetchSequenceStats(sequenceIds);
+
+        // Attach stats to each sequence object
+        state.tableData = (data || []).map((sequence) => ({
+          ...sequence,
+          stats: statsMap[sequence.id] || sequence.stats || {},
+        }));
 
         state.pagination.rowsNumber = count;
 
@@ -777,6 +870,10 @@ export default defineComponent({
       getNumeralAmount,
       findPercentage,
       onUpdateCampaign,
+
+      getContactsStats,
+      getRepliesStats,
+      getPositiveRepliesStats,
     };
   },
 });
