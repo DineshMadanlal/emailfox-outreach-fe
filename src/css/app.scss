@@ -91,6 +91,10 @@
   // include custom scrollbar
   @include custom-scrollbar;
 
+  &.no-border-left {
+    border-left: 0;
+  }
+
   /** table border **/
   tr,
   td,

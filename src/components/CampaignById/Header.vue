@@ -161,7 +161,7 @@
           />
 
           <p class="q-ml-xs">
-            Edit
+            Edit Campaign
           </p>
         </q-btn>
 

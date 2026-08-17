@@ -152,7 +152,7 @@
 
         separator="cell"
         selection="multiple"
-        class="app-table all-accounts-table app-table-rows-fixed app-paginated-table"
+        class="app-table all-accounts-table app-table-rows-fixed app-paginated-table no-border-left"
 
         :rows="tableState.data"
         :columns="tableColumns"

@@ -74,7 +74,7 @@
         v-model:pagination="pagination"
 
         separator="cell"
-        class="app-table all-lists-table app-paginated-table"
+        class="app-table all-lists-table app-paginated-table no-border-left"
 
         :rows="tableData"
         :columns="tableColumns"

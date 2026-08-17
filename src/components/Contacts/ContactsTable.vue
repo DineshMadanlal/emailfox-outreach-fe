@@ -152,7 +152,7 @@
         v-model:pagination="pagination"
 
         separator="cell"
-        class="app-table app-table-rows-fixed all-contacts-table app-paginated-table"
+        class="app-table app-table-rows-fixed all-contacts-table app-paginated-table no-border-left"
 
         :rows="tableData"
         :columns="tableColumns"

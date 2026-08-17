@@ -200,7 +200,7 @@
 
         separator="cell"
         selection="multiple"
-        class="app-table all-mailboxes-table app-paginated-table sticky-first-col"
+        class="app-table all-mailboxes-table app-paginated-table sticky-first-col no-border-left"
 
         :rows="tableData"
         :columns="tableColumns"

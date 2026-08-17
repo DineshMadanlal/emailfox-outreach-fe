@@ -76,7 +76,7 @@ export default defineComponent({
         {
           icon: 'mail',
           iconTheme: 'warning',
-          title: 'Email Followup',
+          title: 'Email Action',
           clickAction: () => {
             emit('onEmailFollowUp');
           },
@@ -84,7 +84,7 @@ export default defineComponent({
         {
           icon: 'people',
           iconTheme: 'primary',
-          title: 'LinkedIn Followup',
+          title: 'LinkedIn Actions',
           clickAction: () => {
             emit('onLinkedInFollowUp');
           },
@@ -103,7 +103,7 @@ export default defineComponent({
         return [{
           icon: 'mail',
           iconTheme: 'warning',
-          title: 'Email Followup',
+          title: 'Email Action',
           clickAction: () => {
             emit('onEmailFollowUp');
           },
@@ -114,7 +114,7 @@ export default defineComponent({
         return [{
           icon: 'people',
           iconTheme: 'primary',
-          title: 'LinkedIn Followup',
+          title: 'LinkedIn Actions',
           clickAction: () => {
             emit('onLinkedInFollowUp');
           },
