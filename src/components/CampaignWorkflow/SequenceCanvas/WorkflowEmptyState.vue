@@ -1,6 +1,5 @@
 <template>
   <div class="workflow-empty-state">
-    <!-- LinkedIn Followup -->
     <q-dialog
       v-model="showLinkedInStepModal"
       :class="isMobileDevice
@@ -26,8 +25,7 @@
     </p>
 
     <div class="workflow-steps">
-      <q-card
-        flat
+      <div
         v-for="(step, index) in workflowSteps"
         :key="`empty-state-step-${index}`"
 
@@ -51,7 +49,7 @@
             {{ step.description }}
           </div>
         </div>
-      </q-card>
+      </div>
     </div>
   </div>
 </template>

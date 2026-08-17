@@ -12,7 +12,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveDailyNewContactsLimit
-        :campaignId="campaignById.id"
+        :campaignId="campaignByIdJson.id"
         :campaignSettings="campaignSettings"
 
         @updateSettingsJson="updateSettingsJson"
@@ -26,7 +26,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SavePauseCampaignBounceRate
-        :campaignId="campaignById.id"
+        :campaignId="campaignByIdJson.id"
         :campaignSettings="campaignSettings"
 
         @updateSettingsJson="updateSettingsJson"
@@ -40,7 +40,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <ManageCampaignCategories
-        :campaignId="campaignById.id"
+        :campaignId="campaignByIdJson.id"
         :campaignSettings="campaignSettings"
 
         @updateSettingsJson="updateSettingsJson"
@@ -54,7 +54,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveEditReactivateDays
-        :campaignId="campaignById.id"
+        :campaignId="campaignByIdJson.id"
         :campaignSettings="campaignSettings"
 
         @updateSettingsJson="updateSettingsJson"
@@ -67,7 +67,6 @@
     >
       <!-- sending schedule -->
       <SendingScheduleCard
-        :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
         @updateCampaignSettings="updateCampaignSettings"
         @editDailyLimit="modals.showDailyLimitDialog = true"
@@ -75,14 +74,12 @@
 
       <!-- sequence configuration -->
       <SequenceConfigurationsCard
-        :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
         @updateCampaignSettings="updateCampaignSettings"
       />
 
       <!-- smart ai -->
       <SmartAiCategorizationCard
-        :campaignId="campaignById.id"
         :campaignSettings="campaignSettings"
 
         @updateCampaignSettings="updateCampaignSettings"
@@ -116,13 +113,11 @@
           class="advanced-configs"
         >
           <DeliverabilitySafetyCard
-            :campaignId="campaignById.id"
             :campaignSettings="campaignSettings"
             @updateCampaignSettings="updateCampaignSettings"
           />
 
           <RiskControlCard
-            :campaignId="campaignById.id"
             :campaignSettings="campaignSettings"
 
             @updateCampaignSettings="updateCampaignSettings"
@@ -154,6 +149,8 @@
         :label="campaignCtaJson.label"
         :disable="campaignCtaJson.disable"
         :loading="loaders.isSaving"
+
+        @click="campaignCtaJson.click()"
       />
     </div>
   </div>
@@ -187,7 +184,7 @@ import SaveEditReactivateDays from 'src/components/CampaignWorkflow/Settings/Mod
 
 // Utils
 import { getApiCall } from 'src/utils/apiRequests';
-import { saveCampaignSettingsById } from 'src/utils/campaignApi';
+import { saveCampaignSettingsById, startCampaignById, pauseCampaignById } from 'src/utils/campaignApi';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -197,6 +194,8 @@ import { CAMPAIGN_STATUS, DEFAULT_CAMPAIGN_SETTINGS } from 'boot/campaign-consta
 
 export default defineComponent({
   name: 'CampaignWorkflowSaveSettings',
+
+  emits: ['closeCampaignForm', 'refetchCampaign'],
 
   components: {
     ApiLoader,
@@ -215,13 +214,13 @@ export default defineComponent({
   },
 
   props: {
-    campaignById: {
+    campaignByIdJson: {
       type: Object,
       required: true,
     },
   },
 
-  setup(props) {
+  setup(props, { emit }) {
     // app context
     const { appContext } = getCurrentInstance();
 
@@ -260,55 +259,6 @@ export default defineComponent({
       },
     });
 
-    // computed
-    const campaignCtaJson = computed(() => {
-      const campaignStatus = props.campaignById?.status;
-
-      if (campaignStatus === CAMPAIGN_STATUS.DRAFTED.value) {
-        return {
-          disable: false,
-          canSchedcule: true,
-          label: 'Launch Campaign',
-        };
-      }
-
-      if (campaignStatus === CAMPAIGN_STATUS.ACTIVE.value) {
-        return {
-          disable: true,
-          label: 'Campaign is Active',
-        };
-      }
-
-      if (campaignStatus === CAMPAIGN_STATUS.COMPLETED.value) {
-        return {
-          disable: true,
-          label: 'Campaign is Completed',
-        };
-      }
-
-      if (campaignStatus === CAMPAIGN_STATUS.PAUSED.value
-        || campaignStatus === CAMPAIGN_STATUS.AUTO_PAUSED.value
-        || campaignStatus === CAMPAIGN_STATUS.PAUSED_SUB_FAILED.value
-      ) {
-        return {
-          disable: false,
-          label: 'Resume Campaign',
-        };
-      }
-
-      if (campaignStatus === CAMPAIGN_STATUS.ARCHIVED.value) {
-        return {
-          disable: true,
-          label: 'Campaign is Archived',
-        };
-      }
-
-      return {
-        disable: true,
-        label: 'Launch Campaign',
-      };
-    });
-
     // --- API Save Execution ---
     const executeSaveApi = async () => {
       state.loaders.isSaving = true;
@@ -323,7 +273,7 @@ export default defineComponent({
 
         const response = await saveCampaignSettingsById({
           payload,
-          campaignId: props.campaignById.id,
+          campaignId: props.campaignByIdJson.id,
           $toast: appContext.config.globalProperties.$toast,
         });
 
@@ -377,7 +327,7 @@ export default defineComponent({
     };
 
     const onGoBack = () => {
-      $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
+      $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/contacts`);
     };
 
     const toggleAdvanced = () => {
@@ -399,7 +349,7 @@ export default defineComponent({
 
         const response = await getApiCall({
           includeWorkspace: true,
-          endpoint: `/sequences/${props.campaignById.id}/settings`,
+          endpoint: `/sequences/${props.campaignByIdJson.id}/settings`,
         });
 
         state.campaignSettings = response || {};
@@ -416,6 +366,98 @@ export default defineComponent({
         state.loaders.isFetching = false;
       }
     };
+
+    const onStartCampaign = async () => {
+      state.loaders.isSaving = true;
+
+      //
+      const response = await startCampaignById({
+        campaignId: props.campaignByIdJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (response) {
+        appContext.config.globalProperties.$toast({
+          message: 'Campaign has been activated successfully.',
+        });
+
+        emit('closeCampaignForm');
+      }
+
+      state.loaders.isSaving = false;
+    };
+
+    const onPauseCampaign = async () => {
+      state.loaders.isSaving = true;
+
+      //
+      const response = await pauseCampaignById({
+        campaignId: props.campaignByIdJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (response) {
+        appContext.config.globalProperties.$toast({
+          message: 'Campaign is paused.',
+        });
+
+        emit('refetchCampaign');
+      }
+
+      state.loaders.isSaving = false;
+    };
+
+    // computed
+    const campaignCtaJson = computed(() => {
+      const campaignStatus = props.campaignByIdJson?.status;
+
+      if (campaignStatus === CAMPAIGN_STATUS.DRAFTED.value) {
+        return {
+          disable: false,
+          label: 'Launch Campaign',
+          click: onStartCampaign,
+        };
+      }
+
+      if (campaignStatus === CAMPAIGN_STATUS.ACTIVE.value) {
+        return {
+          disable: false,
+          label: 'Pause Campaign',
+          click: onPauseCampaign,
+        };
+      }
+
+      if (campaignStatus === CAMPAIGN_STATUS.COMPLETED.value) {
+        return {
+          disable: true,
+          label: 'Campaign is Completed',
+        };
+      }
+
+      if (campaignStatus === CAMPAIGN_STATUS.PAUSED.value
+        || campaignStatus === CAMPAIGN_STATUS.AUTO_PAUSED.value
+        || campaignStatus === CAMPAIGN_STATUS.PAUSED_SUB_FAILED.value
+      ) {
+        return {
+          disable: false,
+          label: 'Resume Campaign',
+          click: onStartCampaign,
+        };
+      }
+
+      if (campaignStatus === CAMPAIGN_STATUS.ARCHIVED.value) {
+        return {
+          disable: true,
+          label: 'Campaign is Archived',
+        };
+      }
+
+      return {
+        disable: false,
+        label: 'Launch Campaign',
+        click: onStartCampaign,
+      };
+    });
 
     // lifecycle hooks
     onMounted(() => {

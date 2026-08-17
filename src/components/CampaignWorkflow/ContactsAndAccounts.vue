@@ -15,18 +15,18 @@
 
       <!-- Manage Contacts -->
       <ManageContacts
-        :campaignById="campaignById"
+        :campaignById="campaignByIdJson"
       />
 
       <!-- Add Sender Mailboxes Card -->
       <ManageMailboxes
-        :campaignById="campaignById"
+        :campaignById="campaignByIdJson"
 
         v-if="canManageMailboxes"
       />
 
       <ManageLinkedIn
-        :campaignById="campaignById"
+        :campaignById="campaignByIdJson"
 
         v-if="canManageLinkedInAccounts"
       />
@@ -82,7 +82,7 @@ export default defineComponent({
   },
 
   props: {
-    campaignById: {
+    campaignByIdJson: {
       type: Object,
       default: () => ({}),
     },
@@ -121,12 +121,12 @@ export default defineComponent({
     // methods
     const onNextPage = () => {
       // route to contacts step
-      $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/settings`);
+      $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/settings`);
     };
 
     const onGoBack = () => {
       // route to contacts step
-      $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/sequence`);
+      $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/sequence`);
     };
 
     return {

@@ -1,7 +1,9 @@
 <template>
   <div class="campaign-by-id-page">
     <!-- Api loader -->
-    <ApiLoader :show="fetchCampaignByIdApiLoading" />
+    <ApiLoader
+      :show="fetchCampaignByIdApiLoading && !campaignByIdJson.id"
+    />
 
     <!-- Header -->
     <CampaignByIdHeader
@@ -41,7 +43,7 @@ import { getApiCall } from 'src/utils/apiRequests';
 import { convertStringToNumber } from 'src/utils/numbers';
 
 // pinia
-import { storeExclusions } from 'src/stores/storeExclusions.js';
+import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -73,7 +75,7 @@ export default defineComponent({
     const $router = useRouter();
 
     // pinia
-    const storeExclusionsPinia = storeExclusions();
+    const userPreferencesStore = useUserPreferencesStore();
 
     // metadata
     useMeta(generateMetadata('Campaign By ID'));
@@ -86,7 +88,7 @@ export default defineComponent({
 
     // computed
     const campaignId = computed(() => convertStringToNumber($route.params.campaignId));
-    const campaignByIdJsonFromStore = computed(() => storeExclusionsPinia.campaignByIdJson);
+    const campaignByIdJsonFromStore = computed(() => userPreferencesStore.campaignByIdJson);
 
     const isEmailOutreachCampaign = computed(
       () => state.campaignByIdJson.type === CAMPAIGN_TYPES.EMAIL.value,
@@ -142,7 +144,7 @@ export default defineComponent({
           state.campaignByIdJson = response;
 
           // update store
-          storeExclusionsPinia.setMultipleFields({
+          userPreferencesStore.setMultipleFields({
             campaignByIdJson: response,
           });
 
@@ -167,7 +169,7 @@ export default defineComponent({
       state.campaignByIdJson = updatedCampaignJson;
 
       // update store
-      storeExclusionsPinia.setMultipleFields({
+      userPreferencesStore.setMultipleFields({
         campaignByIdJson: updatedCampaignJson,
       });
     };

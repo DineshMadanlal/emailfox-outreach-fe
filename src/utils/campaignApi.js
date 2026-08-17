@@ -153,3 +153,25 @@ export const cloneCampaignById = async ({
     return false;
   }
 };
+
+export const startCampaignById = async ({
+  campaignId, $toast,
+}) => {
+  try {
+    // API Call
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: `/sequences/${campaignId}/start`,
+    });
+
+    return response;
+  } catch (error) {
+    // show toast
+    $toast({
+      warning: true,
+      message: error.message,
+    });
+
+    return false;
+  }
+};

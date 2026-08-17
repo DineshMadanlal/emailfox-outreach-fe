@@ -93,6 +93,7 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
     },
 
     allWorkspaces: [],
+    campaignByIdJson: {},
 
     workspaceCustomFields: [],
   });

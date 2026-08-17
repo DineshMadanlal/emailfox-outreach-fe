@@ -1,7 +1,5 @@
 <template>
   <q-select
-    v-bind="$attrs"
-
     dense
     outlined
     emit-value
@@ -25,6 +23,8 @@
     v-model="internalValue"
 
     @filter="onDropdownFilter"
+
+    v-bind="$attrs"
   >
     <!-- no slot -->
     <template

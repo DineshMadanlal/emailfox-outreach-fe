@@ -38,9 +38,11 @@
       <!-- content -->
       <div class="edit-sequence-content">
         <router-view
-          :campaignById="campaignByIdJson"
+          :campaignByIdJson="campaignByIdJson"
 
+          @closeCampaignForm="closeCampaignForm"
           @updateFormChanged="onUpdateFormChanged"
+          @refetchCampaign="getCampaignById"
         />
 
         <!--  -->
@@ -65,7 +67,7 @@ import { useMeta } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 
 // pinia
-import { storeExclusions } from 'src/stores/storeExclusions.js';
+import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -103,7 +105,7 @@ export default defineComponent({
     const { isMobileDevice, generateMetadata } = useAppHelpersApi();
 
     // pinia
-    const storeExclusionsPinia = storeExclusions();
+    const userPreferencesStore = useUserPreferencesStore();
 
     // metadata
     useMeta(generateMetadata('Campaign Editor'));
@@ -122,7 +124,7 @@ export default defineComponent({
 
     // computed
     const campaignId = computed(() => convertStringToNumber($route.params.campaignId));
-    const campaignByIdJsonFromStore = computed(() => storeExclusionsPinia.campaignByIdJson);
+    const campaignByIdJsonFromStore = computed(() => userPreferencesStore.campaignByIdJson);
 
     // computed
     const isEmailOutreachCampaign = computed(
@@ -158,7 +160,7 @@ export default defineComponent({
       state.campaignByIdJson = updatedCampaignJson;
 
       // update store
-      storeExclusionsPinia.setMultipleFields({
+      userPreferencesStore.setMultipleFields({
         campaignByIdJson: updatedCampaignJson,
       });
     };
@@ -186,7 +188,7 @@ export default defineComponent({
           state.campaignByIdJson = response;
 
           // update store
-          storeExclusionsPinia.setMultipleFields({
+          userPreferencesStore.setMultipleFields({
             campaignByIdJson: response,
           });
 
@@ -259,6 +261,7 @@ export default defineComponent({
       closeCampaignForm,
       onUpdateCampaignJson,
       onUpdateFormChanged,
+      getCampaignById,
 
       // hardcoded
       SEQUENCE_FORM_STEPS,

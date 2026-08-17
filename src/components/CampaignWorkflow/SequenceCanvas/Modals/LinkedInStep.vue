@@ -7,7 +7,7 @@
     <div class="app-modal-header">
       <!-- header text -->
         <h4 class="modal-header-text">
-          LinkedIn {{ isFollowupStep ? 'Followup' : 'Step' }}
+          LinkedIn {{ isFollowupStep ? 'Action' : 'Step' }}
         </h4>
 
         <q-space />

@@ -50,7 +50,67 @@
       </div>
     </div>
 
-    <!-- Row 2: Daily Limit -->
+    <!-- Row: Campaign Start Date -->
+    <div
+      class="config-row"
+    >
+      <!--  -->
+      <div class="config-row-left">
+        <div class="flex no-wrap q-gutter-sm items-center">
+          <!--  -->
+          <p class="config-label-line">
+            Campaign Start Date
+          </p>
+
+          <InfoTooltip
+            iconName="circle-question"
+            tooltipText="Set the campaign start date.
+            Leave empty to start the campaign immediately."
+          />
+        </div>
+      </div>
+
+      <!-- right -->
+      <div class="config-row-right flex no-wrap items-center">
+        <DatePicker
+          :outlined="false"
+          :borderless="true"
+          placeholder="Set Start Date"
+          class="schedule-date-picker"
+          :input-class="ui.scheduledDate ? 'schedule-date-picker-input' : ''"
+
+          sendTimestamp
+          v-model="ui.scheduledDate"
+
+          @update:modelValue="onUpdateScheduleData"
+        />
+
+        <!-- Close Button -->
+        <q-btn
+          v-if="ui.scheduledDate"
+
+          flat
+          dense
+          no-caps
+          unelevated
+
+          color="negative"
+          moreClass="dead-small"
+          class="app-negative-button"
+          title="Clear Start Date"
+
+          @click="ui.scheduledDate = null; onUpdateScheduleData()"
+        >
+          <LocalSvgIcon
+            image="close"
+            class="app-negative-icon"
+          />
+        </q-btn>
+
+      </div>
+    </div>
+
+    <!-- Row: Daily Limit -->
     <div class="config-row">
       <!--  -->
       <div class="config-row-left">
@@ -84,6 +144,8 @@ import {
 } from 'vue';
 
 // Components
+import DatePicker from 'src/components/Input/DatePicker.vue';
+import InfoTooltip from 'src/components/General/InfoTooltip.vue';
 import SelectSendingSchedule from 'src/components/Dropdown/SelectSendingSchedule.vue';
 
 // Utils
@@ -98,14 +160,12 @@ export default defineComponent({
   emits: ['editDailyLimit'],
 
   components: {
+    DatePicker,
+    InfoTooltip,
     SelectSendingSchedule,
   },
 
   props: {
-    campaignId: {
-      type: [String, Number],
-      required: true,
-    },
     campaignSettings: {
       type: Object,
       default: () => ({}),
@@ -119,6 +179,7 @@ export default defineComponent({
 
       ui: {
         scheduleJson: {},
+        scheduledDate: null,
       },
 
       loaders: {
@@ -157,6 +218,14 @@ export default defineComponent({
           id: props.campaignSettings.sending_schedule_id,
         };
       }
+
+      state.ui.scheduledDate = props.campaignSettings.scheduled_date;
+    };
+
+    const onUpdateScheduleData = () => {
+      emit('updateCampaignSettings', {
+        scheduled_date: state.ui.scheduledDate,
+      });
     };
 
     const onUpdateScheduleJson = () => {
@@ -191,7 +260,21 @@ export default defineComponent({
 
       // methods
       onUpdateScheduleJson,
+      onUpdateScheduleData,
     };
   },
 });
 </script>
+
+<style lang="scss" scoped>
+.config-card {
+  .schedule-date-picker {
+    max-width: 120px;
+
+    :deep(.schedule-date-picker-input) {
+      color: $primary;
+      font-weight: 500;
+    }
+  }
+}
+</style>

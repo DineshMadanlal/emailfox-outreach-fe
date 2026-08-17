@@ -294,10 +294,10 @@ export default defineComponent({
       const sequenceId = props.campaignByIdJson.id;
 
       return [
-        {
-          name: 'Overview',
-          path: `/outreach/campaigns/${sequenceId}/overview`,
-        },
+        // {
+        //   name: 'Overview',
+        //   path: `/outreach/campaigns/${sequenceId}/overview`,
+        // },
         {
           name: 'Analytics',
           path: `/outreach/campaigns/${sequenceId}/analytics`,

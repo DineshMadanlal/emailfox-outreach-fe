@@ -146,7 +146,7 @@ export default defineComponent({
   },
 
   props: {
-    campaignById: {
+    campaignByIdJson: {
       type: Object,
       default: () => ({}),
     },
@@ -212,7 +212,7 @@ export default defineComponent({
     });
 
     const isCampaignDrafted = computed(
-      () => props.campaignById.status === CAMPAIGN_STATUS.DRAFTED.value,
+      () => props.campaignByIdJson.status === CAMPAIGN_STATUS.DRAFTED.value,
     );
 
     // methods
@@ -344,7 +344,7 @@ export default defineComponent({
         //
         const response = await getApiCall({
           includeWorkspace: true,
-          endpoint: `/sequences/${props.campaignById.id}/steps`,
+          endpoint: `/sequences/${props.campaignByIdJson.id}/steps`,
         });
 
         if (!response || !Array.isArray(response)) {
@@ -398,7 +398,7 @@ export default defineComponent({
         // API call to save steps
         const response = await postApiCall({
           includeWorkspace: true,
-          endpoint: `/sequences/${props.campaignById.id}/steps`,
+          endpoint: `/sequences/${props.campaignByIdJson.id}/steps`,
           payload,
         });
 
@@ -412,7 +412,7 @@ export default defineComponent({
             state.ui.hasChanges = false;
 
             // move to the contacts step
-            $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
+            $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/contacts`);
           }, 500);
         }
       } catch (error) {
@@ -1009,7 +1009,7 @@ export default defineComponent({
         onSaveSteps();
       } else {
         // route to contacts step
-        $router.push(`/outreach/campaigns/${props.campaignById.id}/edit/contacts`);
+        $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/contacts`);
       }
     };
 
