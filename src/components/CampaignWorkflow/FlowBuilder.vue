@@ -1,5 +1,20 @@
 <template>
   <div class="flow-builder-section custom-scrollbar">
+    <!-- Edit Webhook -->
+    <q-dialog
+      v-model="modals.showArchiveStepOrVariant"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ArchiveStepOrVariant
+        :inputJson="archiveStepJson"
+
+        @onConfirmArchive="onUserConfirmArchiveStep"
+      />
+    </q-dialog>
+
     <!-- content -->
     <div class="flow-builder-content">
       <!-- API Loader -->
@@ -80,6 +95,11 @@ import WorkflowEmptyState from 'components/CampaignWorkflow/SequenceCanvas/Workf
 import WorkflowActionNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowActionNode.vue';
 import WorkflowConditionNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowConditionNode.vue';
 
+import ArchiveStepOrVariant from 'components/CampaignWorkflow/SequenceCanvas/Modals/ArchiveStepOrVariant.vue';
+
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
+
 // Utils
 import { getApiCall, postApiCall } from 'src/utils/apiRequests';
 import { getBrandRgbColorByName, getBlendedHexFromRgba } from 'src/utils/quasarHelpers.js';
@@ -91,6 +111,7 @@ import {
   WORKFLOW_STEP_CATALOG,
   WORKFLOW_STEP_TYPES,
   WORKFLOW_CONDITION_CATALOG,
+  CAMPAIGN_STATUS,
 } from 'boot/campaign-constants';
 
 // css imports
@@ -121,6 +142,7 @@ export default defineComponent({
     VueFlow,
     ApiLoader,
     WorkflowEmptyState,
+    ArchiveStepOrVariant,
   },
 
   props: {
@@ -138,6 +160,9 @@ export default defineComponent({
     // router
     const $router = useRouter();
 
+    // Composables
+    const { isMobileDevice } = useAppHelpersApi();
+
     // app cntext
     const { appContext } = getCurrentInstance();
 
@@ -152,10 +177,16 @@ export default defineComponent({
         steps: [],
         archivedStepIds: [],
       },
+
       ui: {
         isSaving: false,
         hasChanges: false,
         isFetchApiLoading: false,
+      },
+
+      modals: {
+        archiveStepJson: null,
+        showArchiveStepOrVariant: false,
       },
     });
 
@@ -179,6 +210,10 @@ export default defineComponent({
 
       return 'Next';
     });
+
+    const isCampaignDrafted = computed(
+      () => props.campaignById.status === CAMPAIGN_STATUS.DRAFTED.value,
+    );
 
     // methods
     const getTempId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -580,8 +615,22 @@ export default defineComponent({
       }
     };
 
-    const archiveWorkflowStep = (stepJson) => {
+    const onUserConfirmArchiveStep = (stepJson) => {
+      state.workflow.archivedStepIds.push(stepJson.id);
       removeWorkflowStep(stepJson);
+    };
+
+    const archiveWorkflowStep = (stepJson) => {
+      if (stepJson?.id) {
+        if (isCampaignDrafted.value) {
+          onUserConfirmArchiveStep(stepJson);
+        } else {
+          state.archiveStepJson = stepJson;
+          state.modals.showArchiveStepOrVariant = true;
+        }
+      } else {
+        removeWorkflowStep(stepJson);
+      }
     };
 
     // Helper to calculate exact dynamic height based on step content
@@ -995,11 +1044,14 @@ export default defineComponent({
 
     //
     const workflowContext = {
+      // computed
+      isCampaignDrafted,
+
+      // methods
       onAddNewStep,
       onAddNewCondition,
       updateWorkflowStep,
       archiveWorkflowStep,
-      removeWorkflowStep,
     };
 
     provide('workflowContext', workflowContext);
@@ -1012,6 +1064,7 @@ export default defineComponent({
       flowEdges,
       flowNodes,
       nodeTypes,
+      isMobileDevice,
       isWorkflowEmpty,
       footerButtonLabel,
 

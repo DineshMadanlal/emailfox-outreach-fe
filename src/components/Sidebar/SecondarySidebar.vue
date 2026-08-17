@@ -266,14 +266,6 @@ export default defineComponent({
           route: '/outreach/linkedin/accounts',
           isActive: activeRoutePath.value.includes('/outreach/linkedin'),
         },
-      ];
-
-      return routes;
-    });
-
-    const analyticsRoutes = computed(() => {
-      const routes = [
-        // domain
         // domains
         {
           name: 'domains',
@@ -298,11 +290,6 @@ export default defineComponent({
         {
           heading: 'Infra',
           routes: mailInfraRoutes.value,
-        },
-        // analytics
-        {
-          heading: 'Analytics',
-          routes: analyticsRoutes.value,
         },
       ];
 

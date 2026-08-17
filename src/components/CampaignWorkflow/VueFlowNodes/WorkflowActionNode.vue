@@ -62,6 +62,22 @@
       />
     </q-dialog>
 
+    <!-- Archive Step Or Variant Modal -->
+    <q-dialog
+      v-model="showArchiveVariantModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ArchiveStepOrVariant
+        isVariant
+        :inputJson="selectedVariantForArchive || {}"
+
+        @onConfirmArchive="onUserConfirmArchiveVariant"
+      />
+    </q-dialog>
+
     <!-- Handle -->
     <Handle
       id="top"
@@ -222,6 +238,7 @@ import NodeCardHeader from 'components/CampaignWorkflow/SequenceCanvas/NodeCardH
 import EmailStep from 'components/CampaignWorkflow/SequenceCanvas/Modals/EmailStep.vue';
 import LinkedInStep from 'components/CampaignWorkflow/SequenceCanvas/Modals/LinkedInStep.vue';
 import VariantConfigurations from 'components/CampaignWorkflow/SequenceCanvas/Modals/VariantConfigurations.vue';
+import ArchiveStepOrVariant from 'components/CampaignWorkflow/SequenceCanvas/Modals/ArchiveStepOrVariant.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -242,6 +259,7 @@ export default defineComponent({
     LinkedInStep,
     SequenceDelay,
     NodeCardHeader,
+    ArchiveStepOrVariant,
     VariantConfigurations,
   },
 
@@ -265,6 +283,9 @@ export default defineComponent({
       showLinkedInStepModal: false,
 
       showVariantConfigurationsModal: false,
+
+      showArchiveVariantModal: false,
+      selectedVariantForArchive: null,
 
       selectedVariantIndex: null,
     });
@@ -296,6 +317,7 @@ export default defineComponent({
     // methods
     const onDeleteStep = () => {
       const step = props.data?.step;
+
       if (!step) {
         return;
       }
@@ -338,23 +360,54 @@ export default defineComponent({
       workflowContext.updateWorkflowStep(updatedWorkflowJson);
     };
 
-    const onDeleteVariant = (variantIndex) => {
-      //
+    const removeVariant = (variantIndex) => {
       const currentWorkflowJson = { ...props.data };
 
       const updatedVariants = [...(currentWorkflowJson.step?.variants || [])];
+
+      const archivedVariantsId = currentWorkflowJson.step?.archived_variants_id || [];
+
+      if (updatedVariants[variantIndex]?.id) {
+        archivedVariantsId.push(updatedVariants[variantIndex].id);
+      }
+
       updatedVariants.splice(variantIndex, 1);
 
       const updatedWorkflowJson = {
         ...currentWorkflowJson,
         step: {
           ...currentWorkflowJson.step,
+          archived_variants_id: archivedVariantsId,
           variants: updatedVariants,
         },
       };
 
-      //
       workflowContext.updateWorkflowStep(updatedWorkflowJson);
+    };
+
+    const onUserConfirmArchiveVariant = (variantJson) => {
+      const targetIndex = variantJson?.index;
+      if (targetIndex !== null && targetIndex !== undefined && targetIndex >= 0) {
+        removeVariant(targetIndex);
+      }
+      state.showArchiveVariantModal = false;
+      state.selectedVariantForArchive = null;
+    };
+
+    const onDeleteVariant = (variantIndex) => {
+      const variant = emailVariants.value[variantIndex];
+      if (!variant) return;
+
+      if (variant?.id) {
+        if (workflowContext?.isCampaignDrafted?.value) {
+          removeVariant(variantIndex);
+        } else {
+          state.selectedVariantForArchive = { ...variant, index: variantIndex };
+          state.showArchiveVariantModal = true;
+        }
+      } else {
+        removeVariant(variantIndex);
+      }
     };
 
     const onEditVariant = (variantIndex) => {
@@ -381,6 +434,7 @@ export default defineComponent({
       getCleanText,
       onAddNewVariant,
       onDeleteVariant,
+      onUserConfirmArchiveVariant,
       onEditVariant,
 
       // npm
