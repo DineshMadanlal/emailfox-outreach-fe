@@ -16,7 +16,12 @@
     </q-dialog>
 
     <!-- content -->
-    <div class="flow-builder-content">
+    <div
+      class="flow-builder-content"
+      :class="{
+        'empty-state': isWorkflowEmpty
+      }"
+    >
       <!-- API Loader -->
       <ApiLoader
         :show="ui.isFetchApiLoading"
@@ -1137,13 +1142,18 @@ export default defineComponent({
     padding: 24px 12px;
     position: relative;
 
+    &.empty-state {
+      justify-content: flex-start;
+    }
+
     .empty-workflow-state {
       width: 100%;
-      min-height: 560px;
       display: flex;
       flex: 1;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+
+      padding-top: 48px;
     }
 
     .workflow-vueflow {

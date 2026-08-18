@@ -21,7 +21,7 @@
     </p>
 
     <p class="empty-desc-text">
-      Build your outreach sequence by choosing the first step.
+      Build a sequence of steps you want your campaign to follow
     </p>
 
     <div class="workflow-steps">
@@ -33,14 +33,19 @@
 
         @click="onAddNewStep(step)"
       >
-        <!-- Image -->
-        <WorkflowStepIcon
-          :icon="step.icon"
-          :theme="step.theme"
-        />
+        <!-- Image / Icon -->
+        <div
+          class="step-icon-wrapper"
+          :class="step.theme"
+        >
+          <LocalSvgIcon
+            :image="step.icon"
+            class="step-icon"
+          />
+        </div>
 
         <!-- Content -->
-        <div>
+        <div class="step-content">
           <div class="workflow-step-title">
             {{ step.title }}
           </div>
@@ -64,12 +69,13 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // Components
 import LinkedInStep from 'components/CampaignWorkflow/SequenceCanvas/Modals/LinkedInStep.vue';
-import WorkflowStepIcon from 'components/CampaignWorkflow/SequenceCanvas/WorkflowStepIcon.vue';
+import LocalSvgIcon from 'components/Global/LocalSvgIcon.vue';
 
 // constants
 import {
-  LINKEDIN_WORKFLOW_STEP_CATALOG, EMAIL_WORKFLOW_STEP_CATALOG,
-  WORKFLOW_STEP_CATALOG, WORKFLOW_STEP_CATEGORIES, LINKEDIN_ACTION_DETAILS,
+  EMAIL_WORKFLOW_STEP_CATALOG,
+  WORKFLOW_STEP_TYPES,
+  WORKFLOW_STEP_CATEGORIES,
 } from 'boot/campaign-constants';
 
 export default defineComponent({
@@ -77,7 +83,7 @@ export default defineComponent({
 
   components: {
     LinkedInStep,
-    WorkflowStepIcon,
+    LocalSvgIcon,
   },
 
   setup() {
@@ -89,7 +95,7 @@ export default defineComponent({
     const state = reactive({
       showLinkedInStepModal: false,
 
-      selectedLinkedInStep: '',
+      selectedLinkedInStep: WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE,
     });
 
     // composition API
@@ -97,41 +103,58 @@ export default defineComponent({
 
     // computed
     const workflowSteps = computed(() => {
-      //
       const {
         isEmailOutreachCampaign,
         isLinkedInOutreachCampaign,
         isMultiChannelOutreachCampaign,
-      } = editCampaignContext;
+      } = editCampaignContext || {};
 
-      if (isEmailOutreachCampaign.value) {
-        return Object.values(EMAIL_WORKFLOW_STEP_CATALOG);
-      } if (isLinkedInOutreachCampaign.value) {
-        return Object.values(LINKEDIN_WORKFLOW_STEP_CATALOG);
-      } if (isMultiChannelOutreachCampaign.value) {
-        return Object.values(WORKFLOW_STEP_CATALOG);
+      const emailStep = {
+        key: 'EMAIL',
+        category: WORKFLOW_STEP_CATEGORIES.EMAIL,
+        stepType: WORKFLOW_STEP_TYPES.EMAIL,
+        title: 'Start with Email',
+        description: 'Send personalized emails from your connected mailboxes.',
+        icon: 'mail',
+        theme: 'warning',
+      };
+
+      const linkedInStep = {
+        key: 'LINKEDIN',
+        category: WORKFLOW_STEP_CATEGORIES.LINKEDIN,
+        stepType: WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE,
+        title: 'Start with LinkedIn',
+        description: 'Reach prospects through profile visits, connections, messages, InMails, & likes.',
+        icon: 'people',
+        theme: 'primary',
+      };
+
+      if (isEmailOutreachCampaign?.value) {
+        return [emailStep];
+      }
+      if (isLinkedInOutreachCampaign?.value) {
+        return [linkedInStep];
+      }
+      if (isMultiChannelOutreachCampaign?.value) {
+        return [emailStep, linkedInStep];
       }
 
-      return Object.values(WORKFLOW_STEP_CATALOG);
+      return [emailStep, linkedInStep];
     });
 
     // methods
     const onAddNewStep = (step) => {
       if (step.category === WORKFLOW_STEP_CATEGORIES.LINKEDIN) {
-        const currentActionDetails = LINKEDIN_ACTION_DETAILS[step.stepType];
-
-        //
-        if (currentActionDetails.supportsMessage) {
-          state.showLinkedInStepModal = true;
-          state.selectedLinkedInStep = step.stepType;
-          return;
-        }
+        state.selectedLinkedInStep = WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE;
+        state.showLinkedInStepModal = true;
+        return;
       }
 
-      // add new step
-      workflowContext.onAddNewStep({
-        step,
-      });
+      if (step.category === WORKFLOW_STEP_CATEGORIES.EMAIL) {
+        workflowContext.onAddNewStep({
+          step: EMAIL_WORKFLOW_STEP_CATALOG[WORKFLOW_STEP_TYPES.EMAIL],
+        });
+      }
     };
 
     return {
@@ -161,7 +184,6 @@ export default defineComponent({
   .empty-header-text {
     color: $black;
     text-align: center;
-    font-family: Inter;
     font-size: 18px;
     font-weight: 600;
   }
@@ -170,24 +192,34 @@ export default defineComponent({
     margin-top: 8px;
     margin-bottom: 32px;
 
-    color: $black;
+    color: rgba(var(--black-rgb), 0.8);
     text-align: center;
     font-size: 14px;
     font-weight: 400;
-    line-height: 16px; /* 114.286% */
+    line-height: 16px;
   }
 
   .workflow-steps {
     width: 100%;
-    max-width: 390px;
 
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    gap: 16px;
+    justify-content: center;
+    align-items: stretch;
+
+    @media (max-width: 600px) {
+      flex-direction: column;
+      align-items: center;
+      max-width: 320px;
+    }
 
     .each-workflow-step {
-      padding: 12px;
-      border-radius: 8px;
+      flex: 1;
+      width: 100%;
+      max-width: 300px;
+      padding: 20px;
+      border-radius: 6px;
       background: $white;
       border: 1px solid $grey-50;
       cursor: pointer;
@@ -195,28 +227,70 @@ export default defineComponent({
       transition: all 0.2s ease-in-out;
 
       display: flex;
-      gap: 12px;
+      flex-direction: column;
+      align-items: flex-start;
 
       &:hover {
-        transform: translateY(-1px);
-        backdrop-filter: blur(100px);
-        background: rgba(var(--primary-rgb), 0.03);
-        border: 1px solid rgba(var(--primary-rgb), 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.06);
+        border-color: rgba(var(--primary-rgb), 0.3);
       }
 
-      .workflow-step-title {
-        color: $black;
-        font-size: 14px;
-        font-weight: 600;
+      .step-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+
+        .step-icon {
+          width: 16px;
+          height: 16px;
+        }
+
+        &.warning {
+          background: rgba(var(--warning-rgb), 0.08);
+          border: 1px solid rgba(var(--warning-rgb), 0.25);
+
+          :deep(.step-icon) {
+            @include svg-icon-stroke('rect, path', $warning);
+          }
+        }
+
+        &.primary {
+          background: rgba(var(--primary-rgb), 0.08);
+          border: 1px solid rgba(var(--primary-rgb), 0.25);
+
+          :deep(.step-icon) {
+            path {
+              fill: inherit;
+            }
+            @include svg-icon-stroke('circle, rect, path', $primary);
+          }
+        }
       }
 
-      .workflow-step-desc {
-        color: $grey;
-        font-size: 12px;
-        font-weight: 400;
-        line-height: 20px; /* 133.333% */
+      .step-content {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
 
-        margin-top: 4px;
+        .workflow-step-title {
+          color: rgba(var(--black-rgb), 0.8);
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 16px;
+        }
+
+        .workflow-step-desc {
+          color: rgba(var(--black-rgb), 0.8);
+          font-size: 13px;
+          font-weight: 400;
+          line-height: 20px;
+          margin-top: 8px;
+        }
       }
     }
   }

@@ -2,7 +2,7 @@
   <div class="analytics-overview">
     <CampaignEngagement
       view="overview"
-      :campaignId="campaignByIdJson.id"
+      :campaignByIdJson="campaignByIdJson"
     />
 
     <SequenceEngagement

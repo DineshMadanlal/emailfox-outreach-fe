@@ -212,7 +212,6 @@ import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount } from 'src/utils/numbers';
 
 // composables
-import { useWorkspace } from 'src/composables/useWorkspace';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // store
@@ -256,7 +255,6 @@ export default defineComponent({
 
     // composables
     const { isMobileDevice } = useAppHelpersApi();
-    const { getWorkspaceCustomFields } = useWorkspace();
 
     // state
     const state = reactive({
@@ -542,8 +540,6 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      getWorkspaceCustomFields();
-
       state.isMounted = true;
 
       makeApiCallOnMounted();

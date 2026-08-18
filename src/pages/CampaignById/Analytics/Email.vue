@@ -2,7 +2,7 @@
   <div class="analytics-email">
     <CampaignEngagement
       view="email"
-      :campaignId="campaignByIdJson.id"
+      :campaignByIdJson="campaignByIdJson"
     />
 
     <SequenceEngagement

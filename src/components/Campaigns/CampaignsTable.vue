@@ -617,12 +617,10 @@ export default defineComponent({
     };
 
     const getContactsStats = (row) => {
-      const stats = row?.stats || {};
-      const total = row?.total_leads
-        || row?.contacts_count
-        || stats.total_leads
-        || stats.email_sent || 0;
-      const active = row?.active_leads || row?.active_contacts || stats.active_leads || 0;
+      const contactStats = row?.contact_stats || {};
+
+      const total = contactStats.total_contacts;
+      const active = contactStats.active_count;
 
       return {
         value: getNumeralAmount(total),

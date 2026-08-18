@@ -2,7 +2,7 @@
   <div class="analytics-linkedin">
     <CampaignEngagement
       view="linkedin"
-      :campaignId="campaignByIdJson.id"
+      :campaignByIdJson="campaignByIdJson"
     />
 
     <SequenceEngagement

@@ -27,7 +27,7 @@
       <template v-slot:body-cell-sequence="props">
         <q-td :props="props">
           <div class="text-weight-medium">
-            {{ formatIndex(props.rowIndex) }}
+            {{ formatIndex(props.row.stepIndex) }}
             {{ props.row.name || getStepDefaultName(props.row.step_type) }}
           </div>
         </q-td>
@@ -77,7 +77,10 @@
       <template v-slot:body-cell-sent="props">
         <q-td :props="props">
           <div class="flex no-wrap items-center">
-            <LocalSvgIcon image="email-sent" classes="seq-metric-icon" />
+            <LocalSvgIcon
+              image="sent"
+              classes="seq-metric-icon"
+            />
             <div class="q-ml-sm">
               {{ props.row.email_sent || 0 }}
             </div>
@@ -123,7 +126,10 @@
       <template v-slot:body-cell-replied="props">
         <q-td :props="props">
           <div class="flex no-wrap">
-            <LocalSvgIcon image="email-replied" classes="seq-metric-icon" />
+            <LocalSvgIcon
+              image="seq-replied"
+              classes="seq-metric-icon"
+            />
             <div class="q-ml-sm">
               <div class="seq-percentage-text">
                 {{ findPercentage(
@@ -334,8 +340,9 @@ export default defineComponent({
     };
 
     const filteredRows = computed(() => {
-      let rows = state.stepStats.map((item) => ({
+      let rows = state.stepStats.map((item, index) => ({
         ...item,
+        stepIndex: index + 1,
         isEmail: isEmailStep(item.step_type),
         isLinkedIn: isLinkedInStep(item.step_type),
         conversionRate: calculateConversion(item),
@@ -351,7 +358,7 @@ export default defineComponent({
     });
 
     const formatIndex = (idx) => {
-      const num = idx + 1;
+      const num = Number(idx) || 1;
       return num < 10 ? `0${num}` : `${num}`;
     };
 

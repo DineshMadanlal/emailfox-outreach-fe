@@ -39,6 +39,9 @@
 // vue
 import { computed, defineComponent } from 'vue';
 
+// Utils
+import { findPercentage } from 'src/utils/numbers';
+
 // constants
 import { CAMPAIGN_STATUS } from 'boot/campaign-constants';
 
@@ -65,14 +68,30 @@ export default defineComponent({
     );
 
     const campaignProgress = computed(() => {
-      //
       if (isCampaignStatusDrafted.value) {
         return 0;
       }
+      const { status, contact_stats: contactStats } = props.tableRowJson;
+      if (status === CAMPAIGN_STATUS.COMPLETED.value) {
+        return 100;
+      }
+      if (!contactStats || !contactStats.total_contacts) {
+        return 0;
+      }
+      const total = contactStats.total_contacts || 0;
 
-      //
-      const randomPercentage = Math.floor(Math.random() * 100) + 1;
-      return randomPercentage;
+      const finished = (contactStats.completed_count || 0)
+        // + (contactStats.replied_count || 0)
+        // + (contactStats.bounced_count || 0)
+        // + (contactStats.unsubscribed_count || 0)
+        // + (contactStats.stopped_count || 0)
+        + (contactStats.failed_count || 0);
+
+      return findPercentage({
+        part: finished,
+        whole: total,
+        roundOutput: true,
+      });
     });
 
     return {
