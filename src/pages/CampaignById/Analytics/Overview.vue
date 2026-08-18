@@ -1,0 +1,55 @@
+<template>
+  <div class="analytics-overview">
+    <CampaignEngagement
+      view="overview"
+      :campaignId="campaignByIdJson.id"
+    />
+
+    <SequenceEngagement
+      view="overview"
+      :campaignId="campaignByIdJson.id"
+    />
+  </div>
+</template>
+
+<script>
+// vue
+import { defineComponent } from 'vue';
+
+// components
+import CampaignEngagement from 'components/CampaignById/Analytics/CampaignEngagement.vue';
+import SequenceEngagement from 'components/CampaignById/Analytics/SequenceEngagement.vue';
+
+export default defineComponent({
+  name: 'CampaignAnalyticsOverview',
+
+  components: {
+    CampaignEngagement,
+    SequenceEngagement,
+  },
+
+  props: {
+    campaignByIdJson: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+});
+</script>
+
+<style lang="scss" scoped>
+.analytics-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+
+  width: 100%;
+
+  padding: 32px 20px;
+  overflow: auto;
+
+  @media (max-width: $breakpoint-xs-max) {
+    padding: 32px 12px;
+  }
+}
+</style>

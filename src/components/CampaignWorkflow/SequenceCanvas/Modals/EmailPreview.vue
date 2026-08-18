@@ -73,7 +73,7 @@
             <!-- To Email Input -->
             <div class="control-section">
               <label class="section-label">
-                To Email:
+                To Email
               </label>
 
               <!-- select campaign mailbox dropdown -->
@@ -512,6 +512,12 @@ export default defineComponent({
             color: $black;
             font-size: 16px;
             font-weight: 600;
+          }
+
+          .app-checkbox {
+            color: $black;
+            font-size: 14px;
+            font-weight: 500;
           }
         }
       }

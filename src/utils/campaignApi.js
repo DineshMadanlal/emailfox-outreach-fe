@@ -1,6 +1,6 @@
 // utils
 import {
-  postApiCall, putApiCall, patchApiCall,
+  getApiCall, postApiCall, putApiCall, patchApiCall,
 } from 'src/utils/apiRequests';
 
 // constants
@@ -175,3 +175,60 @@ export const startCampaignById = async ({
     return false;
   }
 };
+
+// 1. List multiple sequence stats
+// GET /api/workspace/{workspace_id}/stats/sequences/list-stats
+export const getSequenceListStats = async () => getApiCall({
+  includeWorkspace: true,
+  endpoint: '/stats/sequences/list-stats',
+});
+
+// 2. Get overall sequence stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/overall-stats
+export const getSequenceOverallStats = async (campaignId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/overall-stats`,
+});
+
+// 3. Get date-wise sequence stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/date-stats
+export const getSequenceDateStats = async (campaignId, params) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/date-stats`,
+  params,
+});
+
+// 4. Get sequence ESP stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/esp-stats
+export const getSequenceEspStats = async (campaignId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/esp-stats`,
+});
+
+// 5. Get sequence step stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/step-stats
+export const getSequenceStepStats = async (campaignId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/step-stats`,
+});
+
+// 6. Get step variant stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/step-stats/{step_id}/variant-stats
+export const getStepVariantStats = async (campaignId, stepId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/step-stats/${stepId}/variant-stats`,
+});
+
+// 7. Get sequence mailbox stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/mailbox-stats
+export const getSequenceMailboxStats = async (campaignId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/mailbox-stats`,
+});
+
+// 8. Get sequence LinkedIn stats
+// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/linkedin-stats
+export const getSequenceLinkedinStats = async (campaignId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/sequences/${campaignId}/linkedin-stats`,
+});

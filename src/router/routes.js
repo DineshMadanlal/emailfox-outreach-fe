@@ -285,8 +285,28 @@ const routes = [
               },
               {
                 path: 'analytics',
-                component: () => import('src/pages/CampaignById/Analytics.vue'),
+                redirect: (to) => ({
+                  path: `/outreach/campaigns/${to.params.campaignId}/analytics/overview`,
+                }),
+                component: () => import('src/pages/CampaignById/Analytics/Index.vue'),
                 meta: { requiresAuth: true },
+                children: [
+                  {
+                    path: 'overview',
+                    component: () => import('src/pages/CampaignById/Analytics/Overview.vue'),
+                    meta: { requiresAuth: true },
+                  },
+                  {
+                    path: 'email',
+                    component: () => import('src/pages/CampaignById/Analytics/Email.vue'),
+                    meta: { requiresAuth: true },
+                  },
+                  {
+                    path: 'linkedin',
+                    component: () => import('src/pages/CampaignById/Analytics/LinkedIn.vue'),
+                    meta: { requiresAuth: true },
+                  },
+                ],
               },
               {
                 path: 'sequence',

@@ -23,6 +23,7 @@
   --white-color: #FFFFFF;
   --black-color: #040A14;
   --blue-grey-color: #DCE0E8;
+  --yellow-color: #BEAA4E;
 
   // list of grey colors
   --grey-50: #eef0f2;
@@ -89,3 +90,6 @@ $grey-300: var(--grey-300);
 $grey-400: var(--grey-400);
 $grey-700: var(--grey-700);
 $grey-800: var(--grey-800);
+
+// charts
+$yellow: var(--yellow-color);

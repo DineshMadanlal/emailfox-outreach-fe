@@ -21,6 +21,23 @@ const getWorkspaceEndpoint = (endpoint, includeWorkspace = false) => {
 
 const handleErrorMessage = (error) => error.response?.data?.message || error?.data?.message || error?.data?.error || 'Unexpected Error Occurred';
 
+const throwApiError = (error) => {
+  const errorMessage = handleErrorMessage(error);
+  const customError = new Error(errorMessage);
+
+  const status = error?.status || error?.response?.status;
+  const responseObj = error?.response || (error?.status ? error : null);
+
+  if (status) {
+    customError.status = status;
+  }
+  if (responseObj) {
+    customError.response = responseObj;
+  }
+
+  throw customError;
+};
+
 export const postApiCall = async ({
   endpoint, payload, otherParams, includeWorkspace = false,
 }) => {
@@ -40,8 +57,7 @@ export const postApiCall = async ({
     const response = await api(config);
     return response.data;
   } catch (error) {
-    const errorMessage = handleErrorMessage(error);
-    throw new Error(errorMessage);
+    return throwApiError(error);
   }
 };
 
@@ -57,8 +73,7 @@ export const patchApiCall = async ({ endpoint, payload, includeWorkspace = false
     });
     return response.data;
   } catch (error) {
-    const errorMessage = handleErrorMessage(error);
-    throw new Error(errorMessage);
+    return throwApiError(error);
   }
 };
 
@@ -74,8 +89,7 @@ export const putApiCall = async ({ endpoint, payload, includeWorkspace = false }
     });
     return response.data;
   } catch (error) {
-    const errorMessage = handleErrorMessage(error);
-    throw new Error(errorMessage);
+    return throwApiError(error);
   }
 };
 
@@ -91,8 +105,7 @@ export const getApiCall = async ({ endpoint, params, includeWorkspace = false })
     });
     return response.data;
   } catch (error) {
-    const errorMessage = handleErrorMessage(error);
-    throw new Error(errorMessage);
+    return throwApiError(error);
   }
 };
 
@@ -108,7 +121,6 @@ export const deleteApiCall = async ({ endpoint, payload, includeWorkspace = fals
     });
     return response.data;
   } catch (error) {
-    const errorMessage = handleErrorMessage(error);
-    throw new Error(errorMessage);
+    return throwApiError(error);
   }
 };

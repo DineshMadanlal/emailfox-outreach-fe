@@ -1,9 +1,5 @@
 <template>
   <div class="sequence-by-id-analytics">
-    <CampaignEngagement />
-
-    <SequenceEmailEngagement />
-
     <SequencePerformance />
 
     <VariantsTestingResults />
@@ -12,8 +8,8 @@
       <BounceRateBreakdown />
 
       <EspBreakdown
-        :showLoader="isLoadingEspMetrics"
-        :espPerformanceMetrics="espPerformanceMetrics"
+        :showLoader="loaders.espMetrics"
+        :espPerformanceMetrics="results.espMetrics"
 
         class="less-width-card"
       />
@@ -33,11 +29,10 @@
 
 <script>
 // vue
-import { defineComponent, reactive, toRefs } from 'vue';
+import {
+  defineComponent, reactive, toRefs, onMounted, getCurrentInstance,
+} from 'vue';
 
-// Components
-import CampaignEngagement from 'components/CampaignById/CampaignEngagement.vue';
-import SequenceEmailEngagement from 'src/components/CampaignById/SequenceEmailEngagement.vue';
 import SequencePerformance from 'components/CampaignById/SequencePerformance.vue';
 import EspBreakdown from 'components/DomainById/EspBreakdown.vue';
 import BounceRateBreakdown from 'components/CampaignById/BounceRateBreakdown.vue';
@@ -45,24 +40,64 @@ import BounceRateBreakdown from 'components/CampaignById/BounceRateBreakdown.vue
 import ContactsLifecycle from 'components/CampaignById/ContactsLifecycle.vue';
 import VariantsTestingResults from 'components/CampaignById/VariantsTestingResults.vue';
 
+// utils
+import { getSequenceEspStats } from 'src/utils/campaignApi.js';
+
 export default defineComponent({
   name: 'SequenceByIdAnalytics',
 
   components: {
     EspBreakdown,
-    CampaignEngagement,
-    SequenceEmailEngagement,
     BounceRateBreakdown,
     ContactsLifecycle,
     SequencePerformance,
     VariantsTestingResults,
   },
 
-  setup() {
+  props: {
+    campaignByIdJson: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  setup(props) {
+    // app context
+    const { appContext } = getCurrentInstance();
+
     // state
     const state = reactive({
-      isLoadingEspMetrics: false,
-      espPerformanceMetrics: {},
+      loaders: {
+        espMetrics: false,
+      },
+
+      results: {
+        espMetrics: {},
+      },
+    });
+
+    const fetchEspPerformanceMetrics = async () => {
+      try {
+        state.loaders.espMetrics = true;
+
+        const response = await getSequenceEspStats(props.campaignByIdJson?.id);
+
+        state.results.espMetrics = response;
+      } catch (error) {
+        // show error warning
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message,
+        });
+      } finally {
+        state.loaders.espMetrics = false;
+      }
+    };
+
+    // lifecycle hooks
+    onMounted(() => {
+      // fetch esp performance metrics
+      fetchEspPerformanceMetrics();
     });
 
     return {
