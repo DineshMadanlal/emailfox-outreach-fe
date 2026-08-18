@@ -9,6 +9,11 @@
       view="linkedin"
       :campaignId="campaignByIdJson.id"
     />
+
+    <SequencePerformance
+      view="linkedin"
+      :campaignId="campaignByIdJson.id"
+    />
   </div>
 </template>
 
@@ -18,6 +23,7 @@ import { defineComponent } from 'vue';
 
 // components
 import CampaignEngagement from 'components/CampaignById/Analytics/CampaignEngagement.vue';
+import SequencePerformance from 'components/CampaignById/Analytics/SequencePerformance.vue';
 import SequenceEngagement from 'components/CampaignById/Analytics/SequenceEngagement.vue';
 
 export default defineComponent({
@@ -26,6 +32,7 @@ export default defineComponent({
   components: {
     CampaignEngagement,
     SequenceEngagement,
+    SequencePerformance,
   },
 
   props: {

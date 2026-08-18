@@ -1,7 +1,5 @@
 <template>
   <div class="sequence-by-id-analytics">
-    <SequencePerformance />
-
     <VariantsTestingResults />
 
     <div class="two-cards-grid">
@@ -33,7 +31,6 @@ import {
   defineComponent, reactive, toRefs, onMounted, getCurrentInstance,
 } from 'vue';
 
-import SequencePerformance from 'components/CampaignById/SequencePerformance.vue';
 import EspBreakdown from 'components/DomainById/EspBreakdown.vue';
 import BounceRateBreakdown from 'components/CampaignById/BounceRateBreakdown.vue';
 
@@ -50,7 +47,6 @@ export default defineComponent({
     EspBreakdown,
     BounceRateBreakdown,
     ContactsLifecycle,
-    SequencePerformance,
     VariantsTestingResults,
   },
 
