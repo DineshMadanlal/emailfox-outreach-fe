@@ -8,8 +8,7 @@
     />
 
     <!-- table -->
-    <ContactsTable
-      hideHeader
+    <CampaignContactsTable
       :campaignId="campaignByIdJson.id"
     />
   </div>
@@ -20,14 +19,14 @@
 import { defineComponent } from 'vue';
 
 // Components
-import ContactsTable from 'components/Contacts/ContactsTable.vue';
+import CampaignContactsTable from 'components/Contacts/CampaignContactsTable.vue';
 import ContactDeliveryStats from 'components/Contacts/ContactDeliveryStats.vue';
 
 export default defineComponent({
   name: 'CampaignByIdContacts',
 
   components: {
-    ContactsTable,
+    CampaignContactsTable,
     ContactDeliveryStats,
   },
 

@@ -254,7 +254,7 @@
         <template v-slot:body-cell-name="props">
           <q-td :props="props">
             <router-link
-              :to="`/outreach/campaigns/${props.row.id}`"
+              :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignDetails
@@ -272,7 +272,7 @@
           <q-td :props="props">
             <!--  -->
             <router-link
-              :to="`/outreach/campaigns/${props.row.id}`"
+              :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignStatus
@@ -286,7 +286,7 @@
         <template v-slot:body-cell-contacts="props">
           <q-td :props="props">
             <router-link
-              :to="`/outreach/campaigns/${props.row.id}`"
+              :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignStats
@@ -303,7 +303,7 @@
         <template v-slot:body-cell-replies="props">
           <q-td :props="props">
             <router-link
-              :to="`/outreach/campaigns/${props.row.id}`"
+              :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignStats
@@ -319,7 +319,7 @@
         <template v-slot:body-cell-positiveReplies="props">
           <q-td :props="props">
             <router-link
-              :to="`/outreach/campaigns/${props.row.id}`"
+              :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignStats
@@ -377,6 +377,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // constants
 import { DEFAULT_TABLE_PAGINATION } from 'boot/constants';
+import { CAMPAIGN_STATUS } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'CampaignsTable',
@@ -404,10 +405,6 @@ export default defineComponent({
     fromAllCampaignsPage: {
       type: Boolean,
       default: false,
-    },
-    mailboxByJson: {
-      type: Object,
-      default: () => {},
     },
   },
 
@@ -786,6 +783,18 @@ export default defineComponent({
       state.showSaveCampaignDetailsModal = true;
     };
 
+    const getRouterLinkForCampaign = (campaignJson) => {
+      if (!campaignJson || !campaignJson.id) {
+        return '';
+      }
+
+      if (campaignJson.status === CAMPAIGN_STATUS.DRAFTED.value) {
+        return `/outreach/campaigns/${campaignJson.id}/edit`;
+      }
+
+      return `/outreach/campaigns/${campaignJson.id}`;
+    };
+
     const onUpdateCampaign = (updatedCampaignJson) => {
       // update the table data
       state.tableData = state.tableData.map((campaign) => {
@@ -876,6 +885,7 @@ export default defineComponent({
       getContactsStats,
       getRepliesStats,
       getPositiveRepliesStats,
+      getRouterLinkForCampaign,
     };
   },
 });

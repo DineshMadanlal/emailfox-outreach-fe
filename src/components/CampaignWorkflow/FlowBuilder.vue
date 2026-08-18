@@ -9,7 +9,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <ArchiveStepOrVariant
-        :inputJson="archiveStepJson"
+        :inputJson="modals.archiveStepJson"
 
         @onConfirmArchive="onUserConfirmArchiveStep"
       />
@@ -47,8 +47,11 @@
       </VueFlow>
     </div>
 
-    <!-- Footer -->
-    <div class="edit-sequence-footer">
+    <!-- Edit Campaign Footer -->
+    <div
+      class="edit-sequence-footer"
+      v-if="isEditCampaign"
+    >
       <!-- Save Button -->
       <q-btn
         no-caps
@@ -59,6 +62,24 @@
         :label="footerButtonLabel"
 
         @click="onSubmitForm"
+      />
+    </div>
+
+    <!-- Campaign By ID footer -->
+    <div
+      v-else-if="ui.hasChanges"
+      class="campaign-by-id-footer"
+    >
+      <!-- Save Button -->
+      <q-btn
+        no-caps
+        unelevated
+
+        color="primary"
+        label="Save Changes"
+        :loading="ui.isSaving"
+
+        @click="onSaveSequenceSteps"
       />
     </div>
   </div>
@@ -151,6 +172,10 @@ export default defineComponent({
       default: () => ({}),
     },
     formChanged: {
+      type: Boolean,
+      default: false,
+    },
+    isEditCampaign: {
       type: Boolean,
       default: false,
     },
@@ -411,8 +436,10 @@ export default defineComponent({
           setTimeout(() => {
             state.ui.hasChanges = false;
 
-            // move to the contacts step
-            $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/contacts`);
+            if (props.isEditCampaign) {
+              // move to the contacts step
+              $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/contacts`);
+            }
           }, 500);
         }
       } catch (error) {
@@ -618,6 +645,9 @@ export default defineComponent({
     const onUserConfirmArchiveStep = (stepJson) => {
       state.workflow.archivedStepIds.push(stepJson.id);
       removeWorkflowStep(stepJson);
+
+      state.modals.archiveStepJson = null;
+      state.modals.showArchiveStepOrVariant = false;
     };
 
     const archiveWorkflowStep = (stepJson) => {
@@ -625,7 +655,7 @@ export default defineComponent({
         if (isCampaignDrafted.value) {
           onUserConfirmArchiveStep(stepJson);
         } else {
-          state.archiveStepJson = stepJson;
+          state.modals.archiveStepJson = stepJson;
           state.modals.showArchiveStepOrVariant = true;
         }
       } else {
@@ -1013,6 +1043,10 @@ export default defineComponent({
       }
     };
 
+    const onSaveSequenceSteps = () => {
+      onSaveSteps();
+    };
+
     // lifecycle hooks
     onMounted(() => {
       getStepsByCampaignId();
@@ -1070,6 +1104,8 @@ export default defineComponent({
 
       // methods
       onSubmitForm,
+      onSaveSequenceSteps,
+      onUserConfirmArchiveStep,
     };
   },
 });
@@ -1125,6 +1161,27 @@ export default defineComponent({
         stroke: $grey-200;
         stroke-width: 1;
       }
+    }
+  }
+
+  .campaign-by-id-footer {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+
+    position: sticky;
+    bottom: 0px;
+    z-index: 3;
+    background: $white;
+
+    padding: 20px 16px;
+    border-top: 1px solid $grey-50;
+
+    // xs max
+    @media (max-width: $breakpoint-xs-max) {
+      padding: 12px 16px;
     }
   }
 }

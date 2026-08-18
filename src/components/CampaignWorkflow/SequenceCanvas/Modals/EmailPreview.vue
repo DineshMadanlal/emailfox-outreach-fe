@@ -1,213 +1,264 @@
 <template>
   <!-- email preview modal card wrapper -->
   <q-card flat class="app-modal-card email-preview-card">
-    <!-- modal main content -->
-    <div class="app-modal-content custom-scrollbar">
-      <div class="email-preview-wrapper">
+    <q-form
+      ref="formRef"
+      @submit.prevent.stop="onSendTestEmail"
+    >
+      <!-- modal main content -->
+      <div class="app-modal-content custom-scrollbar">
+        <div class="email-preview-wrapper">
 
-        <!-- left section: configuration controls -->
-        <div class="email-preview-left-section">
-          <!-- header text -->
-          <h4 class="modal-header-text">
-            Email Preview
-          </h4>
+          <!-- left section: configuration controls -->
+          <div class="email-preview-left-section">
+            <!-- header text -->
+            <h4 class="modal-header-text">
+              Email Preview
+            </h4>
 
-          <!-- send to contact section -->
-          <div class="control-section">
-            <label class="section-label">
-              Send To
-            </label>
+            <!-- send to contact section -->
+            <div class="control-section">
+              <label class="section-label">
+                Contact
+              </label>
 
-            <!-- select campaign contacts dropdown -->
-            <SelectCampaignContacts
-              preSelectFirstOption
+              <!-- select campaign contacts dropdown -->
+              <SelectCampaignContacts
+                no-error-icon
+                preSelectFirstOption
 
-              :borderless="true"
-              :outlined="false"
-              :campaignId="campaignId"
+                :borderless="true"
+                :outlined="false"
+                :campaignId="campaignId"
 
-              v-model="form.contactId"
+                v-model="form.contactId"
 
-              class="full-width"
-              placeholder-text="Select contact"
+                class="full-width"
+                placeholder-text="Select contact"
+                lazy-rules="ondemand"
+                hide-bottom-space
+                :rules="contactRules"
 
-              @update:model-value="onSelectionChange"
-            />
-          </div>
-
-          <!-- sender email section -->
-          <div class="control-section">
-            <label class="section-label">
-              Sender Email
-            </label>
-
-            <!-- select campaign mailbox dropdown -->
-            <SelectCampaignMailbox
-              preSelectFirstOption
-
-              :borderless="true"
-              :outlined="false"
-              :campaignId="campaignId"
-
-              v-model="form.senderMailboxId"
-
-              class="full-width"
-              placeholder-text="Select sender email"
-              @update:model-value="onSelectionChange"
-            />
-          </div>
-        </div>
-
-        <!-- right section: live preview canvas -->
-        <div class="email-preview-right-section">
-          <!-- preview control bar header -->
-          <div class="preview-control-bar">
-            <!-- web / mobile toggle button group -->
-            <div class="view-mode-toggle-group">
-              <!-- Web -->
-              <q-btn
-                flat
-                dense
-                no-caps
-                unelevated
-
-                color="primary"
-                class="toggle-btn"
-
-                :class="{ 'active-mode': viewMode === 'web' }"
-                @click="viewMode = 'web'"
-              >
-                <div class="text-black toggle-text">
-                  Web
-                </div>
-              </q-btn>
-
-              <!-- Mobile -->
-              <q-btn
-                flat
-                dense
-                no-caps
-                unelevated
-
-                color="primary"
-                class="toggle-btn"
-
-                :class="{ 'active-mode': viewMode === 'mobile' }"
-                @click="viewMode = 'mobile'"
-              >
-                <div class="text-black toggle-text">
-                  Mobile
-                </div>
-              </q-btn>
-            </div>
-
-            <!-- modal close button -->
-            <q-btn
-              flat
-              round
-              dense
-              v-close-popup
-              color="negative"
-              class="app-negative-button"
-            >
-              <LocalSvgIcon
-                image="close"
-                classes="app-negative-icon"
+                @update:model-value="onSelectionChange"
               />
-            </q-btn>
-          </div>
+            </div>
 
-          <!-- email canvas scroll container -->
-          <div class="email-canvas-container">
-            <div
-              class="email-preview-card-body"
-              :class="{
-                'mode-web': viewMode === 'web',
-                'mode-mobile': viewMode === 'mobile'
-              }"
-            >
-              <!-- loader state -->
-              <div
-                v-if="loader.isPreviewLoading"
-                class="preview-loader-wrapper"
-              >
-                <ApiLoader
-                  show
-                  size="30px"
-                />
-              </div>
+            <!-- sender email section -->
+            <div class="control-section">
+              <label class="section-label">
+                Sender Email
+              </label>
 
-              <!-- email message preview content -->
-              <template
-                v-else-if="emailPreviewData.subject || emailPreviewData.message"
-              >
-                <!-- email subject line -->
-                <div class="email-subject-line">
-                  {{ emailPreviewData.subject }}
-                </div>
+              <!-- select campaign mailbox dropdown -->
+              <SelectCampaignMailbox
+                no-error-icon
+                preSelectFirstOption
 
-                <!-- sender meta skeleton placeholder header -->
-                <div class="email-sender-meta">
-                  <div
-                    class="sender-avatar flex items-center
-                    justify-center bg-grey-3 rounded-circle"
-                  >
-                    <q-icon name="person" size="20px" color="grey-6" />
-                  </div>
+                :borderless="true"
+                :outlined="false"
+                :campaignId="campaignId"
 
-                  <div class="meta-skeleton-lines flex column gap-xs">
-                    <div class="skeleton-line-long bg-grey-3 rounded-borders" />
-                    <div class="skeleton-line-short bg-grey-2 rounded-borders" />
-                  </div>
-                </div>
+                v-model="form.senderMailboxId"
 
-                <!-- body html content -->
-                <div
-                  class="email-body-content"
-                  v-html="emailPreviewData.message"
-                />
-              </template>
+                class="full-width"
+                placeholder-text="Select sender email"
+                lazy-rules="ondemand"
+                hide-bottom-space
+                :rules="senderMailboxRules"
 
-              <!-- empty state -->
-              <div
-                v-else
-                class="empty-preview-placeholder"
-              >
-                <q-icon
-                  name="mark_email_read"
-                  size="48px"
+                @update:model-value="onSelectionChange"
+              />
+            </div>
 
-                  class="email-read-icon"
-                />
+            <!-- To Email Input -->
+            <div class="control-section">
+              <label class="section-label">
+                To Email:
+              </label>
 
-                <p class="preview-title-text">
-                  No Email Preview
-                </p>
-                <p class="preview-desc-text">
-                  Select a recipient contact and sender email to fetch email preview.
-                </p>
-              </div>
+              <!-- select campaign mailbox dropdown -->
+              <q-input
+                dense
+                outlined
+                no-error-icon
+                hide-bottom-space
+
+                v-model="form.toEmail"
+
+                class="full-width"
+                :rules="toEmailRules"
+                lazy-rules="ondemand"
+                placeholder="Enter email address"
+
+                @update:model-value="onInputChange"
+              />
+            </div>
+
+            <!-- Send as Plain Text Checkbox -->
+            <div class="control-section">
+              <q-checkbox
+                dense
+                v-model="form.isPlainText"
+
+                color="primary"
+                class="app-checkbox"
+                label="Send as plain text email"
+                @update:model-value="onInputChange"
+              />
             </div>
           </div>
 
+          <!-- right section: live preview canvas -->
+          <div class="email-preview-right-section">
+            <!-- preview control bar header -->
+            <div class="preview-control-bar">
+              <!-- web / mobile toggle button group -->
+              <div class="view-mode-toggle-group">
+                <!-- Web -->
+                <q-btn
+                  flat
+                  dense
+                  no-caps
+                  unelevated
+
+                  color="primary"
+                  class="toggle-btn"
+
+                  :class="{ 'active-mode': viewMode === 'web' }"
+                  @click="viewMode = 'web'"
+                >
+                  <div class="text-black toggle-text">
+                    Web
+                  </div>
+                </q-btn>
+
+                <!-- Mobile -->
+                <q-btn
+                  flat
+                  dense
+                  no-caps
+                  unelevated
+
+                  color="primary"
+                  class="toggle-btn"
+
+                  :class="{ 'active-mode': viewMode === 'mobile' }"
+                  @click="viewMode = 'mobile'"
+                >
+                  <div class="text-black toggle-text">
+                    Mobile
+                  </div>
+                </q-btn>
+              </div>
+
+              <!-- modal close button -->
+              <q-btn
+                flat
+                round
+                dense
+                v-close-popup
+                color="negative"
+                class="app-negative-button"
+              >
+                <LocalSvgIcon
+                  image="close"
+                  classes="app-negative-icon"
+                />
+              </q-btn>
+            </div>
+
+            <!-- email canvas scroll container -->
+            <div class="email-canvas-container">
+              <div
+                class="email-preview-card-body"
+                :class="{
+                  'mode-web': viewMode === 'web',
+                  'mode-mobile': viewMode === 'mobile'
+                }"
+              >
+                <!-- loader state -->
+                <div
+                  v-if="loader.isPreviewLoading"
+                  class="preview-loader-wrapper"
+                >
+                  <ApiLoader
+                    show
+                    size="30px"
+                  />
+                </div>
+
+                <!-- email message preview content -->
+                <template
+                  v-else-if="emailPreviewData.subject || emailPreviewData.message"
+                >
+                  <!-- email subject line -->
+                  <div class="email-subject-line">
+                    {{ emailPreviewData.subject }}
+                  </div>
+
+                  <!-- sender meta skeleton placeholder header -->
+                  <div class="email-sender-meta">
+                    <div
+                      class="sender-avatar flex items-center
+                      justify-center bg-grey-3 rounded-circle"
+                    >
+                      <q-icon name="person" size="20px" color="grey-6" />
+                    </div>
+
+                    <div class="meta-skeleton-lines flex column gap-xs">
+                      <div class="skeleton-line-long bg-grey-3 rounded-borders" />
+                      <div class="skeleton-line-short bg-grey-2 rounded-borders" />
+                    </div>
+                  </div>
+
+                  <!-- body html content -->
+                  <div
+                    class="email-body-content"
+                    v-html="emailPreviewData.message"
+                  />
+                </template>
+
+                <!-- empty state -->
+                <div
+                  v-else
+                  class="empty-preview-placeholder"
+                >
+                  <q-icon
+                    name="mark_email_read"
+                    size="48px"
+
+                    class="email-read-icon"
+                  />
+
+                  <p class="preview-title-text">
+                    No Email Preview
+                  </p>
+                  <p class="preview-desc-text">
+                    Select a recipient contact and sender email to fetch email preview.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
-
       </div>
-    </div>
 
-    <!-- modal footer -->
-    <div class="app-modal-footer">
-      <q-btn
-        no-caps
-        unelevated
-        color="primary"
-        label="Send Test Email"
-        class="send-test-btn text-weight-medium"
-        :loading="loader.isSending"
-        :disable="!form.contactId || !form.senderMailboxId"
-        @click="onSendTestEmail"
-      />
-    </div>
+      <!-- modal footer -->
+      <div class="app-modal-footer">
+        <q-btn
+          no-caps
+          unelevated
+          type="submit"
+          color="primary"
+          label="Send Test Email"
+          class="send-test-btn text-weight-medium"
+
+          :loading="loader.isSending"
+        />
+      </div>
+    </q-form>
 
   </q-card>
 </template>
@@ -229,6 +280,9 @@ import SelectCampaignContacts from 'components/Dropdown/SelectCampaignContacts.v
 // utils
 import { postApiCall } from 'src/utils/apiRequests';
 import { convertStringToNumber } from 'src/utils/numbers';
+
+// constants
+import { EMAIL_REGEX } from 'boot/constants';
 
 export default defineComponent({
   name: 'EmailPreview',
@@ -266,8 +320,10 @@ export default defineComponent({
 
       // selection form values (only primitive IDs stored)
       form: {
+        toEmail: null,
         contactId: null,
         senderMailboxId: null,
+        isPlainText: false,
       },
 
       // preview api data
@@ -282,6 +338,8 @@ export default defineComponent({
         isPreviewLoading: false,
         isSending: false,
       },
+
+      formRef: null,
     });
 
     // computed
@@ -304,6 +362,8 @@ export default defineComponent({
             message: props.message,
             contact_id: state.form.contactId,
             sender_mailbox_id: state.form.senderMailboxId,
+            is_plain_text: state.form.isPlainText,
+            send_plain_text: state.form.isPlainText,
           },
         });
 
@@ -320,8 +380,16 @@ export default defineComponent({
       }
     };
 
+    const onInputChange = () => {
+      if (state.formRef) {
+        state.formRef.resetValidation();
+      }
+    };
+
     // selection change listener
     const onSelectionChange = () => {
+      onInputChange();
+
       if (state.form.contactId && state.form.senderMailboxId) {
         fetchEmailPreview();
       }
@@ -329,26 +397,22 @@ export default defineComponent({
 
     // send test email handler
     const onSendTestEmail = async () => {
-      if (!state.form.contactId || !state.form.senderMailboxId) {
-        appContext.config.globalProperties.$toast({
-          warning: true,
-          message: 'Please select both contact and sender email',
-        });
-        return;
-      }
-
       try {
         state.loader.isSending = true;
+
+        const payload = {
+          message: state.emailPreviewData.message,
+          subject: state.emailPreviewData.subject,
+
+          to: state.form.toEmail,
+          sender_mailbox_id: state.form.senderMailboxId,
+          send_plain_text: state.form.isPlainText,
+        };
 
         await postApiCall({
           includeWorkspace: true,
           endpoint: `/sequences/${campaignId.value}/send-test-email`,
-          payload: {
-            message: props.message,
-            subject: props.subject,
-            contact_id: state.form.contactId,
-            mailbox_id: state.form.senderMailboxId,
-          },
+          payload,
         });
 
         appContext.config.globalProperties.$toast({
@@ -375,6 +439,16 @@ export default defineComponent({
     });
 
     return {
+      contactRules: [
+        (val) => !!val || 'Contact is required',
+      ],
+      senderMailboxRules: [
+        (val) => !!val || 'Sender email is required',
+      ],
+      toEmailRules: [
+        (val) => EMAIL_REGEX.test(val) || 'Invalid email',
+      ],
+
       // state
       ...toRefs(state),
 
@@ -382,6 +456,7 @@ export default defineComponent({
       campaignId,
 
       // methods
+      onInputChange,
       onSelectionChange,
       fetchEmailPreview,
       onSendTestEmail,
@@ -427,10 +502,11 @@ export default defineComponent({
         }
 
         .control-section {
-          padding: 20px;
+          padding: 16px 20px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 4px;
+          border-bottom: 1px solid $grey-50;
 
           .section-label {
             color: $black;

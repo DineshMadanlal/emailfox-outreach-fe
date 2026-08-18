@@ -314,6 +314,10 @@ export default defineComponent({
           name: 'Sender Mailboxes',
           path: `/outreach/campaigns/${sequenceId}/sender-mailboxes`,
         },
+        {
+          name: 'Sequence',
+          path: `/outreach/campaigns/${sequenceId}/sequence`,
+        },
         // {
         //   name: 'Activity',
         //   path: `/outreach/campaigns/${sequenceId}/activity`,

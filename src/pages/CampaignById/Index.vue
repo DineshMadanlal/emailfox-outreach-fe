@@ -29,7 +29,7 @@ import isEmpty from 'lodash/isEmpty';
 
 // vue
 import {
-  defineComponent, onMounted, reactive, toRefs, computed, getCurrentInstance,
+  defineComponent, onMounted, reactive, toRefs, computed, getCurrentInstance, provide,
 } from 'vue';
 
 // quasar
@@ -173,6 +173,16 @@ export default defineComponent({
         campaignByIdJson: updatedCampaignJson,
       });
     };
+
+    const editCampaignContext = {
+      //
+      isEmailOutreachCampaign,
+      isLinkedInOutreachCampaign,
+      isMultiChannelOutreachCampaign,
+    };
+
+    // provide
+    provide('editCampaignContext', editCampaignContext);
 
     // lifecycle hooks
     onMounted(() => {

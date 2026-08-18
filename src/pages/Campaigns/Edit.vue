@@ -38,6 +38,7 @@
       <!-- content -->
       <div class="edit-sequence-content">
         <router-view
+          isEditCampaign
           :campaignByIdJson="campaignByIdJson"
 
           @closeCampaignForm="closeCampaignForm"

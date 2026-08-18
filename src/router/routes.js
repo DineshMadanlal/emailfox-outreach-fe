@@ -263,16 +263,16 @@ const routes = [
             component: () => import('pages/CampaignById/Index.vue'),
             meta: { requiresAuth: true },
             children: [
-              {
-                path: 'overview',
-                component: () => import('src/pages/CampaignById/Overview.vue'),
-                meta: { requiresAuth: true },
-              },
-              {
-                path: 'inbox',
-                component: () => import('src/pages/CampaignById/Inbox.vue'),
-                meta: { requiresAuth: true },
-              },
+              // {
+              //   path: 'overview',
+              //   component: () => import('src/pages/CampaignById/Overview.vue'),
+              //   meta: { requiresAuth: true },
+              // },
+              // {
+              //   path: 'inbox',
+              //   component: () => import('src/pages/CampaignById/Inbox.vue'),
+              //   meta: { requiresAuth: true },
+              // },
               {
                 path: 'contacts',
                 component: () => import('src/pages/CampaignById/Contacts.vue'),
@@ -289,10 +289,15 @@ const routes = [
                 meta: { requiresAuth: true },
               },
               {
-                path: 'activity',
-                component: () => import('src/pages/CampaignById/Activity.vue'),
+                path: 'sequence',
                 meta: { requiresAuth: true },
+                component: () => import('components/CampaignWorkflow/FlowBuilder.vue'),
               },
+              // {
+              //   path: 'activity',
+              //   component: () => import('src/pages/CampaignById/Activity.vue'),
+              //   meta: { requiresAuth: true },
+              // },
             ],
           },
 
