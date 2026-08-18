@@ -25,8 +25,8 @@
           class="exchange-icon"
         />
 
-        <LocalSvgIcon
-          image="app-logo-squared"
+        <img
+          src="https://cdn.outreachfox.ai/landing/outreachfox-icon.png?v=4"
           class="connection-provider-icon"
         />
       </div>
@@ -122,9 +122,6 @@ import { useRouter } from 'vue-router';
 // quasar
 import { copyToClipboard } from 'quasar';
 
-// Import the Pinia store
-import { useCustomerStore } from 'src/stores/customer.js';
-
 // utils
 import { isMainApp } from 'src/utils/applyBranding.js';
 import { connectGoogleAccount, connectOutlookAccount } from 'src/utils/domainMailboxesApi.js';
@@ -150,9 +147,6 @@ export default defineComponent({
 
     // instance
     const { appContext } = getCurrentInstance();
-
-    // access the store
-    const customerStorePinia = useCustomerStore();
 
     // state
     const state = reactive({
@@ -198,15 +192,13 @@ export default defineComponent({
       return 'Connect';
     });
 
-    const partnerBranding = computed(() => customerStorePinia.getBrandingData);
-
     const appName = computed(() => {
       const isPrimaryPlatform = isMainApp();
       if (isPrimaryPlatform) {
-        return 'Skysenders';
+        return 'Coldbean.ai';
       }
 
-      return partnerBranding.value?.name || '';
+      return 'the app';
     });
 
     const googleConnectionSteps = computed(() => {
