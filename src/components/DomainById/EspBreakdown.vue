@@ -160,8 +160,14 @@ export default defineComponent({
     // computed
     const hideEspBreakdown = computed(() => isEmpty(props.espPerformanceMetrics));
 
+    const numericEspPerformanceMetrics = computed(() => Object.fromEntries(
+      Object.entries(props.espPerformanceMetrics).filter(
+        ([, value]) => typeof value === 'number',
+      ),
+    ));
+
     const totalCount = computed(() => Object.values(
-      props.espPerformanceMetrics,
+      numericEspPerformanceMetrics.value,
     ).reduce((a, b) => a + b, 0));
 
     const percentages = computed(() => {
@@ -172,7 +178,7 @@ export default defineComponent({
       }
 
       return Object.fromEntries(
-        Object.entries(props.espPerformanceMetrics).map(([key, val]) => {
+        Object.entries(numericEspPerformanceMetrics.value).map(([key, val]) => {
           const percent = (val / totalCount.value) * 100;
           const rounded = percent.toFixed(1);
 

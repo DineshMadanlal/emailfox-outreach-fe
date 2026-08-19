@@ -348,7 +348,7 @@ export default defineComponent({
         {
           name: 'SuppressionList',
           icon: 'mails-bounced',
-          label: 'Suppress List',
+          label: 'Blocklist',
           route: '/settings/suppression-list',
           isActive: activeRoutePath.value.includes('/settings/suppression-list'),
         },

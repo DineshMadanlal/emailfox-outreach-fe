@@ -49,19 +49,42 @@
     </div>
 
     <!-- Content -->
-    <div class="add-mailbox-content">
+    <div
+      class="add-mailbox-content"
+      :class="{
+        'smtp-mail': isCustomSmtp
+      }"
+    >
       <SelectMailboxProvider
         v-if="activeStep === 1"
 
         @onCompleteStep="onSelectMailboxProvider"
       />
 
-      <ConnectionSteps
-        v-else-if="activeStep === 2"
+      <template v-else-if="activeStep === 2">
+        <!-- IMAP/SMTP bulk import -->
+        <SmtpBulkImport
+          v-if="isCustomSmtp && isBulkMode"
 
-        :mailboxDataJson="mailboxDataJson"
-        @goBack="setStep(1)"
-      />
+          @goBack="setStep(1)"
+        />
+
+        <!-- IMAP/SMTP single add -->
+        <AddSmtpMailbox
+          v-else-if="isCustomSmtp"
+
+          :mailboxDataJson="mailboxDataJson"
+          @goBack="setStep(1)"
+        />
+
+        <!-- OAuth providers (Google / Outlook) -->
+        <ConnectionSteps
+          v-else
+
+          :mailboxDataJson="mailboxDataJson"
+          @goBack="setStep(1)"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -69,7 +92,7 @@
 <script>
 // vue
 import {
-  defineComponent, toRefs, reactive, onMounted,
+  defineComponent, toRefs, reactive, onMounted, computed,
 } from 'vue';
 
 // router
@@ -79,10 +102,13 @@ import { useRouter } from 'vue-router';
 import StepSummary from 'components/Mailboxes/StepSummary.vue';
 import ConnectionSteps from 'components/Mailboxes/ConnectionSteps.vue';
 import SelectMailboxProvider from 'components/Mailboxes/SelectMailboxProvider.vue';
+import AddSmtpMailbox from 'components/Mailboxes/AddSmtpMailbox.vue';
+import SmtpBulkImport from 'components/Mailboxes/SmtpBulkImport.vue';
 
 // utils
 import { scrollToTheTop } from 'src/utils/htmlScrollApi.js';
 import { MAILBOX_IMPORT_STEPS } from 'src/boot/constants';
+import { ESP_PROVIDERS } from 'boot/mailbox-constants';
 
 export default defineComponent({
   name: 'AddMailbox',
@@ -91,6 +117,8 @@ export default defineComponent({
     StepSummary,
     SelectMailboxProvider,
     ConnectionSteps,
+    AddSmtpMailbox,
+    SmtpBulkImport,
   },
 
   setup() {
@@ -105,6 +133,10 @@ export default defineComponent({
 
       previousRoutePath: '',
     });
+
+    // computed
+    const isCustomSmtp = computed(() => state.mailboxDataJson?.value === ESP_PROVIDERS.CUSTOM_SMTP);
+    const isBulkMode = computed(() => state.mailboxDataJson?.mode === 'bulk');
 
     // methods
     const onClosePage = () => {
@@ -124,6 +156,10 @@ export default defineComponent({
     };
 
     const setStep = (stepNumber) => {
+      if (stepNumber === 1) {
+        state.mailboxDataJson.value = null;
+      }
+
       state.activeStep = stepNumber;
 
       // time out is required for the scroll
@@ -147,6 +183,10 @@ export default defineComponent({
     return {
       // state
       ...toRefs(state),
+
+      // computed
+      isBulkMode,
+      isCustomSmtp,
 
       // methods
       setStep,
@@ -234,6 +274,11 @@ export default defineComponent({
     // xs max
     @media (max-width: $breakpoint-xs-max) {
       padding: 24px 12px;
+    }
+
+    &.smtp-mail {
+      padding: 0;
+      justify-content: flex-start;
     }
   }
 }

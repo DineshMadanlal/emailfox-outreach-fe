@@ -176,6 +176,20 @@ export const connectGoogleAccount = async (redirectUrl) => {
   }
 };
 
+export const connectSmtpAccount = async (payload) => {
+  try {
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: '/mailboxes/connect/smtp',
+      payload,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const bulkUpdateMailboxes = async (payload) => {
   try {
     const response = await putApiCall({

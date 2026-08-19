@@ -68,7 +68,7 @@
       <div class="settings-header-left-side">
         <!-- header text -->
         <p class="settings-header-text">
-          Suppression List
+          Blocklist
         </p>
 
         <!-- label text -->
