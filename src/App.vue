@@ -18,7 +18,7 @@ import isEmpty from 'lodash/isEmpty';
 
 // vue
 import {
-  computed, defineComponent, onMounted, provide, reactive, toRefs,
+  computed, defineComponent, onBeforeUnmount, onMounted, provide, reactive, toRefs,
 } from 'vue';
 
 // quasar
@@ -46,6 +46,9 @@ import { updatePrimaryAndSecondaryColor } from 'src/utils/quasarHelpers.js';
 import { isMainApp, applyBranding } from 'src/utils/applyBranding';
 import { getWorkspaceSlugFromUrl } from 'src/utils/helperFunctions';
 
+// boot
+import { setApiBaseURL } from 'src/boot/axios';
+
 export default defineComponent({
   name: 'App',
 
@@ -70,6 +73,8 @@ export default defineComponent({
     // state
     const state = reactive({
       showRouterView: false,
+
+      configTimeoutId: null,
     });
 
     // computed
@@ -165,20 +170,88 @@ export default defineComponent({
     };
 
     const onAppMounted = async () => {
-      const isMainAppFlag = isMainApp();
-
       // no dark mode
       $q.dark.set(false);
 
+      // If not inside an iframe, use the existing isMainApp() logic — no cross-origin issues here
+      if (window.parent === window) {
+        if (isMainApp()) {
+          primaryAppSetup();
+        } else {
+          whitelabelBrandingSetup();
+        }
+        return;
+      }
+
+      // Inside a cross-origin iframe: use postMessage handshake instead of isMainApp()
+      // Send EMAILFOX_INIT to signal we are ready to receive config
+      window.parent.postMessage(
+        {
+          type: 'EMAILFOX_INIT',
+          version: '1.0.0',
+          timestamp: Date.now(),
+        },
+        '*',
+      );
+    };
+
+    // Handles the EMAILFOX_CONFIG message sent by the parent in response to EMAILFOX_INIT
+    const handleConfigMessage = (event) => {
+      if (event.data?.type !== 'EMAILFOX_CONFIG') {
+        return;
+      }
+
+      // Clean up listener — config is a one-time handshake
+      window.removeEventListener('message', handleConfigMessage);
+
+      if (state.configTimeoutId) {
+        clearTimeout(state.configTimeoutId);
+      }
+
+      const { isMainApp: isMainAppFlag } = event.data;
+
       if (isMainAppFlag) {
+        // Switch axios to the primary app API before any requests are made
+        setApiBaseURL(process.env.AUTHENTICATION_API);
         primaryAppSetup();
       } else {
         whitelabelBrandingSetup();
       }
     };
 
+    // Handles the EMAILFOX_LOGOUT message sent by the parent to force-logout the user
+    const handleLogoutMessage = (event) => {
+      if (event.data?.type !== 'EMAILFOX_LOGOUT') {
+        return;
+      }
+
+      authStorePinia.logoutUser?.();
+    };
+
     onMounted(async () => {
+      if (window.parent !== window) {
+        // Register config listener before sending EMAILFOX_INIT to avoid any race condition
+        window.addEventListener('message', handleConfigMessage);
+
+        // Register logout listener — stays active for the lifetime of the app
+        window.addEventListener('message', handleLogoutMessage);
+
+        // Fallback: if parent does not respond within 3s, treat as white-label
+        state.configTimeoutId = setTimeout(() => {
+          window.removeEventListener('message', handleConfigMessage);
+          whitelabelBrandingSetup();
+        }, 3000);
+      }
+
       onAppMounted();
+    });
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('message', handleConfigMessage);
+      window.removeEventListener('message', handleLogoutMessage);
+      if (state.configTimeoutId) {
+        clearTimeout(state.configTimeoutId);
+      }
     });
 
     return {

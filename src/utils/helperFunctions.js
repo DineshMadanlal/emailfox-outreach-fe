@@ -227,7 +227,7 @@ export const backendApiUrl = () => {
   let baseURL = process.env.AUTHENTICATION_API;
 
   if (!isPrimaryApp) {
-    baseURL = 'https://outreach-api.apiruntime.com/api';
+    baseURL = 'https://api.boltapi.ai/api';
   }
 
   return baseURL;

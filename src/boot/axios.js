@@ -169,3 +169,15 @@ export default boot(({ app, store, router }) => {
 });
 
 export { api };
+
+/**
+ * Updates the baseURL for both axios instances at runtime.
+ * Called after receiving EMAILFOX_CONFIG from the parent frame
+ * to switch from the default white-label URL to the primary app URL.
+ *
+ * @param {string} url - The new base URL to apply
+ */
+export const setApiBaseURL = (url) => {
+  api.defaults.baseURL = url;
+  refreshApi.defaults.baseURL = url;
+};

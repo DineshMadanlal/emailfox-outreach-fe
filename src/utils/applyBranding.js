@@ -12,8 +12,16 @@ export const isMainApp = () => {
     return true;
   }
 
-  //
-  return window.location.hostname.includes('emailfox.ai');
+  try {
+    const { hostname } = window.parent.location;
+
+    return hostname === 'icemail.ai'
+      || hostname.endsWith('.icemail.ai')
+      || hostname === 'outreachfox.ai'
+      || hostname.endsWith('.outreachfox.ai');
+  } catch (error) {
+    return false;
+  }
 };
 
 export const getPrimaryBrandColor = () => {
