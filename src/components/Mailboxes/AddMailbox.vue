@@ -11,7 +11,8 @@
 
         <div class="add-mailbox-stepper">
           <StepSummary
-            :activeStep="activeStep"
+            :steps="activeSteps"
+            :activeStep="stepperActiveStep"
             :completedStepsJson="completedStepsJson"
 
             @setStep="setStep"
@@ -40,7 +41,8 @@
 
       <div class="mobile-add-mailbox-stepper">
         <StepSummary
-          :activeStep="activeStep"
+          :steps="activeSteps"
+          :activeStep="stepperActiveStep"
           :completedStepsJson="completedStepsJson"
 
           @setStep="setStep"
@@ -67,6 +69,7 @@
           v-if="isCustomSmtp && isBulkMode"
 
           @goBack="setStep(1)"
+          @bulkStepChanged="onBulkStepChanged"
         />
 
         <!-- IMAP/SMTP single add -->
@@ -107,8 +110,13 @@ import SmtpBulkImport from 'components/Mailboxes/SmtpBulkImport.vue';
 
 // utils
 import { scrollToTheTop } from 'src/utils/htmlScrollApi.js';
-import { MAILBOX_IMPORT_STEPS } from 'src/boot/constants';
-import { ESP_PROVIDERS } from 'boot/mailbox-constants';
+
+// constants
+import {
+  ESP_PROVIDERS,
+  MAILBOX_IMPORT_STEPS,
+  BULK_MAILBOX_IMPORT_STEPS,
+} from 'boot/mailbox-constants';
 
 export default defineComponent({
   name: 'AddMailbox',
@@ -128,6 +136,8 @@ export default defineComponent({
     // state
     const state = reactive({
       activeStep: 1,
+      // tracks sub-step inside SmtpBulkImport (1=upload, 2=import progress)
+      bulkSubStep: 1,
       completedStepsJson: {},
       mailboxDataJson: {},
 
@@ -137,6 +147,20 @@ export default defineComponent({
     // computed
     const isCustomSmtp = computed(() => state.mailboxDataJson?.value === ESP_PROVIDERS.CUSTOM_SMTP);
     const isBulkMode = computed(() => state.mailboxDataJson?.mode === 'bulk');
+
+    // Which step config to show in the stepper header
+    const activeSteps = computed(
+      () => (isBulkMode.value ? BULK_MAILBOX_IMPORT_STEPS : MAILBOX_IMPORT_STEPS),
+    );
+
+    // Map parent step + bulk sub-step → stepper highlight
+    // Standard: activeStep maps directly (1 or 2)
+    // Bulk: step 1 → 1, step 2 sub-step 1 → 2, step 2 sub-step 2 → 3
+    const stepperActiveStep = computed(() => {
+      if (!isBulkMode.value) return state.activeStep;
+      if (state.activeStep === 1) return 1;
+      return state.bulkSubStep + 1; // sub-step 1 → stepper 2, sub-step 2 → stepper 3
+    });
 
     // methods
     const onClosePage = () => {
@@ -158,6 +182,7 @@ export default defineComponent({
     const setStep = (stepNumber) => {
       if (stepNumber === 1) {
         state.mailboxDataJson.value = null;
+        state.bulkSubStep = 1;
       }
 
       state.activeStep = stepNumber;
@@ -176,6 +201,15 @@ export default defineComponent({
       setStep(2);
     };
 
+    // Called by SmtpBulkImport when it moves between its internal steps
+    const onBulkStepChanged = (subStep) => {
+      state.bulkSubStep = subStep;
+
+      if (subStep === 2) {
+        setCompletedSteps(BULK_MAILBOX_IMPORT_STEPS.UPLOAD_FILE.value);
+      }
+    };
+
     onMounted(() => {
       onComponentMounted();
     });
@@ -187,10 +221,13 @@ export default defineComponent({
       // computed
       isBulkMode,
       isCustomSmtp,
+      activeSteps,
+      stepperActiveStep,
 
       // methods
       setStep,
       onClosePage,
+      onBulkStepChanged,
       onSelectMailboxProvider,
     };
   },
@@ -279,6 +316,26 @@ export default defineComponent({
     &.smtp-mail {
       padding: 0;
       justify-content: flex-start;
+    }
+  }
+
+  // Footer
+  :deep(.smtp-footer-actions) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    background: $white;
+    border-top: 1px solid $grey-50;
+    padding: 20px;
+
+    position: sticky;
+    bottom: 0px;
+    z-index: 2;
+
+    @media (max-width: $breakpoint-xs-max) {
+      padding: 20px 12px;
     }
   }
 }

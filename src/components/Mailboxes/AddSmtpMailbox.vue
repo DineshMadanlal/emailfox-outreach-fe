@@ -237,7 +237,7 @@
       </div>
 
       <!-- Footer Buttons -->
-      <div class="footer-actions">
+      <div class="smtp-footer-actions">
         <!-- Back button -->
         <q-btn
           flat
@@ -503,26 +503,6 @@ export default defineComponent({
           max-width: 100%;
         }
       }
-    }
-  }
-
-  .footer-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid $grey-50;
-
-    padding: 20px;
-
-    @media (max-width: $breakpoint-xs-max) {
-      padding: 20px 12px;
-    }
-
-    @media (max-width: $breakpoint-xs-max) {
-      margin-top: 24px;
-      padding-top: 16px;
     }
   }
 }

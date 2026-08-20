@@ -45,7 +45,7 @@
 import { defineComponent, computed } from 'vue';
 
 // constants
-import { MAILBOX_IMPORT_STEPS } from 'boot/constants';
+import { MAILBOX_IMPORT_STEPS } from 'boot/mailbox-constants';
 
 export default defineComponent({
   name: 'StepSummary',
@@ -61,11 +61,19 @@ export default defineComponent({
       type: Object,
       required: true,
     },
+    // Optional: pass a custom steps object (e.g. BULK_MAILBOX_IMPORT_STEPS).
+    // Defaults to the standard 2-step MAILBOX_IMPORT_STEPS.
+    steps: {
+      type: Object,
+      default: null,
+    },
   },
 
-  setup() {
+  setup(props) {
     // computed
-    const addMailboxImportSteps = computed(() => Object.values(MAILBOX_IMPORT_STEPS));
+    const addMailboxImportSteps = computed(
+      () => Object.values(props.steps || MAILBOX_IMPORT_STEPS),
+    );
 
     return {
       // computed

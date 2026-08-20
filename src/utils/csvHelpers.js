@@ -163,3 +163,52 @@ export const normalizeCustomFieldKey = (key) => (
     .replace(/[^a-z0-9]+/g, '_') // replace spaces & special chars
     .replace(/^_+|_+$/g, '') // remove leading/trailing _
 );
+
+/**
+ * Generates and triggers a browser download of an SMTP mailbox CSV template.
+ * Includes all required/optional columns with a single dummy row so users
+ * know the expected format before filling in real data.
+ */
+export const downloadSmtpCsvTemplate = () => {
+  const headers = [
+    'name',
+    'email',
+    'password',
+    'smtp_host',
+    'smtp_port',
+    'smtp_secure',
+    'imap_host',
+    'imap_port',
+    'imap_secure',
+    'sending_limit_per_day',
+    'minimum_time_gap_mins',
+  ];
+
+  const dummyRow = [
+    'John Doe',
+    'john@example.com',
+    'yourpassword',
+    'smtp.example.com',
+    '465',
+    'true',
+    'imap.example.com',
+    '993',
+    'true',
+    '20',
+    '5',
+  ];
+
+  const csvContent = [headers.join(','), dummyRow.join(',')].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'smtp_mailboxes_template.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};

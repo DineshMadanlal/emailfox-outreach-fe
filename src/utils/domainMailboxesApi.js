@@ -190,6 +190,38 @@ export const connectSmtpAccount = async (payload) => {
   }
 };
 
+// POST /mailboxes/connect/smtp/bulk
+// payload: { mailboxes: [ { name, email, smtp_host, ... } ] }
+// Returns: { id: jobId, ... }
+export const connectSmtpBulkImport = async (payload) => {
+  try {
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: '/mailboxes/connect/smtp/bulk',
+      payload,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+// GET /mailboxes/bulk-import-jobs/{id}
+// Returns job status + progress stats
+export const getSmtpBulkImportJob = async (jobId) => {
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: `/mailboxes/bulk-import-jobs/${jobId}`,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const bulkUpdateMailboxes = async (payload) => {
   try {
     const response = await putApiCall({
