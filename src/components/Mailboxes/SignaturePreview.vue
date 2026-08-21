@@ -57,8 +57,7 @@ export default defineComponent({
 
       // variables value
       const variablesMap = {
-        '{{sender_firstname}}': 'John',
-        '{{sender_lastname}}': 'Doe',
+        '{{sender_name}}': 'John Doe',
         '{{sender_email}}': 'john.doe@example.com',
       };
 

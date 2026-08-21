@@ -195,7 +195,7 @@ export default defineComponent({
     };
 
     const onContinueInBackground = () => {
-      $router.push('/outreach/mailboxes');
+      $router.push(`/outreach/mailboxes?jobId=${props.jobId}`);
     };
 
     onMounted(() => {

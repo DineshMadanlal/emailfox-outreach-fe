@@ -622,11 +622,12 @@ export default defineComponent({
 
       .mapping-group-header {
         padding: 8px 16px;
-        background: rgba($color: var(--black-rgb), $alpha: 0.04);
+        background: rgba($color: var(--grey-50-rgb), $alpha: 0.5);
         color: $grey;
         font-size: 11px;
         font-weight: 600;
         letter-spacing: 0.6px;
+        border-top: 1px solid $grey-50;
       }
 
       .mapping-row {
@@ -634,7 +635,7 @@ export default defineComponent({
         grid-template-columns: 1fr 32px 1fr;
         padding: 4px 16px;
         align-items: center;
-        border-bottom: 1px solid $grey-50;
+        border-top: 1px solid $grey-50;
         gap: 8px;
 
         &:last-child {

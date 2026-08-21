@@ -221,6 +221,18 @@ const routes = [
                 component: () => import('src/pages/MailboxById/Campaigns.vue'),
                 meta: { requiresAuth: true },
               },
+              // settings
+              {
+                path: 'settings',
+                component: () => import('src/pages/MailboxById/MailboxSettings.vue'),
+                meta: { requiresAuth: true },
+              },
+              // SMTP Authentication
+              {
+                path: 'smtp-authentication',
+                component: () => import('src/pages/MailboxById/SmtpAuthentication.vue'),
+                meta: { requiresAuth: true },
+              },
             ],
           },
           {

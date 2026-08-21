@@ -95,7 +95,7 @@ export default defineComponent({
 
     const placeholderText = computed(() => {
       if (!props.modelValue) {
-        return 'Best Regards, <br> {{sender_firstname}} {{sender_lastname}}, <br> {{sender_email}} <br> Company Name | Website';
+        return 'Best Regards, <br> {{sender_name}}, <br> {{sender_email}} <br> Company Name | Website';
       }
       return '';
     });

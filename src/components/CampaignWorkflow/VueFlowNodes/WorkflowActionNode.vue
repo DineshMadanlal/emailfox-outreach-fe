@@ -373,6 +373,18 @@ export default defineComponent({
 
       updatedVariants.splice(variantIndex, 1);
 
+      // update the weight of the remaining variants
+      const updatedNumberOfVariants = updatedVariants.length;
+
+      const variantWeight = findPercentage({
+        part: 1,
+        whole: updatedNumberOfVariants,
+      });
+
+      updatedVariants.forEach((variant) => {
+        variant.weight = Number(variantWeight);
+      });
+
       const updatedWorkflowJson = {
         ...currentWorkflowJson,
         step: {

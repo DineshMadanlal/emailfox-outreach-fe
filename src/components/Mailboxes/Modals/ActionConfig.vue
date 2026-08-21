@@ -64,6 +64,7 @@
           >
             <template v-slot:control>
               <q-checkbox
+                color="negative"
                 class="app-checkbox"
                 v-model="agreeToDeleteMailboxes"
 

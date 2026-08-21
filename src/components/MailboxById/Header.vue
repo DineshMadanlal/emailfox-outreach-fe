@@ -126,6 +126,9 @@ import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import MailboxMoreOptions from 'components/Menu/MailboxMoreOptions.vue';
 import DropdownOptionsButton from 'components/Buttons/DropdownOptionsButton.vue';
 
+// constants
+import { MAILBOX_PROVIDERS } from 'boot/mailbox-constants';
+
 export default defineComponent({
   name: 'MailboxByIdHeader',
 
@@ -161,7 +164,7 @@ export default defineComponent({
     const mailboxByIdPages = computed(() => {
       const mailboxId = props.mailboxByJson.id;
 
-      return [
+      const pages = [
         {
           label: 'Overview',
           route: `/outreach/mailbox/${mailboxId}/overview`,
@@ -174,7 +177,21 @@ export default defineComponent({
           label: 'Campaigns',
           route: `/outreach/mailbox/${mailboxId}/campaigns`,
         },
+        {
+          label: 'Settings',
+          route: `/outreach/mailbox/${mailboxId}/settings`,
+        },
       ];
+
+      // Add SMTP Authentication tab if the mailbox provider is SMTP
+      if (props.mailboxByJson.provider === MAILBOX_PROVIDERS.SMTP.value) {
+        pages.push({
+          label: 'SMTP Authentication',
+          route: `/outreach/mailbox/${mailboxId}/smtp-authentication`,
+        });
+      }
+
+      return pages;
     });
 
     return {

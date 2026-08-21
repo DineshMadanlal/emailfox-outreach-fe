@@ -102,6 +102,13 @@
                 {{ props.row.name }}
               </div>
 
+              <InfoTooltip
+                iconName="info-circle"
+                tooltipText="This profile is managed by the system and cannot be modified.
+                Create a custom warmup profile to configure
+                your own settings and assign it to your mailboxes."
+              />
+
               <q-space />
 
               <!-- more options -->
@@ -111,6 +118,8 @@
                 unelevated
 
                 class="more-action-btn"
+
+                v-if="!props.row.is_public"
               >
                 <!-- more -->
                 <LocalSvgIcon
@@ -165,6 +174,7 @@ import {
 } from 'vue';
 
 // components
+import InfoTooltip from 'components/General/InfoTooltip.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import WarmupMoreOptions from 'components/Menu/WarmupMoreOptions.vue';
 import SaveWarmupProfile from 'components/Warmup/Modals/SaveWarmupProfile.vue';
@@ -184,6 +194,7 @@ export default defineComponent({
   name: 'WarmupProfilesSettings',
 
   components: {
+    InfoTooltip,
     AppSearchInput,
     SaveWarmupProfile,
     WarmupMoreOptions,
@@ -413,7 +424,7 @@ export default defineComponent({
 
     .wamrup-profiles-table {
       .name-and-action-cell {
-        gap: 16px;
+        gap: 8px;
         display: flex;
         align-items: center;
 
