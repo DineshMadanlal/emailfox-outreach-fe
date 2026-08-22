@@ -66,6 +66,8 @@
 
     <!-- Footer -->
     <div class="smtp-footer-actions">
+      <q-space />
+
       <!--  -->
       <q-btn
         no-caps

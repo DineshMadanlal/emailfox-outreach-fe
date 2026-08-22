@@ -98,7 +98,7 @@
           <LineNumberTextarea
             v-model="script"
 
-            placeholder="e.g. <script>console.log('Hello World');</script>"
+            placeholder="e.g. <script>...</script>"
 
             lazy-rules="ondemand"
             :rules="[val => !!val || 'Script is required']"

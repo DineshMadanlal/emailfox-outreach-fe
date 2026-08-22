@@ -205,17 +205,21 @@ export const connectGoogleAccount = async (redirectUrl) => {
 };
 
 export const connectSmtpAccount = async (payload) => {
-  try {
-    const response = await postApiCall({
-      includeWorkspace: true,
-      endpoint: '/mailboxes/connect/smtp',
-      payload,
-    });
+  const response = await postApiCall({
+    includeWorkspace: true,
+    endpoint: '/mailboxes/connect/smtp',
+    payload,
+  });
+  return response;
+};
 
-    return response;
-  } catch (error) {
-    throw new Error(error);
-  }
+export const verifySmtpAccount = async (payload) => {
+  const response = await postApiCall({
+    includeWorkspace: true,
+    endpoint: '/mailboxes/verify/smtp',
+    payload,
+  });
+  return response;
 };
 
 // POST /mailboxes/connect/smtp/bulk

@@ -234,12 +234,78 @@
             />
           </div>
         </div>
+
+        <!-- Verification Result Box -->
+        <div
+          v-if="verificationResult"
+          ref="verificationMsgRef"
+          class="verification-result-box"
+          :class="verificationResult.success ? 'is-success' : 'is-error'"
+        >
+          <div class="verification-header-row">
+            <LocalSvgIcon
+              :image="verificationResult.success ? 'basic-tick' : 'close'"
+              classes="verification-icon"
+            />
+            <span class="verification-title">
+              {{ verificationResult.message }}
+            </span>
+          </div>
+
+          <!-- Detailed Breakdown for SMTP and IMAP -->
+          <div
+            v-if="verificationResult.logs &&
+              (verificationResult.logs.smtp || verificationResult.logs.imap)"
+            class="verification-breakdown-list"
+          >
+            <!-- SMTP row -->
+            <div
+              v-if="verificationResult.logs.smtp"
+              class="breakdown-item"
+              :class="verificationResult.logs.smtp.success ? 'item-pass' : 'item-fail'"
+            >
+              <div class="breakdown-protocol">
+                <span class="protocol-badge">SMTP</span>
+                <span class="protocol-status">
+                  {{ verificationResult.logs.smtp.success ? 'Passed' : 'Failed' }}
+                </span>
+              </div>
+              <p
+                v-if="verificationResult.logs.smtp.message"
+                class="breakdown-message"
+              >
+                {{ verificationResult.logs.smtp.message }}
+              </p>
+            </div>
+
+            <!-- IMAP row -->
+            <div
+              v-if="verificationResult.logs.imap"
+              class="breakdown-item"
+              :class="verificationResult.logs.imap.success ? 'item-pass' : 'item-fail'"
+            >
+              <div class="breakdown-protocol">
+                <span class="protocol-badge">IMAP</span>
+                <span class="protocol-status">
+                  {{ verificationResult.logs.imap.success ? 'Passed' : 'Failed' }}
+                </span>
+              </div>
+              <p
+                v-if="verificationResult.logs.imap.message"
+                class="breakdown-message"
+              >
+                {{ verificationResult.logs.imap.message }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Footer Buttons -->
       <div class="smtp-footer-actions">
-        <!-- Back button -->
+        <!-- Back button (only in add mode) -->
         <q-btn
+          v-if="!isEditMode"
           flat
           no-caps
           unelevated
@@ -249,15 +315,33 @@
           @click="$emit('goBack')"
         />
 
-        <!-- Save & Complete Button -->
-        <q-btn
-          no-caps
-          unelevated
-          type="submit"
-          color="primary"
-          label="Save & Complete"
-          :loading="isApiLoading"
-        />
+        <q-space v-if="!isEditMode" />
+
+        <div class="flex items-center gap-12">
+          <!-- Verify SMTP Button -->
+          <q-btn
+            flat
+            no-caps
+            unelevated
+            color="primary"
+            label="Verify SMTP"
+            class="light-primary-btn"
+            :loading="isVerifying"
+            :disable="isApiLoading"
+            @click="onVerifySmtp"
+          />
+
+          <!-- Save CTA -->
+          <q-btn
+            no-caps
+            unelevated
+            type="submit"
+            color="primary"
+            :label="isEditMode ? 'Save Changes' : 'Save & Complete'"
+            :loading="isApiLoading"
+            :disable="isVerifying"
+          />
+        </div>
       </div>
     </q-form>
   </div>
@@ -266,7 +350,8 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, getCurrentInstance,
+  defineComponent, reactive, toRefs, computed,
+  onMounted, watch, nextTick, getCurrentInstance,
 } from 'vue';
 
 // vue router
@@ -277,7 +362,7 @@ import InputLabel from 'components/Form/InputLabel.vue';
 import PasswordIconToggle from 'components/Password/PasswordIconToggle.vue';
 
 // utils
-import { connectSmtpAccount } from 'src/utils/domainMailboxesApi.js';
+import { connectSmtpAccount, verifySmtpAccount } from 'src/utils/domainMailboxesApi.js';
 
 // constants
 import { EMAIL_REGEX } from 'boot/constants';
@@ -290,9 +375,16 @@ export default defineComponent({
     PasswordIconToggle,
   },
 
-  emits: ['goBack'],
+  props: {
+    mailboxByJson: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
 
-  setup() {
+  emits: ['goBack', 'updateMailbox'],
+
+  setup(props, { emit }) {
     // router
     const $router = useRouter();
 
@@ -302,8 +394,11 @@ export default defineComponent({
     // state
     const state = reactive({
       isApiLoading: false,
+      isVerifying: false,
       isPasswordVisible: false,
       addSmtpFormRef: null,
+      verificationMsgRef: null,
+      verificationResult: null,
 
       formData: {
         name: '',
@@ -326,6 +421,8 @@ export default defineComponent({
       },
     });
 
+    const isEditMode = computed(() => !!props.mailboxByJson?.id);
+
     const emailRules = [
       (val) => (val && val.trim().length > 0) || 'User Name is required',
       (val) => EMAIL_REGEX.test(val) || 'Invalid email address',
@@ -338,12 +435,36 @@ export default defineComponent({
 
     const onInputChange = () => {
       state.addSmtpFormRef?.resetValidation();
+      state.verificationResult = null;
+    };
+
+    const populateFromMailboxJson = () => {
+      if (!props.mailboxByJson || !props.mailboxByJson.id) {
+        return;
+      }
+
+      const mb = props.mailboxByJson;
+
+      state.formData.name = mb.name || '';
+      state.formData.email = mb.email || '';
+      state.formData.password = mb.smtp_password || '';
+
+      state.formData.smtpHost = mb.smtp_host || '';
+      state.formData.smtpPort = mb.smtp_port || 465;
+      state.formData.smtpSecure = mb.smtp_secure !== undefined ? mb.smtp_secure : true;
+
+      state.formData.imapHost = mb.imap_host || '';
+      state.formData.imapPort = mb.imap_port || 993;
+      state.formData.imapSecure = mb.imap_secure !== undefined ? mb.imap_secure : true;
+
+      state.formData.differentReplyTo = !!mb.different_reply_to;
+      state.formData.replyToEmail = mb.different_reply_to || '';
     };
 
     const getPayload = () => {
       const { formData } = state;
 
-      return {
+      const payload = {
         name: formData.name.trim(),
         email: formData.email.trim(),
 
@@ -361,22 +482,81 @@ export default defineComponent({
         imap_username: formData.email.trim(),
         imap_password: formData.password,
 
-        //
         different_reply_to: formData.differentReplyTo
           ? formData.replyToEmail.trim()
           : '',
 
-        bcc_to_crm: '',
-        signature: '',
-        sending_limit_per_day: 20,
-        minimum_time_gap_mins: 5,
+        bcc_to_crm: props.mailboxByJson?.bcc_to_crm || '',
+        signature: props.mailboxByJson?.signature || '',
+        sending_limit_per_day: props.mailboxByJson?.sending_limit_per_day || 20,
+        minimum_time_gap_mins: props.mailboxByJson?.minimum_time_gap_mins || 5,
       };
+
+      if (isEditMode.value) {
+        payload.id = props.mailboxByJson.id;
+      }
+
+      return payload;
+    };
+
+    const onVerifySmtp = async () => {
+      try {
+        const isValidated = await state.addSmtpFormRef?.validate();
+        if (!isValidated) {
+          return;
+        }
+
+        state.isVerifying = true;
+        state.verificationResult = null;
+
+        const payload = getPayload();
+        const response = await verifySmtpAccount(payload);
+
+        const logs = response?.verification_logs
+          || response?.data?.verification_logs
+          || null;
+
+        const isOverallSuccess = logs ? logs.success !== false : true;
+
+        state.verificationResult = {
+          success: isOverallSuccess,
+          message: response?.message || (isOverallSuccess ? 'Mailbox verified successfully' : 'Mailbox verification failed'),
+          logs,
+        };
+
+        appContext.config.globalProperties.$toast({
+          warning: !isOverallSuccess,
+          message: state.verificationResult.message,
+        });
+
+        await nextTick();
+        state.verificationMsgRef?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (error) {
+        const logs = error?.data?.verification_logs || null;
+
+        const cleanMessage = (error?.message || 'Mailbox verification failed').replace(/^Error:\s*/i, '');
+
+        state.verificationResult = {
+          success: false,
+          message: cleanMessage,
+          logs,
+        };
+
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: cleanMessage,
+        });
+
+        await nextTick();
+        state.verificationMsgRef?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } finally {
+        state.isVerifying = false;
+      }
     };
 
     const onSubmit = async () => {
       try {
         const isValidated = await state.addSmtpFormRef?.validate();
-
         if (!isValidated) {
           return;
         }
@@ -386,29 +566,71 @@ export default defineComponent({
         const payload = getPayload();
         const response = await connectSmtpAccount(payload);
 
-        appContext.config.globalProperties.$toast({
-          message: `${response?.email || payload.email} connected successfully`,
-        });
+        if (isEditMode.value) {
+          appContext.config.globalProperties.$toast({
+            message: 'SMTP settings updated successfully',
+          });
 
-        const mailboxId = response?.mailbox_id || response?.id;
-        if (mailboxId) {
-          $router.push(`/outreach/mailbox/${mailboxId}`);
+          const updatedMailbox = {
+            ...props.mailboxByJson,
+            ...payload,
+            ...(response || {}),
+          };
+
+          emit('updateMailbox', updatedMailbox);
         } else {
-          $router.push('/outreach/mailboxes');
+          appContext.config.globalProperties.$toast({
+            message: `${response?.email || payload.email} connected successfully`,
+          });
+
+          const mailboxId = response?.mailbox_id || response?.id;
+          if (mailboxId) {
+            $router.push(`/outreach/mailbox/${mailboxId}`);
+          } else {
+            $router.push('/outreach/mailboxes');
+          }
         }
       } catch (error) {
+        const logs = error?.data?.verification_logs || null;
+
+        const cleanMessage = (error?.message || 'Mailbox verification failed').replace(/^Error:\s*/i, '');
+
+        state.verificationResult = {
+          success: false,
+          message: cleanMessage,
+          logs,
+        };
+
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message,
+          message: cleanMessage,
         });
+
+        await nextTick();
+        state.verificationMsgRef?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } finally {
         state.isApiLoading = false;
       }
     };
 
+    watch(
+      () => props.mailboxByJson,
+      () => {
+        populateFromMailboxJson();
+      },
+      { deep: true },
+    );
+
+    onMounted(() => {
+      populateFromMailboxJson();
+    });
+
     return {
       // state
       ...toRefs(state),
+
+      // computed
+      isEditMode,
 
       // constants
       emailRules,
@@ -416,6 +638,7 @@ export default defineComponent({
 
       // methods
       onSubmit,
+      onVerifySmtp,
       onInputChange,
     };
   },
@@ -475,14 +698,14 @@ export default defineComponent({
       }
 
       .secure-checkbox-block {
-          margin-top: 4px;
+        margin-top: 4px;
 
-          :deep(.q-checkbox__label) {
-            color: $black;
-            font-size: 14px;
-            font-weight: 400;
-          }
+        :deep(.q-checkbox__label) {
+          color: $black;
+          font-size: 14px;
+          font-weight: 400;
         }
+      }
     }
 
     .reply-to-section {
@@ -503,6 +726,134 @@ export default defineComponent({
           max-width: 100%;
         }
       }
+    }
+
+    .verification-result-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 6px;
+
+      &.is-success {
+        background: rgba(var(--positive-rgb), 0.08);
+        border: 1px solid rgba(var(--positive-rgb), 0.3);
+
+        .verification-header-row {
+          color: $positive;
+
+          :deep(.verification-icon) {
+            @include svg-icon-stroke('path', $positive);
+          }
+        }
+      }
+
+      &.is-error {
+        background: rgba(var(--negative-rgb), 0.08);
+        border: 1px solid rgba(var(--negative-rgb), 0.3);
+
+        .verification-header-row {
+          color: $negative;
+
+          :deep(.verification-icon) {
+            @include svg-icon-stroke('path', $negative);
+          }
+        }
+      }
+
+      .verification-header-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .verification-title {
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        :deep(.verification-icon) {
+          width: 16px;
+          height: 16px;
+          flex-shrink: 0;
+        }
+      }
+
+      .verification-breakdown-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(var(--black-rgb), 0.08);
+
+        .breakdown-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 8px 12px;
+          border-radius: 4px;
+          background: $white;
+
+          &.item-pass {
+            border-left: 3px solid $positive;
+
+            .protocol-status {
+              color: $positive;
+            }
+          }
+
+          &.item-fail {
+            border-left: 3px solid $negative;
+
+            .protocol-status {
+              color: $negative;
+            }
+          }
+
+          .breakdown-protocol {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .protocol-badge {
+              font-weight: 600;
+              font-size: 13px;
+              color: $black;
+            }
+
+            .protocol-status {
+              font-size: 12px;
+              font-weight: 600;
+            }
+          }
+
+          .breakdown-message {
+            color: $grey-800;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            word-break: break-word;
+            font-family: monospace;
+          }
+        }
+      }
+    }
+  }
+
+  .smtp-footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 16px 20px;
+    border-top: 1px solid $grey-50;
+
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: $white;
+
+    .gap-12 {
+      gap: 12px;
     }
   }
 }

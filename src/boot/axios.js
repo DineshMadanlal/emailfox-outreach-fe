@@ -16,8 +16,8 @@ const baseURL = backendApiUrl();
 // Create a new Axios instance
 const api = axios.create({
   baseURL,
-  // Set the timeout to 10 seconds
-  timeout: 10000,
+  // Set the timeout to 60 seconds
+  timeout: 60000,
   withCredentials: true,
   paramsSerializer: (params) => {
     const queryString = Object.entries(params)

@@ -204,6 +204,8 @@
         @click="$emit('goBack')"
       />
 
+      <q-space />
+
       <q-btn
         no-caps unelevated
         color="primary"

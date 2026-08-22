@@ -298,7 +298,7 @@ export default defineComponent({
 
       if (totalAccepted > 0) {
         series.push({
-          name: 'Connected Accepted',
+          name: 'Connection Accepted',
           type: 'line',
           colorName: 'secondary',
           data: liAccepted,

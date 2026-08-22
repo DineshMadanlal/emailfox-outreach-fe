@@ -1044,4 +1044,52 @@ export const CONTACT_ESP_PROVIDERS = {
   },
 };
 
+export const CONTACT_STATUS = {
+  NOT_STARTED: {
+    label: 'Not Started',
+    value: 'NOT_STARTED',
+    color: 'grey',
+  },
+  ACTIVE: {
+    label: 'Active',
+    value: 'ACTIVE',
+    color: 'positive',
+  },
+  PAUSED: {
+    label: 'Paused',
+    value: 'PAUSED',
+    color: 'warning',
+  },
+  STOPPED: {
+    label: 'Stopped',
+    value: 'STOPPED',
+    color: 'warning',
+  },
+  COMPLETED: {
+    label: 'Completed',
+    value: 'COMPLETED',
+    color: 'primary',
+  },
+  FAILED: {
+    label: 'Failed',
+    value: 'FAILED',
+    color: 'negative',
+  },
+  UNSUBSCRIBED: {
+    label: 'Unsubscribed',
+    value: 'UNSUBSCRIBED',
+    color: 'negative',
+  },
+  BOUNCED: {
+    label: 'Bounced',
+    value: 'BOUNCED',
+    color: 'negative',
+  },
+  REPLIED: {
+    label: 'Replied',
+    value: 'REPLIED',
+    color: 'positive',
+  },
+};
+
 export const MAX_AI_CATEGORIES_ALLOWED = 15;
