@@ -685,6 +685,11 @@ export default defineComponent({
           params.list_id = state.filters.listJson.id;
         }
 
+        // status filter
+        if (state.filters.status) {
+          params.contact_status = state.filters.status;
+        }
+
         let endpoint = '/contacts';
         if (props.listId) {
           endpoint = `/lists/${props.listId}/contacts`;

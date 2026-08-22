@@ -22,12 +22,22 @@
       >
         <!-- search input -->
         <AppSearchInput
-          v-if="showContactFilters"
           :debounce="500"
+
           v-model="filters.searchText"
           class="dead-small contact-filter-input"
           placeholder="Search contacts"
           @update:modelValue="onSearchContactInput"
+        />
+
+        <SelectCampaignContactStatus
+          clearable
+          v-model="filters.status"
+
+          placeholder-text="Status"
+          class="dd-filter dead-small"
+
+          @update:modelValue="onUpdateFiltersModelValue('status', $event)"
         />
       </div>
 
@@ -227,6 +237,7 @@ import ApiLoader from 'components/General/ApiLoader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ContactsMoreOptions from 'components/Menu/ContactsMoreOptions.vue';
 import AllContactsIllustration from 'components/Illustrations/AllContacts.vue';
+import SelectCampaignContactStatus from 'components/Dropdown/SelectCampaignContactStatus.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -241,7 +252,7 @@ import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // constants
 import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
-import { CONTACT_STATUS } from 'boot/campaign-constants';
+import { CAMPAIGN_CONTACT_STATUS } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'CampaignContactsTable',
@@ -251,6 +262,7 @@ export default defineComponent({
     AppSearchInput,
     ContactsMoreOptions,
     AllContactsIllustration,
+    SelectCampaignContactStatus,
   },
 
   props: {
@@ -387,7 +399,7 @@ export default defineComponent({
       return '-';
     };
 
-    const getStatusLabel = (status) => CONTACT_STATUS[status]?.label || status || 'Not Started';
+    const getStatusLabel = (status) => CAMPAIGN_CONTACT_STATUS[status]?.label || status || 'Not Started';
 
     const formatLastActivity = (row) => {
       const date = row.last_sent_at || row.last_reply_at || row.updated_at;

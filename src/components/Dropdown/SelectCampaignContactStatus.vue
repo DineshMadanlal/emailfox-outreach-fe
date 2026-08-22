@@ -29,10 +29,10 @@
 import { defineComponent, computed } from 'vue';
 
 // Constants
-import { CONTACT_STATUS_LABELS } from 'boot/campaign-constants';
+import { CAMPAIGN_CONTACT_STATUS } from 'boot/campaign-constants';
 
 export default defineComponent({
-  name: 'SelectContactStatus',
+  name: 'SelectCampaignContactStatus',
 
   emits: ['update:modelValue'],
 
@@ -59,7 +59,7 @@ export default defineComponent({
       },
     });
 
-    const dropdownOptions = computed(() => Object.values(CONTACT_STATUS_LABELS));
+    const dropdownOptions = computed(() => Object.values(CAMPAIGN_CONTACT_STATUS));
 
     return {
       // computed

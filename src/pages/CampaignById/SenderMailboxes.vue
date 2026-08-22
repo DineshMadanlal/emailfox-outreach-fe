@@ -27,7 +27,7 @@
         borderless
         :outlined="false"
         :debounce="500"
-        v-model="searchMailboxInput"
+        v-model="filters.searchText"
 
         class="mailbox-filter-input"
         placeholder="Search mailbox"
@@ -58,8 +58,6 @@
       :rows="tableData"
       :columns="tableColumns"
       :loading="isApiProcessing"
-
-      @request="onRequest"
     >
       <!-- bottom -->
       <template v-slot:bottom="scope">
@@ -82,8 +80,6 @@
 
               :options="[5, 10, 20, 30, 50]"
               v-model="pagination.rowsPerPage"
-
-              @update:model-value="onFetchMailboxRecords"
 
               class="records-per-page-select"
             >
@@ -157,7 +153,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <div>
@@ -179,7 +175,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <EspProvider
@@ -195,7 +191,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <div class="flex no-wrap items-center">
@@ -217,7 +213,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <div class="flex no-wrap items-center">
@@ -239,7 +235,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <div class="flex no-wrap items-center">
@@ -261,7 +257,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <div class="flex no-wrap items-center">
@@ -284,7 +280,7 @@
           :props="props"
         >
           <router-link
-            :to="`/outreach/mailbox/${props.row.id}`"
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
             class="mailbox-route-link"
           >
             <StatusBadge
@@ -323,6 +319,11 @@ import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 // constants
 import { DEFAULT_TABLE_PAGINATION } from 'boot/constants';
 
+// hardcoded
+const mailboxFilters = {
+  searchText: '',
+};
+
 export default defineComponent({
   name: 'CampaignByIdSenderMailboxes',
 
@@ -350,9 +351,8 @@ export default defineComponent({
     // state
     const state = reactive({
       tableData: [],
-      tableColumns: [],
+      filters: { ...mailboxFilters },
       visibleColumns: [],
-      searchMailboxInput: '',
 
       pagination: {
         ...DEFAULT_TABLE_PAGINATION,
@@ -412,10 +412,13 @@ export default defineComponent({
     });
 
     const tablePaginationLabel = computed(() => {
-      const { page, perPage, rowsNumber } = state.pagination;
+      const { page, rowsPerPage } = state.pagination;
+      const rowsNumber = state.tableData.length;
 
-      const start = (page - 1) * perPage + 1;
-      const end = page * perPage;
+      if (!rowsNumber) return '0 to 0 of 0';
+
+      const start = (page - 1) * rowsPerPage + 1;
+      const end = Math.min(page * rowsPerPage, rowsNumber);
 
       return `${start} to ${end} of ${getNumeralAmount(rowsNumber)}`;
     });
@@ -432,42 +435,42 @@ export default defineComponent({
     });
 
     // API Calls
-    const fetchData = async (page = 1, perPage = 10) => {
+    const fetchData = async () => {
       try {
         state.isApiProcessing = true;
 
-        const params = {
-          offset: (page - 1) * perPage,
-          limit: perPage,
-          search_text: state.searchMailboxInput,
-        };
+        const params = {};
+
+        if (state.filters.searchText) {
+          params.search_text = state.filters.searchText;
+        }
 
         const response = await getApiCall({
           includeWorkspace: true,
-          endpoint: `/sequences/${props.campaignByIdJson.id}/mailboxes`,
+          endpoint: `/stats/sequences/${props.campaignByIdJson.id}/mailbox-stats`,
           params,
         });
 
-        const { data, count } = response;
+        const { data } = response;
 
-        data.forEach((element) => {
+        const formattedData = (data || []).map((element) => {
           // delivery rate
           const deliveryRate = findPercentage({
-            part: element.sent_count - element.bounce_count,
-            whole: element.sent_count,
+            part: (element.sent_count || 0) - (element.bounce_count || 0),
+            whole: element.sent_count || 0,
           });
 
           // bounced rate
           const bouncedRate = findPercentage({
-            part: element.bounce_count,
-            whole: element.sent_count,
+            part: element.bounce_count || 0,
+            whole: element.sent_count || 0,
           });
 
           const bouncedRateJson = getBouncedRateJson(bouncedRate);
           const deliverabilityRateJson = getDeliverabilityRateJson(deliveryRate);
 
           // table data
-          state.tableData.push({
+          return {
             ...element,
             deliveryRate,
             bouncedRate,
@@ -475,58 +478,32 @@ export default defineComponent({
 
             bouncedRateJson,
             deliverabilityRateJson,
-          });
+          };
         });
 
-        state.selectedMailboxes = [];
-        state.multiSelectOptionJson = {};
-
-        state.pagination.rowsNumber = count;
+        state.tableData = formattedData;
       } catch (error) {
         // Show a toaster that domain have been setup successfully
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message || 'Unexpected error occured. Unable to fetch mailboxes.',
+          message: error.message || 'Unexpected error occurred. Unable to fetch mailboxes.',
         });
       } finally {
         state.isApiProcessing = false;
       }
     };
 
-    const onRequest = async (params) => {
-      state.pagination.page = params.pagination.page;
-      state.pagination.perPage = params.pagination.rowsPerPage;
-
-      await fetchData(
-        state.pagination.page,
-        state.pagination.perPage,
-      );
-
-      if (!state.areResultsFetchedOnce) {
-        // make it true
-        state.areResultsFetchedOnce = true;
-      }
-
-      return true;
-    };
-
-    const onFetchMailboxRecords = () => {
-      onRequest({
-        pagination: state.pagination,
-      });
-    };
-
     const onSearchMailboxInput = async () => {
-      onFetchMailboxRecords();
+      state.pagination.page = 1;
+      await fetchData();
     };
 
-    const makeApiCallOnMounted = () => {
+    const makeApiCallOnMounted = async () => {
       // set default visible columns
       state.visibleColumns = dynamicColumns.value.map((col) => col.name);
 
-      onRequest({
-        pagination: state.pagination,
-      });
+      await fetchData();
+      state.areResultsFetchedOnce = true;
     };
 
     onMounted(() => {
@@ -545,9 +522,7 @@ export default defineComponent({
       tablePaginationLabel,
 
       // methods
-      onRequest,
       getNumeralAmount,
-      onFetchMailboxRecords,
       onSearchMailboxInput,
     };
   },

@@ -1044,7 +1044,7 @@ export const CONTACT_ESP_PROVIDERS = {
   },
 };
 
-export const CONTACT_STATUS = {
+export const CAMPAIGN_CONTACT_STATUS = {
   NOT_STARTED: {
     label: 'Not Started',
     value: 'NOT_STARTED',
