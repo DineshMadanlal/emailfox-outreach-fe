@@ -39,7 +39,7 @@
 
       :domainByJson="domainByJson"
 
-      @updateAuthReports="onUpdateAuthReports"
+      @updateDomainByIdJson="onUpdateDomainByIdJson"
     />
   </div>
 </template>
@@ -110,25 +110,12 @@ export default defineComponent({
       state.isPageScrolled = !isVisible;
     };
 
-    const onUpdateAuthReports = (responseJson) => {
-      const {
-        dns_errors,
-        spf_pass,
-        dkim_pass,
-        dmarc_pass,
-      } = responseJson.domain;
-
+    const onUpdateDomainByIdJson = (updatedJson) => {
+      //
       state.domainByJson = {
         ...state.domainByJson,
-        dns_errors,
-        spf_pass,
-        dkim_pass,
-        dmarc_pass,
+        ...updatedJson,
       };
-
-      appContext.config.globalProperties.$toast({
-        message: 'Authentication reports updated',
-      });
     };
 
     const makeApiCallOnMounted = async () => {
@@ -193,7 +180,7 @@ export default defineComponent({
       // methods
       onDeleteDomain,
       onVisibilityChange,
-      onUpdateAuthReports,
+      onUpdateDomainByIdJson,
       onSuccessfulDeleteDomains,
     };
   },

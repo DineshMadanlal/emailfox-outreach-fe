@@ -24,6 +24,7 @@
     </div>
   </div>
 </template>
+
 <script>
 // vue
 import { defineComponent, defineAsyncComponent, computed } from 'vue';
@@ -40,6 +41,14 @@ export default defineComponent({
       type: String,
       required: true,
     },
+    senderName: {
+      type: String,
+      default: 'John Doe',
+    },
+    senderEmail: {
+      type: String,
+      default: 'john.doe@example.com',
+    },
   },
 
   setup(props) {
@@ -50,20 +59,19 @@ export default defineComponent({
       return '';
     });
 
+    const variablesMap = computed(() => ({
+      '{{sender_name}}': props.senderName,
+      '{{sender_email}}': props.senderEmail,
+    }));
+
     const handleBarSignature = computed(() => {
       if (!props.signatureHtml) {
         return '';
       }
 
-      // variables value
-      const variablesMap = {
-        '{{sender_name}}': 'John Doe',
-        '{{sender_email}}': 'john.doe@example.com',
-      };
-
       // replace variables with sample values for preview
       let previewSignature = props.signatureHtml;
-      Object.entries(variablesMap).forEach(([variable, value]) => {
+      Object.entries(variablesMap.value).forEach(([variable, value]) => {
         const regex = new RegExp(variable, 'g');
         previewSignature = previewSignature.replace(regex, value);
       });

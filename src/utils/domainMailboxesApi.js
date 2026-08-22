@@ -124,6 +124,34 @@ export const checkDnsByDomainId = async (domainId) => {
   }
 };
 
+export const verifyTrackingUrlByDomainId = async ({ payload }) => {
+  try {
+    const response = await postApiCall({
+      payload,
+      includeWorkspace: true,
+      endpoint: '/domains/verify-tracking-url',
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const updateDomainDetailsById = async ({ domainId, payload }) => {
+  try {
+    const response = await putApiCall({
+      payload,
+      includeWorkspace: true,
+      endpoint: `/domains/${domainId}/details`,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const connectOutlookAccount = async (redirectUrl) => {
   try {
     const response = await getApiCall({
@@ -222,11 +250,39 @@ export const getSmtpBulkImportJob = async (jobId) => {
   }
 };
 
+export const updateMailboxById = async (mailboxId, payload) => {
+  try {
+    const response = await putApiCall({
+      includeWorkspace: true,
+      endpoint: `/mailboxes/${mailboxId}`,
+      payload,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const bulkUpdateMailboxes = async (payload) => {
   try {
     const response = await putApiCall({
       includeWorkspace: true,
       endpoint: '/mailboxes/bulk-update',
+      payload,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const bulkUpdateDomains = async (payload) => {
+  try {
+    const response = await putApiCall({
+      includeWorkspace: true,
+      endpoint: '/domains/bulk-update',
       payload,
     });
 

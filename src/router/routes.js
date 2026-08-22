@@ -195,6 +195,12 @@ const routes = [
                 component: () => import('src/pages/DomainById/Mailboxes.vue'),
                 meta: { requiresAuth: true },
               },
+              // settings
+              {
+                path: 'settings',
+                component: () => import('src/pages/DomainById/DomainSettings.vue'),
+                meta: { requiresAuth: true },
+              },
             ],
           },
 

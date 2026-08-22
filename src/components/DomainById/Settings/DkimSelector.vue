@@ -1,30 +1,26 @@
 <template>
-  <div class="settings-full-section bcc-to-crm-section">
+  <div class="settings-full-section dkim-selector-section">
     <div class="section-heading-row">
       <LocalSvgIcon
-        image="mail"
+        image="badge-tick"
         classes="section-header-icon"
       />
-
       <h6 class="section-title">
-        BCC to CRM
+        DKIM Selector
       </h6>
     </div>
 
     <p class="section-description">
-      Automatically send a copy of every outgoing email
-      to your CRM. This helps keep customer conversations,
-      activities, and engagement history synced without manual updates.
+      DKIM (DomainKeys Identified Mail) provides an
+      encryption key and digital signature that
+      verifies email sender authenticity and prevents spoofing.
     </p>
 
     <!-- Configured Value or Add Button -->
-    <div
-      v-if="mailboxByJson.bcc_to_crm"
-      class="configured-item-box"
-    >
+    <div v-if="domainByJson.dkim_selector" class="configured-item-box">
       <div class="flex items-center no-wrap">
         <span class="configured-value-text">
-          {{ mailboxByJson.bcc_to_crm }}
+          {{ domainByJson.dkim_selector }}
         </span>
       </div>
 
@@ -35,7 +31,7 @@
         no-caps
         color="primary"
         class="edit-btn"
-        @click="$emit('editBcc')"
+        @click="$emit('editDkimSelector')"
       >
         <LocalSvgIcon
           image="edit"
@@ -49,31 +45,73 @@
       v-else
       flat
       class="action-box-card"
-      @click="$emit('editBcc')"
+      @click="$emit('editDkimSelector')"
     >
       <p class="action-box-text">
-        + Add Email Address
+        + Add DKIM Selector
       </p>
     </q-card>
+
+    <!-- Authentication & Reputation Reports -->
+    <div class="auth-reports-wrapper q-mt-lg">
+      <AuthenticationReports
+        :dnsErrors="dnsErrors"
+        :authReports="authReports"
+        :domainId="domainByJson.id"
+        @updateAuthReports="onUpdateAuthReports"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 // vue
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
+
+// components
+import AuthenticationReports from 'components/MailboxById/Authentication.vue';
 
 export default defineComponent({
-  name: 'BccToCrm',
+  name: 'DkimSelector',
+
+  components: {
+    AuthenticationReports,
+  },
 
   props: {
-    mailboxByJson: {
+    domainByJson: {
       type: Object,
       required: true,
       default: () => ({}),
     },
   },
 
-  emits: ['editBcc'],
+  emits: ['editDkimSelector', 'updateDomainByIdJson'],
+
+  setup(props, { emit }) {
+    const authReports = computed(() => ({
+      spf_pass: props.domainByJson?.spf_pass || false,
+      dkim_pass: props.domainByJson?.dkim_pass || false,
+      dmarc_pass: props.domainByJson?.dmarc_pass || false,
+      mx_pass: props.domainByJson?.mx_pass || false,
+    }));
+
+    const dnsErrors = computed(() => props.domainByJson?.dns_errors || {});
+
+    const onUpdateAuthReports = (response) => {
+      const updatedDomain = {
+        ...props.domainByJson,
+        ...(response?.domain || response || {}),
+      };
+      emit('updateDomainByIdJson', updatedDomain);
+    };
+
+    return {
+      authReports,
+      dnsErrors,
+      onUpdateAuthReports,
+    };
+  },
 });
 </script>
 
@@ -85,7 +123,7 @@ export default defineComponent({
   .section-heading-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 8px;
   }
 
@@ -93,7 +131,7 @@ export default defineComponent({
     width: 16px;
     height: 16px;
 
-    @include svg-icon-stroke('path, rect', $grey);
+    @include svg-icon-stroke('circle, path, rect', $grey);
   }
 
   .section-title {
@@ -161,6 +199,10 @@ export default defineComponent({
 
       @include svg-icon-stroke('path', $primary);
     }
+  }
+
+  .auth-reports-wrapper {
+    max-width: 600px;
   }
 }
 </style>

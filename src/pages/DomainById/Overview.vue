@@ -72,7 +72,7 @@ import {
 export default defineComponent({
   name: 'DomainsOverview',
 
-  emits: ['updateAuthReports'],
+  emits: ['updateDomainByIdJson'],
 
   components: {
     TotalEngagement,
@@ -132,7 +132,15 @@ export default defineComponent({
 
     // methods
     const onUpdateAuthReports = (responseJson) => {
-      emit('updateAuthReports', responseJson);
+      emit('updateDomainByIdJson', {
+        ...props.domainByJson,
+        ...responseJson,
+      });
+
+      // toaster
+      appContext.config.globalProperties.$toast({
+        message: 'Authentication reports updated',
+      });
     };
 
     const onFetchEmailEngagementMetrics = async () => {

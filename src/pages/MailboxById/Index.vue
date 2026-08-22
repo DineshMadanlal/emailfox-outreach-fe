@@ -41,6 +41,8 @@
       v-if="mailboxByJson.id"
 
       :mailboxByJson="mailboxByJson"
+
+      @updateMailbox="onUpdateMailboxJson"
     />
   </div>
 </template>
@@ -163,6 +165,10 @@ export default defineComponent({
       $router.go(-1);
     };
 
+    const onUpdateMailboxJson = (updatedMailbox) => {
+      state.mailboxByJson = { ...updatedMailbox };
+    };
+
     // lifecycle hooks
     onMounted(() => {
       makeApiCallOnMounted();
@@ -177,8 +183,9 @@ export default defineComponent({
       isMobileDevice,
 
       // methods
-      onVisibilityChange,
       onDeleteMailbox,
+      onVisibilityChange,
+      onUpdateMailboxJson,
       onSuccessfulDeleteMailbox,
     };
   },

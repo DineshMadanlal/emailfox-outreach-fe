@@ -2,7 +2,7 @@
   <div class="settings-full-section custom-tracking-domain-section">
     <div class="section-heading-row">
       <LocalSvgIcon
-        image="compose"
+        image="domains"
         classes="section-header-icon"
       />
       <h6 class="section-title">
@@ -13,14 +13,18 @@
     <p class="section-description">
       Improve deliverability and build trust by using your own domain
       for email tracking links. Tracking links will appear as
-      part of your brand instead of a shared tracking domain.
+      part of your brand instead of the default tracking domain.
     </p>
 
     <!-- Configured Value or Add Button -->
     <div v-if="customTrackingDomain" class="configured-item-box">
       <div class="flex items-center no-wrap">
-        <span class="configured-value-text">{{ customTrackingDomain }}</span>
+        <span class="configured-value-text">
+          {{ customTrackingDomain }}
+        </span>
       </div>
+
+      <!-- Edit -->
       <q-btn
         flat
         dense
@@ -41,7 +45,7 @@
       v-else
       flat
       class="action-box-card"
-      @click="$emit('addCustomTrackingDomain')"
+      @click="$emit('editCustomTrackingDomain')"
     >
       <p class="action-box-text">
         + Add CNAME Record
@@ -58,20 +62,18 @@ export default defineComponent({
   name: 'CustomTrackingDomain',
 
   props: {
-    mailboxByJson: {
+    domainByJson: {
       type: Object,
       required: true,
       default: () => ({}),
     },
   },
 
-  emits: ['addCustomTrackingDomain', 'editCustomTrackingDomain'],
+  emits: ['editCustomTrackingDomain'],
 
   setup(props) {
     const customTrackingDomain = computed(() => (
-      props.mailboxByJson.custom_tracking_domain
-      || props.mailboxByJson.tracking_domain
-      || ''
+      props.domainByJson.tracking_domain_url || ''
     ));
 
     return {
@@ -93,16 +95,17 @@ export default defineComponent({
     margin-bottom: 8px;
   }
 
-  .section-header-icon {
+  :deep(.section-header-icon) {
     width: 16px;
     height: 16px;
+
+    @include svg-icon-stroke('circle, path, rect', $grey);
   }
 
   .section-title {
     color: $black;
     font-size: 16px;
     font-weight: 600;
-    margin-left: 12px;
   }
 
   .section-description {

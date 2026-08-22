@@ -162,6 +162,10 @@ export default defineComponent({
           label: 'Mailboxes',
           route: `/outreach/domain/${domainId}/mailboxes`,
         },
+        {
+          label: 'Settings',
+          route: `/outreach/domain/${domainId}/settings`,
+        },
         // {
         //   label: 'Campaigns',
         //   route: `/outreach/domain/${domainId}/campaigns`,

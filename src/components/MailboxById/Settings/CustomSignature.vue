@@ -101,31 +101,31 @@ export default defineComponent({
       }
     }
   }
-}
 
-.section-header-icon {
-  width: 16px;
-  height: 16px;
-}
+  .section-header-icon {
+    width: 16px;
+    height: 16px;
+  }
 
-.section-title {
-  color: $black;
-  font-size: 16px;
-  font-weight: 600;
-  margin-left: 12px;
-}
+  .section-title {
+    color: $black;
+    font-size: 16px;
+    font-weight: 600;
+    margin-left: 12px;
+  }
 
-.edit-btn {
-  font-size: 14px;
-  font-weight: 500;
-  padding: 2px 6px;
+  .edit-btn {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 2px 6px;
 
-  :deep(.edit-icon) {
-    width: 14px;
-    height: 14px;
-    margin-right: 4px;
+    :deep(.edit-icon) {
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
 
-    @include svg-icon-stroke('path', $primary);
+      @include svg-icon-stroke('path', $primary);
+    }
   }
 }
 </style>

@@ -584,38 +584,6 @@ export default defineComponent({
       });
     };
 
-    const fetchSequenceStats = async (sequenceIds) => {
-      if (isEmpty(sequenceIds)) {
-        return {};
-      }
-
-      try {
-        const response = await getApiCall({
-          endpoint: '/stats/sequences/list-stats',
-          params: {
-            seq_ids: sequenceIds,
-          },
-          includeWorkspace: true,
-        });
-
-        const statsList = Array.isArray(response)
-          ? response
-          : (response?.data || []);
-
-        const statsMap = {};
-        statsList.forEach((statItem) => {
-          if (statItem && statItem.seq_id != null) {
-            statsMap[statItem.seq_id] = statItem;
-          }
-        });
-
-        return statsMap;
-      } catch (error) {
-        // return empty object on stats fetch failure
-        return {};
-      }
-    };
-
     const getContactsStats = (row) => {
       const contactStats = row?.contact_stats || {};
 
@@ -649,7 +617,10 @@ export default defineComponent({
       const totalSent = emailSent + liSent;
 
       //
-      const rate = totalSent > 0 ? findPercentage(totalReplies, totalSent) : 0;
+      const rate = totalSent > 0 ? findPercentage({
+        part: totalReplies,
+        whole: totalSent,
+      }) : 0;
 
       return {
         icon: 'seq-replied',
@@ -670,7 +641,10 @@ export default defineComponent({
       const liReplies = stats.li_replies || 0;
       const totalReplies = emailReplies + liReplies;
 
-      const rate = totalReplies > 0 ? findPercentage(totalPositive, totalReplies) : 0;
+      const rate = totalReplies > 0 ? findPercentage({
+        part: totalPositive,
+        whole: totalReplies,
+      }) : 0;
 
       return {
         icon: 'positive-reply',
@@ -707,16 +681,7 @@ export default defineComponent({
 
         const { data, count } = response;
 
-        // Fetch sequence stats for all sequence IDs
-        const sequenceIds = (data || []).map((sequence) => sequence.id).filter(Boolean);
-        const statsMap = await fetchSequenceStats(sequenceIds);
-
-        // Attach stats to each sequence object
-        state.tableData = (data || []).map((sequence) => ({
-          ...sequence,
-          stats: statsMap[sequence.id] || sequence.stats || {},
-        }));
-
+        state.tableData = data || [];
         state.pagination.rowsNumber = count;
 
         // store in pinia
@@ -877,7 +842,6 @@ export default defineComponent({
       onCreateNewSequence,
 
       getNumeralAmount,
-      findPercentage,
       onUpdateCampaign,
 
       getContactsStats,

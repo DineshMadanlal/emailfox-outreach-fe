@@ -1,19 +1,59 @@
 <template>
   <div class="mailbox-settings-container">
+    <!-- Modal: Edit General Preference -->
+    <q-dialog
+      v-model="modals.showEditGeneralPreferenceModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <EditGeneralPreference
+        :mailboxByJson="mailboxByJson"
+        @onSuccessfulUpdate="onSuccessfulUpdateGeneralPreference"
+      />
+    </q-dialog>
+
+    <!-- Modal: Edit Signature -->
+    <q-dialog
+      v-model="modals.showEditSignatureModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SetSignature
+        :mailboxByJson="mailboxByJson"
+        @onSuccessfulUpdate="onSuccessfulUpdateSignature"
+      />
+    </q-dialog>
+
+    <!-- Modal: Edit BCC to CRM -->
+    <q-dialog
+      v-model="modals.showEditBccModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <EditBccToCrm
+        :mailboxByJson="mailboxByJson"
+        @onSuccessfulUpdate="onSuccessfulUpdateBcc"
+      />
+    </q-dialog>
+
     <!-- Top Grid: General Preference & Custom Signature -->
     <div class="settings-top-grid">
       <!-- General Preference Card -->
       <GeneralPreference
         :mailboxByJson="mailboxByJson"
-
-        @editGeneralPreference="$emit('editGeneralPreference')"
+        @editGeneralPreference="modals.showEditGeneralPreferenceModal = true"
       />
 
       <!-- Custom Signature Card -->
       <CustomSignature
         :mailboxByJson="mailboxByJson"
-
-        @editSignature="$emit('editSignature')"
+        @editSignature="modals.showEditSignatureModal = true"
       />
     </div>
 
@@ -22,32 +62,25 @@
     <!-- BCC to CRM Section -->
     <BccToCrm
       :mailboxByJson="mailboxByJson"
-
-      @addBcc="$emit('addBcc')"
-      @editBcc="$emit('editBcc')"
-    />
-
-    <div class="section-divider" />
-
-    <!-- Custom Tracking Domain Section -->
-    <CustomTrackingDomain
-      :mailboxByJson="mailboxByJson"
-
-      @addCustomTrackingDomain="$emit('addCustomTrackingDomain')"
-      @editCustomTrackingDomain="$emit('editCustomTrackingDomain')"
+      @editBcc="modals.showEditBccModal = true"
     />
   </div>
 </template>
 
 <script>
 // vue
-import { defineComponent } from 'vue';
+import { defineComponent, toRefs, reactive } from 'vue';
 
 // components
 import BccToCrm from 'components/MailboxById/Settings/BccToCrm.vue';
 import CustomSignature from 'components/MailboxById/Settings/CustomSignature.vue';
 import GeneralPreference from 'components/MailboxById/Settings/GeneralPreference.vue';
-import CustomTrackingDomain from 'components/MailboxById/Settings/CustomTrackingDomain.vue';
+import SetSignature from 'components/MailboxById/Settings/Modals/SetSignature.vue';
+import EditGeneralPreference from 'components/MailboxById/Settings/Modals/EditGeneralPreference.vue';
+import EditBccToCrm from 'components/MailboxById/Settings/Modals/EditBccToCrm.vue';
+
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 export default defineComponent({
   name: 'MailboxSettings',
@@ -56,7 +89,9 @@ export default defineComponent({
     GeneralPreference,
     CustomSignature,
     BccToCrm,
-    CustomTrackingDomain,
+    SetSignature,
+    EditGeneralPreference,
+    EditBccToCrm,
   },
 
   props: {
@@ -68,13 +103,50 @@ export default defineComponent({
   },
 
   emits: [
-    'addBcc',
-    'editBcc',
-    'editSignature',
-    'editGeneralPreference',
-    'addCustomTrackingDomain',
-    'editCustomTrackingDomain',
+    'updateMailbox',
   ],
+
+  setup(props, { emit }) {
+    // composition API
+    const { isMobileDevice } = useAppHelpersApi();
+
+    // state
+    const state = reactive({
+      modals: {
+        showEditSignatureModal: false,
+        showEditGeneralPreferenceModal: false,
+        showEditBccModal: false,
+      },
+    });
+
+    const onSuccessfulUpdateSignature = (updatedMailbox) => {
+      state.modals.showEditSignatureModal = false;
+      emit('updateMailbox', updatedMailbox);
+    };
+
+    const onSuccessfulUpdateGeneralPreference = (updatedMailbox) => {
+      state.modals.showEditGeneralPreferenceModal = false;
+      emit('updateMailbox', updatedMailbox);
+    };
+
+    const onSuccessfulUpdateBcc = (updatedMailbox) => {
+      state.modals.showEditBccModal = false;
+      emit('updateMailbox', updatedMailbox);
+    };
+
+    return {
+      // state
+      ...toRefs(state),
+
+      // computed
+      isMobileDevice,
+
+      // methods
+      onSuccessfulUpdateSignature,
+      onSuccessfulUpdateGeneralPreference,
+      onSuccessfulUpdateBcc,
+    };
+  },
 });
 </script>
 
