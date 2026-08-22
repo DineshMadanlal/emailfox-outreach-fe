@@ -221,7 +221,7 @@
 <script>
 // vue
 import {
-  computed, defineComponent, toRefs, reactive, getCurrentInstance,
+  computed, defineComponent, toRefs, reactive, getCurrentInstance, inject,
 } from 'vue';
 
 // vue-router
@@ -269,6 +269,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // inject
+    const editCampaignContext = inject('editCampaignContext');
+
     // router
     const $router = useRouter();
 
@@ -293,7 +296,7 @@ export default defineComponent({
     const sequenceByIdRoutes = computed(() => {
       const sequenceId = props.campaignByIdJson.id;
 
-      return [
+      const pages = [
         // {
         //   name: 'Overview',
         //   path: `/outreach/campaigns/${sequenceId}/overview`,
@@ -310,19 +313,42 @@ export default defineComponent({
           name: 'Contacts',
           path: `/outreach/campaigns/${sequenceId}/contacts`,
         },
-        {
-          name: 'Sender Mailboxes',
-          path: `/outreach/campaigns/${sequenceId}/sender-mailboxes`,
-        },
-        {
-          name: 'Sequence',
-          path: `/outreach/campaigns/${sequenceId}/sequence`,
-        },
         // {
         //   name: 'Activity',
         //   path: `/outreach/campaigns/${sequenceId}/activity`,
         // },
       ];
+
+      // Email Only Campaign
+      if (editCampaignContext?.isEmailOutreachCampaign.value) {
+        pages.push({
+          name: 'Sender Mailboxes',
+          path: `/outreach/campaigns/${sequenceId}/sender-mailboxes`,
+        });
+      } else if (editCampaignContext?.isLinkedInOutreachCampaign.value) {
+        pages.push({
+          name: 'LinkedIn Accounts',
+          path: `/outreach/campaigns/${sequenceId}/linkedin-accounts`,
+        });
+      } else {
+        // Multi Channel Campaign
+        pages.push({
+          name: 'Sender Mailboxes',
+          path: `/outreach/campaigns/${sequenceId}/sender-mailboxes`,
+        }, {
+          name: 'LinkedIn Accounts',
+          path: `/outreach/campaigns/${sequenceId}/linkedin-accounts`,
+        });
+      }
+
+      pages.push(
+        // Sequence
+        {
+          name: 'Sequence',
+          path: `/outreach/campaigns/${sequenceId}/sequence`,
+        },
+      );
+      return pages;
     });
 
     // methods

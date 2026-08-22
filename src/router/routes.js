@@ -302,6 +302,11 @@ const routes = [
                 meta: { requiresAuth: true },
               },
               {
+                path: 'linkedin-accounts',
+                component: () => import('src/pages/CampaignById/LinkedInAccounts.vue'),
+                meta: { requiresAuth: true },
+              },
+              {
                 path: 'analytics',
                 redirect: (to) => ({
                   path: `/outreach/campaigns/${to.params.campaignId}/analytics/overview`,
