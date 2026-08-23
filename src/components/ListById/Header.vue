@@ -161,10 +161,10 @@ export default defineComponent({
           label: 'Contacts',
           route: `/outreach/lists/view/${listId}/list-contacts`,
         },
-        {
-          label: 'List Analytics',
-          route: `/outreach/lists/view/${listId}/list-analytics`,
-        },
+        // {
+        //   label: 'List Analytics',
+        //   route: `/outreach/lists/view/${listId}/list-analytics`,
+        // },
       ];
     });
 

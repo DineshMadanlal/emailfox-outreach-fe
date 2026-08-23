@@ -39,6 +39,8 @@ module.exports = configure((ctx) => ({
     'warmup-constants',
     'workspace-constants',
     'mailbox-constants',
+    'linkedin-constants',
+    'partner-constants',
   ],
 
   // https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js#Property%3A-css

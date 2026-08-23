@@ -40,7 +40,11 @@
         @update:dateRangeInputJson="onUpdateDateRangeInputJson"
       />
 
-      <div class="mailbox-bounce">
+      <div
+        class="mailbox-bounce"
+
+        v-if="false"
+      >
         <BounceCategories
           :metrics="overallEngagementMetrics"
           :showLoader="showOverallEngagementLoader"

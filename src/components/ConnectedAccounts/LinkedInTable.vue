@@ -20,17 +20,39 @@
       />
     </q-dialog>
 
+    <!-- Update Sending Limits -->
     <q-dialog
       v-model="modals.showUpdateLinkedInLimitsModal"
-      class="app-modal-dialog"
 
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+
+      :position="isMobileDevice ? 'standard' : 'right'"
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <UpdateLinkedInLimits
-        :selectedRows="tableState.selectedRows"
+        :editLinkedInJson="editLinkedInJson"
 
-        @rateLimitsUpdated="onFetchLinkedInRecords"
+        @sendingLimitsUpdated="onUpdateLinkedInById"
+      />
+    </q-dialog>
+
+    <!-- LinkedIn Proxy Settings -->
+    <q-dialog
+      v-model="modals.showLinkedInProxySettingsModal"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <LinkedInProxySettings
+        :editLinkedInJson="editLinkedInJson"
+
+        @proxySettingsUpdated="onUpdateLinkedInById"
       />
     </q-dialog>
 
@@ -43,29 +65,9 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <DeleteLinkedIn
-        :filters="tableState.filters"
-        :selectedRows="tableState.selectedRows"
-        :multiSelectOptionJson="tableState.multiSelectOptionJson"
+        :editLinkedInJson="editLinkedInJson"
 
-        @onSuccessfulDelete="onFetchLinkedInRecords"
-      />
-    </q-dialog>
-
-    <!--  -->
-    <q-dialog
-      seamless
-      :model-value="!!selectedRowsCount"
-
-      position="bottom"
-      class="app-table-selection-dialog"
-    >
-      <LinkedInActionSummary
-        :totalCount="tableState.pagination.rowsNumber"
-        :numberOfSelectedRows="selectedRowsCount"
-
-        @onCancel="tableState.selectedRows = []"
-        @delete="modals.showDeleteLinkedInModal = true"
-        @setApiRateLimit="modals.showUpdateLinkedInLimitsModal = true"
+        @onSuccessfulDelete="onDeleteLinkedInAccount"
       />
     </q-dialog>
 
@@ -151,7 +153,6 @@
         v-model:pagination="tableState.pagination"
 
         separator="cell"
-        selection="multiple"
         class="app-table all-accounts-table app-table-rows-fixed app-paginated-table no-border-left"
 
         :rows="tableState.data"
@@ -159,86 +160,8 @@
 
         :loading="loaders.isFetchApi"
 
-        v-model:selected="tableState.selectedRows"
-
         @request="onRequest"
       >
-        <!-- Header Slots -->
-        <template #header="props">
-          <q-tr :props="props">
-            <q-th
-              auto-width
-            >
-              <q-checkbox
-                dense
-                color="primary"
-                class="app-checkbox"
-
-                v-model="props.selected"
-
-                v-if="props.selected || props.selected === null"
-
-                @update:modelValue="resetTableMultiSelect"
-              />
-
-              <q-checkbox
-                v-else
-
-                dense
-                color="primary"
-                class="header-selection-checkbox app-checkbox"
-
-                :model-value="props.selected"
-              >
-                <q-menu
-                  transition-show="jump-down"
-                  transition-hide="jump-up"
-
-                  v-model="tableState.showTableMultiSelectMenu"
-                >
-                  <!-- quasar list -->
-                  <q-list style="min-width: 270px">
-                    <TableMultiSelect
-                      multiSelectType="mailboxes"
-                      :multiSelectOptionJson="multiSelectOptionJson"
-
-                      :totalList="tableState.pagination.rowsNumber"
-                      :totalCurrentList="tableState.data.length"
-
-                      @updateMultiSelect="updateMultiSelect"
-                    />
-                  </q-list>
-                </q-menu>
-              </q-checkbox>
-            </q-th>
-            <!-- rest of the slot -->
-            <q-th
-              v-for="col in props.cols"
-              :key="col.name"
-              :props="props"
-            >
-              <div
-                class="flex no-wrap items-center"
-              >
-                {{ col.label }}
-              </div>
-            </q-th>
-          </q-tr>
-        </template>
-
-        <!-- template body checkbox -->
-        <template v-slot:body-selection="scope">
-          <q-checkbox
-            dense
-            color="primary"
-            class="app-checkbox"
-
-            v-model="scope.selected"
-
-            @click="onTableRowSelect"
-          />
-        </template>
-
         <!-- bottom -->
         <template v-slot:bottom="scope">
           <div class="table-bottom-block">
@@ -338,8 +261,43 @@
               :to="`/outreach/linkedin/${props.row.id}`"
               class="account-route-link"
             >
-              <div>
-                {{ props.row.name }}
+              <div class="name-and-action-cell">
+                <q-img
+                  :src="props.row.picture_url"
+                  :alt="props.row.name"
+                  class="account-profile-image"
+                />
+
+                <div>
+                  {{ props.row.name }}
+                </div>
+
+                <q-space />
+
+                <!-- more options -->
+                <q-btn
+                  dense
+                  outlined
+                  unelevated
+
+                  class="more-action-btn"
+
+                  @click.stop.prevent
+                >
+                  <!-- more -->
+                  <LocalSvgIcon
+                    image="more"
+                    classes="more-menu-icon"
+                  />
+
+                  <LinkedInMoreOptions
+                    :tableRow="props.row"
+
+                    @editSendingLimits="editSendingLimits"
+                    @updateProxySettings="updateProxySettings"
+                    @deleteAccount="deleteLinkedInAccount"
+                  />
+                </q-btn>
               </div>
             </router-link>
           </q-td>
@@ -362,8 +320,8 @@
           </q-td>
         </template>
 
-        <!-- API Rate Limit per day -->
-        <template v-slot:body-cell-apiRateLimit="props">
+        <!-- Proxy & Location -->
+        <template v-slot:body-cell-proxyAndLocation="props">
           <q-td
             :props="props"
           >
@@ -372,13 +330,130 @@
               class="account-route-link"
             >
               <div>
-                {{ props.row.api_rate_limit }} / Day
+                {{ props.row.proxy_country || '-' }}
               </div>
-
             </router-link>
           </q-td>
         </template>
 
+        <!-- Total Actions -->
+        <template v-slot:body-cell-totalActions="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_TOTAL_ACTIONS?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_TOTAL_ACTIONS?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Profile Views -->
+        <template v-slot:body-cell-profileViews="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_VISIT_PROFILE?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_VISIT_PROFILE?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Follow Profiles -->
+        <template v-slot:body-cell-followProfiles="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_FOLLOW_PROFILE?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_FOLLOW_PROFILE?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Latest Post Likes -->
+        <template v-slot:body-cell-latestPostLikes="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_LIKE_POST?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_LIKE_POST?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Connection Requests -->
+        <template v-slot:body-cell-connectionRequests="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_CONNECTION_REQUEST?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_CONNECTION_REQUEST?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Messages -->
+        <template v-slot:body-cell-messages="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_MESSAGE?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_MESSAGE?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Inmails -->
+        <template v-slot:body-cell-inmails="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/linkedin/${props.row.id}`"
+              class="account-route-link"
+            >
+              <div>
+                {{ getNumeralAmount(props.row.limits?.LINKEDIN_INMAIL?.used || 0) }}
+                / {{ props.row.limits?.LINKEDIN_INMAIL?.max || 0 }} per day
+              </div>
+            </router-link>
+          </q-td>
+        </template>
       </q-table>
     </div>
   </div>
@@ -386,7 +461,6 @@
 
 <script>
 // lodash
-import size from 'lodash/size';
 import isEmpty from 'lodash/isEmpty';
 
 // vue
@@ -408,14 +482,14 @@ import ApiLoader from 'components/General/ApiLoader.vue';
 import AppHeader from 'components/Headers/AppHeader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ConnectionStatus from 'components/ConnectedAccounts/ConnectionStatus.vue';
-import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
 import LinkedInAccountsIllustration from 'components/Illustrations/LinkedInAccounts.vue';
 
+import LinkedInMoreOptions from 'components/Menu/LinkedInMoreOptions.vue';
 import DeleteLinkedIn from 'components/ConnectedAccounts/Modals/DeleteLinkedIn.vue';
 import UpdateLinkedInLimits from 'components/ConnectedAccounts/Modals/UpdateLinkedInLimits.vue';
-import LinkedInActionSummary from 'components/ConnectedAccounts/Modals/LinkedInActionSummary.vue';
+import LinkedInProxySettings from 'components/ConnectedAccounts/Modals/LinkedInProxySettings.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -426,9 +500,7 @@ import { connectNewLinkedInAccount } from 'src/utils/domainMailboxesApi.js';
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // constants
-import {
-  TABLE_MULTI_SELECT_OPTIONS, DEFAULT_TABLE_PAGINATION,
-} from 'boot/constants';
+import { DEFAULT_TABLE_PAGINATION } from 'boot/constants';
 
 export default defineComponent({
   name: 'LinkedInTable',
@@ -438,13 +510,13 @@ export default defineComponent({
     AppHeader,
     ConnectionStatus,
     AppSearchInput,
-    TableMultiSelect,
     ColumnsVisibility,
-    LinkedInActionSummary,
     ColumnsVisibilityButton,
     LinkedInAccountsIllustration,
     UpdateLinkedInLimits,
     DeleteLinkedIn,
+    LinkedInMoreOptions,
+    LinkedInProxySettings,
   },
 
   props: {
@@ -489,8 +561,6 @@ export default defineComponent({
         areResultsFetchedOnce: false,
 
         // multi select
-        selectedRows: [],
-        multiSelectOptionJson: {},
         showTableMultiSelectMenu: false,
 
         //
@@ -501,10 +571,13 @@ export default defineComponent({
       },
 
       modals: {
+        showDeleteLinkedInModal: false,
         showColumnsVisibilityModal: false,
         showUpdateLinkedInLimitsModal: false,
-        showDeleteLinkedInModal: false,
+        showLinkedInProxySettingsModal: false,
       },
+
+      editLinkedInJson: {},
     });
 
     const showApiLoader = computed(() => {
@@ -549,8 +622,6 @@ export default defineComponent({
       return `${start} to ${end} of ${getNumeralAmount(rowsNumber)}`;
     });
 
-    const selectedRowsCount = computed(() => size(state.tableState.selectedRows));
-
     const baseColumns = [
       {
         name: 'accountName',
@@ -567,11 +638,54 @@ export default defineComponent({
 
     const dynamicColumns = computed(() => {
       const columns = [
-        // {
-        //   name: 'apiRateLimit',
-        //   label: 'API Rate Limit per Day',
-        //   align: 'left',
-        // },
+        // Proxy and location
+        {
+          name: 'proxyAndLocation',
+          label: 'Proxy & Location',
+          align: 'left',
+        },
+        // total actions
+        {
+          name: 'totalActions',
+          label: 'Total Actions',
+          align: 'left',
+        },
+        // profile views
+        {
+          name: 'profileViews',
+          label: 'Profile Views',
+          align: 'left',
+        },
+        // follow profiles
+        {
+          name: 'followProfiles',
+          label: 'Follow Profiles',
+          align: 'left',
+        },
+        // like latest post
+        {
+          name: 'latestPostLikes',
+          label: 'Latest Post Likes',
+          align: 'left',
+        },
+        // Connection Request
+        {
+          name: 'connectionRequests',
+          label: 'Connection Requests',
+          align: 'left',
+        },
+        // Messages
+        {
+          name: 'messages',
+          label: 'Messages',
+          align: 'left',
+        },
+        // Inmails
+        {
+          name: 'inmails',
+          label: 'Inmails',
+          align: 'left',
+        },
       ];
 
       return columns;
@@ -598,21 +712,6 @@ export default defineComponent({
           },
         });
       }
-    };
-
-    const updateMultiSelect = (multiSelectOptionJson) => {
-      state.tableState.multiSelectOptionJson = multiSelectOptionJson;
-
-      if (multiSelectOptionJson.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST
-        || multiSelectOptionJson.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL) {
-        state.tableState.selectedRows = state.tableState.data;
-      } else {
-        // limit number
-        state.tableState.selectedRows = state.tableState.data
-          .slice(0, multiSelectOptionJson.limitNumber);
-      }
-
-      state.tableState.showTableMultiSelectMenu = false;
     };
 
     // API Calls
@@ -674,34 +773,9 @@ export default defineComponent({
     };
 
     const onFetchLinkedInRecords = () => {
-      // close the modals
-      if (state.modals.showDeleteLinkedInModal || state.modals.showUpdateLinkedInLimitsModal) {
-        state.modals.showDeleteLinkedInModal = false;
-        state.modals.showUpdateLinkedInLimitsModal = false;
-
-        state.tableState.selectedRows = [];
-      }
-
       onRequest({
         pagination: state.tableState.pagination,
       });
-    };
-
-    const onTableRowSelect = () => {
-      if (state.tableState.data.length === state.tableState.selectedRows.length) {
-        state.tableState.multiSelectOptionJson = {
-          limit: state.tableState.data.length,
-          selectedOption: TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST,
-        };
-      } else {
-        state.tableState.multiSelectOptionJson = null;
-      }
-    };
-
-    const resetTableMultiSelect = () => {
-      state.tableState.multiSelectOptionJson = {};
-
-      state.tableState.selectedRows = [];
     };
 
     const onUpdateVisibleColumns = () => {
@@ -715,6 +789,62 @@ export default defineComponent({
       state.tableState.filters.searchText = searchText?.trim();
 
       onFetchLinkedInRecords();
+    };
+
+    const editSendingLimits = (linkedInJson) => {
+      state.editLinkedInJson = { ...linkedInJson };
+      state.modals.showUpdateLinkedInLimitsModal = true;
+    };
+
+    const updateProxySettings = (linkedInJson) => {
+      state.editLinkedInJson = { ...linkedInJson };
+      state.modals.showLinkedInProxySettingsModal = true;
+    };
+
+    const deleteLinkedInAccount = (linkedInJson) => {
+      state.editLinkedInJson = { ...linkedInJson };
+      state.modals.showDeleteLinkedInModal = true;
+    };
+
+    const onUpdateLinkedInById = (updatedLinkedInJson) => {
+      state.editLinkedInJson = {};
+
+      // close the modals
+      state.modals.showUpdateLinkedInLimitsModal = false;
+      state.modals.showLinkedInProxySettingsModal = false;
+
+      // update the table data
+      const updatedData = state.tableState.data.map((row) => {
+        if (row.id === updatedLinkedInJson.id) {
+          return {
+            ...row,
+            ...updatedLinkedInJson,
+          };
+        }
+
+        return row;
+      });
+
+      state.tableState.data = [...updatedData];
+    };
+
+    const onDeleteLinkedInAccount = () => {
+      state.modals.showDeleteLinkedInModal = false;
+
+      // find the deleted account and remove it from the table data
+      const updatedData = state.tableState.data.filter(
+        (row) => row.id !== state.editLinkedInJson.id,
+      );
+      state.tableState.data = [...updatedData];
+
+      state.tableState.pagination.rowsNumber -= 1;
+
+      state.editLinkedInJson = {};
+
+      updateDataToStore({
+        tableData: state.tableState.data,
+        pagination: state.tableState.pagination,
+      });
     };
 
     const makeApiCallOnMounted = async () => {
@@ -824,18 +954,24 @@ export default defineComponent({
       showLinkedInIllustration,
       showLinkedInFilters,
       tablePaginationLabel,
-      selectedRowsCount,
       isFilterApplied,
+
+      // utils
+      getNumeralAmount,
 
       // methods
       onRequest,
-      onFetchLinkedInRecords,
-      onTableRowSelect,
-      resetTableMultiSelect,
-      updateMultiSelect,
-      onUpdateVisibleColumns,
       onSearchAccounts,
+
+      editSendingLimits,
+      updateProxySettings,
+      deleteLinkedInAccount,
+
+      onUpdateLinkedInById,
+      onFetchLinkedInRecords,
+      onUpdateVisibleColumns,
       onConnectLinkedInAccount,
+      onDeleteLinkedInAccount,
     };
   },
 });
@@ -892,6 +1028,25 @@ export default defineComponent({
       display: grid;
       min-height: 0;
       border-top: 0px;
+
+      .name-and-action-cell {
+        width: 100%;
+        gap: 8px;
+        display: flex;
+        align-items: center;
+
+        .account-profile-image {
+          height: 32px;
+          width: 32px;
+          border-radius: 5px;
+        }
+
+        .more-action-btn {
+          .more-menu-icon {
+            transform: rotate(90deg);
+          }
+        }
+      }
 
       .account-route-link {
         display: flex;

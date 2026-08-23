@@ -4,7 +4,7 @@
     <div class="app-modal-header">
       <!--  -->
       <h4 class="modal-header-text">
-        Delete {{ deleteMultipleAccounts ? 'Multiple Accounts' : 'Account' }}
+        Delete Account
       </h4>
 
       <q-space />
@@ -29,7 +29,7 @@
     <!-- Content -->
     <div class="app-modal-content">
       <p class="delete-warning-text">
-        Deleting the {{ deleteMultipleAccounts ? 'selected accounts' : 'account' }} will
+        Deleting the account will
         <span class="permanent-delete-text">
           permanently delete
         </span>
@@ -45,7 +45,7 @@
         v-model="agreeToDelete"
 
         color="primary"
-        label="I understand the consequences of deleting the selected account(s)"
+        label="I understand the consequences of deleting the selected account."
       />
     </div>
 
@@ -84,19 +84,13 @@
 </template>
 
 <script>
-// lodash
-import size from 'lodash/size';
-
 // vue
 import {
-  defineComponent, reactive, toRefs, computed, getCurrentInstance,
+  defineComponent, reactive, toRefs, getCurrentInstance,
 } from 'vue';
 
 // Utils
 import { deleteApiCall } from 'src/utils/apiRequests';
-
-// constants
-import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
 export default defineComponent({
   name: 'DeleteLinkedIn',
@@ -104,15 +98,7 @@ export default defineComponent({
   emits: ['onSuccessfulDelete'],
 
   props: {
-    filters: {
-      type: Object,
-      default: () => ({}),
-    },
-    selectedRows: {
-      type: Array,
-      default: () => [],
-    },
-    multiSelectOptionJson: {
+    editLinkedInJson: {
       type: Object,
       default: () => ({}),
     },
@@ -129,56 +115,19 @@ export default defineComponent({
       isApiLoading: false,
     });
 
-    // computed
-    const deleteMultipleAccounts = computed(() => size(props.selectedRows) > 1);
-
-    const isAllSelected = computed(() => props.multiSelectOptionJson?.selectedOption
-      === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL);
-
     // methods
-    const getAccountsPayload = () => {
-      const filterJson = {};
-
-      const {
-        searchText,
-      } = props.filters;
-
-      if (searchText) {
-        filterJson.search_text = searchText;
-      }
-
-      if (isAllSelected.value) {
-        filterJson.select_all = true;
-      } else {
-        filterJson.ids = props.selectedRows.map((domain) => domain.id);
-      }
-
-      return filterJson;
-    };
-
     const onDeleteAccount = async () => {
       try {
         state.isApiLoading = true;
 
-        if (size(props.selectedRows) === 1) {
-          // delete single domain
-          await deleteApiCall({
-            includeWorkspace: true,
-            endpoint: `/connected-accounts/linkedin/${props.selectedRows[0].id}`,
-          });
-        } else {
-          const payload = getAccountsPayload();
-
-          // delete multiple domains
-          await deleteApiCall({
-            data: payload,
-            includeWorkspace: true,
-            endpoint: '/connected-accounts/linkedin/bulk-delete',
-          });
-        }
+        // delete single domain
+        await deleteApiCall({
+          includeWorkspace: true,
+          endpoint: `/connected-accounts/linkedin/${props.editLinkedInJson.id}`,
+        });
 
         appContext.config.globalProperties.$toast({
-          message: `${deleteMultipleAccounts.value ? 'Accounts' : 'Account'} deleted successfully`,
+          message: 'Account deleted successfully',
         });
 
         emit('onSuccessfulDelete');
@@ -196,9 +145,6 @@ export default defineComponent({
     return {
       // state
       ...toRefs(state),
-
-      // computed
-      deleteMultipleAccounts,
 
       // methods
       onDeleteAccount,

@@ -49,12 +49,12 @@
               <span class="dns-col type-col type-badge">CNAME</span>
 
               <div class="dns-col host-col flex items-center no-wrap">
-                <span class="host-text">track</span>
+                <span class="host-text">cdn</span>
 
                 <InfoTooltip
                   iconName="circle-question"
                   tooltipText="You can use any subdomain of your
-                  choice (e.g. route, track, mail, etc.)"
+                  choice (e.g. cdn, route, track, mail, etc.)"
                 />
               </div>
 
@@ -101,7 +101,7 @@
               outlined
               hide-bottom-space
               v-model.trim="domain"
-              placeholder="e.g. track.yourdomain.com"
+              placeholder="e.g. cdn.yourdomain.com"
               lazy-rules="ondemand"
               :rules="domainRules"
               @update:modelValue="onDomainChange"
@@ -166,8 +166,7 @@ import { bulkUpdateDomains, verifyTrackingUrlByDomainId } from 'src/utils/domain
 
 // constants
 import { CUSTOM_TRACKING_URL_REGEX } from 'boot/constants';
-
-const CNAME_TARGET = 'cdn.sys-gateway.com';
+import { CNAME_TARGET } from 'src/boot/partner-constants';
 
 export default defineComponent({
   name: 'EditCustomTrackingDomain',
@@ -202,7 +201,7 @@ export default defineComponent({
     });
 
     const domainRules = [
-      (val) => !val || CUSTOM_TRACKING_URL_REGEX.test(val) || 'Please enter a valid tracking domain (e.g. track.yourdomain.com)',
+      (val) => !val || CUSTOM_TRACKING_URL_REGEX.test(val) || 'Please enter a valid tracking domain (e.g. cdn.yourdomain.com)',
     ];
 
     const saveButtonLabel = computed(() => {

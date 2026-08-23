@@ -1,0 +1,165 @@
+// LinkedIn Limits Configuration
+export const LINKEDIN_ACTION_TYPES = {
+  LINKEDIN_TOTAL_ACTIONS: 'LINKEDIN_TOTAL_ACTIONS',
+  LINKEDIN_VISIT_PROFILE: 'LINKEDIN_VISIT_PROFILE',
+  LINKEDIN_LIKE_POST: 'LINKEDIN_LIKE_POST',
+  LINKEDIN_CONNECTION_REQUEST: 'LINKEDIN_CONNECTION_REQUEST',
+  LINKEDIN_MESSAGE: 'LINKEDIN_MESSAGE',
+  LINKEDIN_INMAIL: 'LINKEDIN_INMAIL',
+  LINKEDIN_FOLLOW_PROFILE: 'LINKEDIN_FOLLOW_PROFILE',
+};
+
+export const LINKEDIN_LIMITS_CONFIG = {
+  LINKEDIN_TOTAL_ACTIONS: {
+    key: 'LINKEDIN_TOTAL_ACTIONS',
+    label: 'Total Actions/Day',
+    safestDefault: 50,
+    balancedDefault: 100,
+    agedDefault: 150,
+    safestText: '50 / day',
+    balancedText: '100 / day',
+    agedText: '150 / day',
+    safeMin: 25,
+    safeMax: 200,
+    hint: '100 Recommended and 200 Max.',
+  },
+  LINKEDIN_VISIT_PROFILE: {
+    key: 'LINKEDIN_VISIT_PROFILE',
+    label: 'Profile Views/Day',
+    safestDefault: 50,
+    balancedDefault: 100,
+    agedDefault: 150,
+    safestText: '40 – 50 / day',
+    balancedText: '80 – 100 / day',
+    agedText: '150 / day',
+    safeMin: 25,
+    safeMax: 150,
+    hint: '100 Recommended and 150 Max.',
+  },
+  LINKEDIN_LIKE_POST: {
+    key: 'LINKEDIN_LIKE_POST',
+    label: 'Likes/Day',
+    safestDefault: 20,
+    balancedDefault: 40,
+    agedDefault: 50,
+    safestText: '15 – 20 / day',
+    balancedText: '30 – 40 / day',
+    agedText: '50 / day',
+    safeMin: 10,
+    safeMax: 50,
+    hint: '40 Recommended and 50 Max.',
+  },
+  LINKEDIN_CONNECTION_REQUEST: {
+    key: 'LINKEDIN_CONNECTION_REQUEST',
+    label: 'Connection Request/Day',
+    safestDefault: 12,
+    balancedDefault: 25,
+    agedDefault: 30,
+    safestText: '10 – 12 / day',
+    balancedText: '20 – 25 / day',
+    agedText: '30 / day',
+    safeMin: 5,
+    safeMax: 30,
+    hint: '25 Recommended and 30 Max.',
+  },
+  LINKEDIN_MESSAGE: {
+    key: 'LINKEDIN_MESSAGE',
+    label: 'Message/Day',
+    safestDefault: 25,
+    balancedDefault: 50,
+    agedDefault: 80,
+    safestText: '20 – 25 / day',
+    balancedText: '40 – 50 / day',
+    agedText: '80 / day',
+    safeMin: 15,
+    safeMax: 80,
+    hint: '50 Recommended and 80 Max.',
+  },
+  LINKEDIN_INMAIL: {
+    key: 'LINKEDIN_INMAIL',
+    label: 'Inmail/Day',
+    safestDefault: 4,
+    balancedDefault: 8,
+    agedDefault: 15,
+    safestText: '2 – 4 / day',
+    balancedText: '5 – 8 / day',
+    agedText: '15 / day',
+    safeMin: 2,
+    safeMax: 15,
+    hint: '8 Recommended and 15 Max.',
+  },
+  LINKEDIN_FOLLOW_PROFILE: {
+    key: 'LINKEDIN_FOLLOW_PROFILE',
+    label: 'Follow Profile/Day',
+    safestDefault: 15,
+    balancedDefault: 30,
+    agedDefault: 50,
+    safestText: '12 – 15 / day',
+    balancedText: '25 – 30 / day',
+    agedText: '50 / day',
+    safeMin: 10,
+    safeMax: 50,
+    hint: '30 Recommended and 50 Max.',
+  },
+};
+
+export const LINKEDIN_SAFEST_PRESET = {
+  LINKEDIN_TOTAL_ACTIONS: 50,
+  LINKEDIN_VISIT_PROFILE: 50,
+  LINKEDIN_LIKE_POST: 20,
+  LINKEDIN_CONNECTION_REQUEST: 12,
+  LINKEDIN_MESSAGE: 25,
+  LINKEDIN_INMAIL: 4,
+  LINKEDIN_FOLLOW_PROFILE: 15,
+};
+
+export const LINKEDIN_BALANCED_PRESET = {
+  LINKEDIN_TOTAL_ACTIONS: 100,
+  LINKEDIN_VISIT_PROFILE: 100,
+  LINKEDIN_LIKE_POST: 40,
+  LINKEDIN_CONNECTION_REQUEST: 25,
+  LINKEDIN_MESSAGE: 50,
+  LINKEDIN_INMAIL: 8,
+  LINKEDIN_FOLLOW_PROFILE: 30,
+};
+
+export const LINKEDIN_AGED_PRESET = {
+  LINKEDIN_TOTAL_ACTIONS: 150,
+  LINKEDIN_VISIT_PROFILE: 150,
+  LINKEDIN_LIKE_POST: 50,
+  LINKEDIN_CONNECTION_REQUEST: 30,
+  LINKEDIN_MESSAGE: 80,
+  LINKEDIN_INMAIL: 15,
+  LINKEDIN_FOLLOW_PROFILE: 50,
+};
+
+// Aliases for compatibility
+export const LINKEDIN_NEW_ACCOUNT_PRESET = LINKEDIN_BALANCED_PRESET;
+export const LINKEDIN_AGED_ACCOUNT_PRESET = LINKEDIN_AGED_PRESET;
+
+export const LINKEDIN_PRESET_TIERS = [
+  {
+    key: 'safest',
+    title: 'Safest',
+    subtitle: 'Low risk, warmup pace',
+    tag: '50 Actions / day',
+    preset: LINKEDIN_SAFEST_PRESET,
+    badgeClass: 'preset-badge-tag--safest',
+  },
+  {
+    key: 'balanced',
+    title: 'Balanced (Recommended)',
+    subtitle: 'Standard daily limit',
+    tag: '100 Actions / day',
+    preset: LINKEDIN_BALANCED_PRESET,
+    badgeClass: 'preset-badge-tag--balanced',
+  },
+  {
+    key: 'aged',
+    title: 'Aged Accounts',
+    subtitle: 'For mature profiles',
+    tag: '150 Actions / day',
+    preset: LINKEDIN_AGED_PRESET,
+    badgeClass: 'preset-badge-tag--aged',
+  },
+];
