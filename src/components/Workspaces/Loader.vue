@@ -68,11 +68,6 @@ export default defineComponent({
         workspacesLoadedNew: workspacesLoaded.value,
       }),
       ({ isWorkspaceValidNew, isWorkspaceApiLoadingNew, workspacesLoadedNew }) => {
-        console.log('WorkspaceLoader watch triggered:', {
-          isWorkspaceValidNew,
-          isWorkspaceApiLoadingNew,
-          workspacesLoadedNew,
-        });
         if (
           workspacesLoadedNew
           && !isWorkspaceApiLoadingNew
