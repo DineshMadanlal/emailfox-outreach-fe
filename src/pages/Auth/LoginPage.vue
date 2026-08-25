@@ -58,6 +58,8 @@ export default defineComponent({
           },
         });
 
+        console.log('SSO login response:', response);
+
         // set token
         const {
           user, token,
@@ -100,6 +102,8 @@ export default defineComponent({
         return;
       }
 
+      console.log('Received token from parent:', token);
+
       // api call to verify the token and log in the user
       ssoLogin(token);
     };
@@ -118,6 +122,7 @@ export default defineComponent({
 
     // lifecycle hooks
     onMounted(() => {
+      console.log('LoginPage mounted');
       // Only send if we're actually running inside an iframe
       if (window.parent !== window) {
         sendMessageToParent();
