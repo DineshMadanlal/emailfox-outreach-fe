@@ -43,7 +43,7 @@ import { client1 } from 'src/graphql/apollo';
 
 // utils
 import { updatePrimaryAndSecondaryColor } from 'src/utils/quasarHelpers.js';
-import { isMainApp, applyBranding } from 'src/utils/applyBranding';
+import { applyBranding } from 'src/utils/applyBranding';
 import { getWorkspaceSlugFromUrl } from 'src/utils/helperFunctions';
 
 // boot
@@ -173,13 +173,10 @@ export default defineComponent({
       // no dark mode
       $q.dark.set(false);
 
-      // If not inside an iframe, use the existing isMainApp() logic — no cross-origin issues here
+      // If not inside an iframe
+      // use the existing isMainApp() logic — no cross-origin issues here
       if (window.parent === window) {
-        if (isMainApp()) {
-          primaryAppSetup();
-        } else {
-          whitelabelBrandingSetup();
-        }
+        primaryAppSetup();
         return;
       }
 
@@ -215,7 +212,7 @@ export default defineComponent({
         setApiBaseURL(process.env.AUTHENTICATION_API);
         primaryAppSetup();
       } else {
-        whitelabelBrandingSetup();
+        // whitelabelBrandingSetup();
       }
     };
 
