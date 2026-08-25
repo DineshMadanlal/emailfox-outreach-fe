@@ -130,12 +130,7 @@ export default defineComponent({
       // no dark mode
       $q.dark.set(false);
 
-      // If not inside an iframe
-      // use the existing isMainApp() logic — no cross-origin issues here
-      if (window.parent === window) {
-        primaryAppSetup();
-        return;
-      }
+      primaryAppSetup();
 
       // Inside a cross-origin iframe: use postMessage handshake instead of isMainApp()
       // Send EMAILFOX_INIT to signal we are ready to receive config
@@ -167,9 +162,6 @@ export default defineComponent({
       if (isMainAppFlag) {
         // Switch axios to the primary app API before any requests are made
         setApiBaseURL(process.env.AUTHENTICATION_API);
-        primaryAppSetup();
-      } else {
-        // whitelabelBrandingSetup();
       }
     };
 
