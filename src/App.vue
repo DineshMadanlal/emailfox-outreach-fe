@@ -66,7 +66,6 @@ export default defineComponent({
     // composition API
     const {
       fetchWorkspaceDetailsBySlug,
-      fetchWorkspaceDetailsByWhitelabelUrl,
     } = useWorkspace();
     const { updateAppBranding } = useAppHelpersApi();
 
@@ -124,48 +123,6 @@ export default defineComponent({
         state.showRouterView = true;
       } finally {
         applyBranding();
-      }
-    };
-
-    const setupWhitelabelBranding = (workspaceData) => {
-      applyBranding({
-        description: '',
-        analyticsId: '',
-        themeColor: workspaceData.theme_color,
-        icons: {
-          ico: 'https://',
-        },
-      });
-    };
-
-    const whitelabelBrandingSetup = async () => {
-      const appUrl = window.location.hostname;
-
-      try {
-        if (isEmpty(activeWorkspaceData.value)) {
-          // fetch workspace details and set branding
-          const response = await fetchWorkspaceDetailsByWhitelabelUrl(appUrl);
-
-          authStorePinia.setField({
-            field: 'activeWorkspaceData',
-            value: response,
-          });
-
-          setupWhitelabelBranding(response);
-
-          setupWorkspaceBranding(response);
-
-          state.showRouterView = true;
-        } else {
-          setupWhitelabelBranding(activeWorkspaceData.value);
-
-          setupWorkspaceBranding(activeWorkspaceData.value);
-
-          state.showRouterView = true;
-        }
-      } catch (error) {
-        // redirect to google if any error in fetching workspace details using whitelabel url
-        window.location.href = 'https://www.google.com';
       }
     };
 
@@ -236,7 +193,6 @@ export default defineComponent({
         // Fallback: if parent does not respond within 3s, treat as white-label
         state.configTimeoutId = setTimeout(() => {
           window.removeEventListener('message', handleConfigMessage);
-          whitelabelBrandingSetup();
         }, 3000);
       }
 
