@@ -277,11 +277,6 @@ export const isSupportedThemeColor = (color = '') => Object.values(SUPPORTED_THE
   .some((theme) => theme.value.toLowerCase() === color.toLowerCase());
 
 export const getWorkspaceSlugFromUrl = () => {
-  // Whitelabel domains should never return workspace slug
-  if (!isPrimaryApp) {
-    return '';
-  }
-
   const { hostname } = window.location;
 
   const rootDomain = getRootDomain();

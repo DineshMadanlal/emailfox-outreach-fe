@@ -96,11 +96,15 @@ export default defineComponent({
 
     const primaryAppSetup = async () => {
       const workspaceSlug = getWorkspaceSlugFromUrl();
+      console.log('Workspace slug from URL:', workspaceSlug);
+
       try {
         if (workspaceSlug) {
           if (isEmpty(activeWorkspaceData.value)) {
             // fetch workspace details and set branding
             const response = await fetchWorkspaceDetailsBySlug(workspaceSlug);
+
+            console.log('Fetched workspace details:', response);
 
             authStorePinia.setField({
               field: 'activeWorkspaceData',
@@ -134,14 +138,16 @@ export default defineComponent({
 
       // Inside a cross-origin iframe: use postMessage handshake instead of isMainApp()
       // Send EMAILFOX_INIT to signal we are ready to receive config
-      window.parent.postMessage(
-        {
-          type: 'EMAILFOX_INIT',
-          version: '1.0.0',
-          timestamp: Date.now(),
-        },
-        '*',
-      );
+      if (window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: 'EMAILFOX_INIT',
+            version: '1.0.0',
+            timestamp: Date.now(),
+          },
+          '*',
+        );
+      }
     };
 
     // Handles the EMAILFOX_CONFIG message sent by the parent in response to EMAILFOX_INIT
@@ -194,6 +200,7 @@ export default defineComponent({
     onBeforeUnmount(() => {
       window.removeEventListener('message', handleConfigMessage);
       window.removeEventListener('message', handleLogoutMessage);
+
       if (state.configTimeoutId) {
         clearTimeout(state.configTimeoutId);
       }
