@@ -359,7 +359,10 @@ export default defineComponent({
     );
 
     return {
+      // state
       ...toRefs(state),
+
+      // computed
       headerTitle,
       dataSeries,
     };

@@ -8,6 +8,11 @@
       <OverallStats
         :accountId="accountByJson.id"
       />
+
+      <!-- Daily Activity Chart with Date Range -->
+      <DailyActivity
+        :accountId="accountByJson.id"
+      />
     </div>
   </div>
 </template>
@@ -18,6 +23,7 @@ import { defineComponent } from 'vue';
 
 // Components
 import OverallStats from 'components/LinkedInById/Analytics/OverallStats.vue';
+import DailyActivity from 'components/LinkedInById/Analytics/DailyActivity.vue';
 
 export default defineComponent({
   name: 'LinkedInByIdOverview',
@@ -26,6 +32,7 @@ export default defineComponent({
 
   components: {
     OverallStats,
+    DailyActivity,
   },
 
   props: {

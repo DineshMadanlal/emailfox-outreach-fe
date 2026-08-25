@@ -30,6 +30,23 @@ export const fetchLinkedInOverallStats = async (accountId) => {
   }
 };
 
+export const fetchLinkedInDateStats = async ({ accountId, startDate, endDate }) => {
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: `/stats/linkedin/${accountId}/date-stats`,
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+      },
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const updateLinkedInLimits = async ({ accountId, payload }) => {
   try {
     const response = await putApiCall({
