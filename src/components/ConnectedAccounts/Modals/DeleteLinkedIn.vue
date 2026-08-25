@@ -90,7 +90,7 @@ import {
 } from 'vue';
 
 // Utils
-import { deleteApiCall } from 'src/utils/apiRequests';
+import { deleteLinkedInAccount } from 'src/utils/connectedAccountsApi';
 
 export default defineComponent({
   name: 'DeleteLinkedIn',
@@ -121,10 +121,7 @@ export default defineComponent({
         state.isApiLoading = true;
 
         // delete single domain
-        await deleteApiCall({
-          includeWorkspace: true,
-          endpoint: `/connected-accounts/linkedin/${props.editLinkedInJson.id}`,
-        });
+        await deleteLinkedInAccount(props.editLinkedInJson.id);
 
         appContext.config.globalProperties.$toast({
           message: 'Account deleted successfully',

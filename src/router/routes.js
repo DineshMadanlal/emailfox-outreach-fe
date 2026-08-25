@@ -166,8 +166,19 @@ const routes = [
           },
           {
             path: 'linkedin/:accountId',
-            component: () => import('src/pages/LinkedIn/AccountById.vue'),
+            component: () => import('src/pages/LinkedInById/Index.vue'),
+            redirect: (to) => ({
+              path: `/outreach/linkedin/${to.params.accountId}/overview`,
+            }),
             meta: { requiresAuth: true },
+            children: [
+              // overview
+              {
+                path: 'overview',
+                component: () => import('src/pages/LinkedInById/Overview.vue'),
+                meta: { requiresAuth: true },
+              },
+            ],
           },
           {
             path: 'mailboxes/new',

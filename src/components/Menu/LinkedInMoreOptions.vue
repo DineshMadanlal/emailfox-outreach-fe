@@ -1,37 +1,30 @@
 <template>
-  <q-menu
-    auto-close
-    transition-show="jump-down"
-    transition-hide="jump-up"
-    content-class="bg-white text-dark"
+  <!-- List -->
+  <q-list
+    style="min-width: 180px"
+    class="warmup-profiles-action-list"
   >
-    <!-- List -->
-    <q-list
-      style="min-width: 180px"
-      class="warmup-profiles-action-list"
+    <!-- Edit -->
+    <q-item
+      v-ripple
+      clickable
+
+      v-for="(action, index) of profileActions"
+      :key="`team-profile-action-${index}`"
+      :class="`flex items-center each-profile-action-item ${action.classes || ''}`"
+
+      @click="onActionClick(action)"
     >
-      <!-- Edit -->
-      <q-item
-        v-ripple
-        clickable
+      <LocalSvgIcon
+        :image="action.icon"
+        classes="profile-menu-icon"
+      />
 
-        v-for="(action, index) of profileActions"
-        :key="`team-profile-action-${index}`"
-        :class="`flex items-center each-profile-action-item ${action.classes || ''}`"
-
-        @click="onActionClick(action)"
-      >
-        <LocalSvgIcon
-          :image="action.icon"
-          classes="profile-menu-icon"
-        />
-
-        <p class="profile-action-text">
-          {{ action.label }}
-        </p>
-      </q-item>
-    </q-list>
-  </q-menu>
+      <p class="profile-action-text">
+        {{ action.label }}
+      </p>
+    </q-item>
+  </q-list>
 </template>
 
 <script>

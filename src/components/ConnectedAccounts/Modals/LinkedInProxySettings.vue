@@ -245,7 +245,7 @@ import CountriesSelect from 'src/components/Dropdown/CountriesSelect.vue';
 import PasswordIconToggle from 'src/components/Password/PasswordIconToggle.vue';
 
 // Utils
-import { patchApiCall } from 'src/utils/apiRequests.js';
+import { updateLinkedInProxy } from 'src/utils/connectedAccountsApi';
 
 export default defineComponent({
   name: 'LinkedInProxySettings',
@@ -324,10 +324,9 @@ export default defineComponent({
           auto_proxy_country: state.formData.country || null,
         };
 
-        await patchApiCall({
+        await updateLinkedInProxy({
+          accountId: props.editLinkedInJson.id,
           payload,
-          includeWorkspace: true,
-          endpoint: `/connected-accounts/linkedin/${props.editLinkedInJson.id}/proxy`,
         });
 
         emit('proxySettingsUpdated', {

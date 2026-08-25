@@ -243,7 +243,7 @@ import {
 import InputLabel from 'src/components/Form/InputLabel.vue';
 
 // Utils
-import { putApiCall } from 'src/utils/apiRequests.js';
+import { updateLinkedInLimits } from 'src/utils/connectedAccountsApi';
 
 // Constants
 import {
@@ -369,14 +369,15 @@ export default defineComponent({
           max_count: Number(state.formLimits[action_type]) || 0,
         }));
 
-        await putApiCall({
+        // api call
+        await updateLinkedInLimits({
+          accountId: props.editLinkedInJson.id,
           payload,
-          includeWorkspace: true,
-          endpoint: `/connected-accounts/linkedin/${props.editLinkedInJson.id}/limits`,
         });
 
         // Update limits object
         const updatedLimits = { ...(props.editLinkedInJson.limits || {}) };
+
         payload.forEach((item) => {
           updatedLimits[item.action_type] = {
             ...(updatedLimits[item.action_type] || {}),

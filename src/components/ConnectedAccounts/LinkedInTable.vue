@@ -290,13 +290,21 @@
                     classes="more-menu-icon"
                   />
 
-                  <LinkedInMoreOptions
-                    :tableRow="props.row"
+                  <!-- menu -->
+                  <q-menu
+                    auto-close
+                    transition-show="jump-down"
+                    transition-hide="jump-up"
+                    content-class="bg-white text-dark"
+                  >
+                    <LinkedInMoreOptions
+                      :tableRow="props.row"
 
-                    @editSendingLimits="editSendingLimits"
-                    @updateProxySettings="updateProxySettings"
-                    @deleteAccount="deleteLinkedInAccount"
-                  />
+                      @editSendingLimits="editSendingLimits"
+                      @updateProxySettings="updateProxySettings"
+                      @deleteAccount="deleteLinkedInAccount"
+                    />
+                  </q-menu>
                 </q-btn>
               </div>
             </router-link>
@@ -347,7 +355,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_TOTAL_ACTIONS?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_TOTAL_ACTIONS?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_TOTAL_ACTIONS?.max || 0 }}
               </div>
             </router-link>
           </q-td>
@@ -364,7 +372,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_VISIT_PROFILE?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_VISIT_PROFILE?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_VISIT_PROFILE?.max || 0 }}
               </div>
             </router-link>
           </q-td>
@@ -381,7 +389,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_FOLLOW_PROFILE?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_FOLLOW_PROFILE?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_FOLLOW_PROFILE?.max || 0 }}
               </div>
             </router-link>
           </q-td>
@@ -398,7 +406,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_LIKE_POST?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_LIKE_POST?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_LIKE_POST?.max || 0 }}
               </div>
             </router-link>
           </q-td>
@@ -415,7 +423,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_CONNECTION_REQUEST?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_CONNECTION_REQUEST?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_CONNECTION_REQUEST?.max || 0 }}
               </div>
             </router-link>
           </q-td>
@@ -432,7 +440,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_MESSAGE?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_MESSAGE?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_MESSAGE?.max || 0 }}
               </div>
             </router-link>
           </q-td>
@@ -449,7 +457,7 @@
             >
               <div>
                 {{ getNumeralAmount(props.row.limits?.LINKEDIN_INMAIL?.used || 0) }}
-                / {{ props.row.limits?.LINKEDIN_INMAIL?.max || 0 }} per day
+                / {{ props.row.limits?.LINKEDIN_INMAIL?.max || 0 }}
               </div>
             </router-link>
           </q-td>
