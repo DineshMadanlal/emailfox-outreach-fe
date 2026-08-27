@@ -17,18 +17,10 @@ export const getLinkedInAccountById = async (accountId) => {
   }
 };
 
-export const fetchLinkedInOverallStats = async (accountId) => {
-  try {
-    const response = await getApiCall({
-      includeWorkspace: true,
-      endpoint: `/stats/linkedin/${accountId}/overall-stats`,
-    });
-
-    return response;
-  } catch (error) {
-    throw new Error(error);
-  }
-};
+export const fetchLinkedInOverallStats = async (accountId) => getApiCall({
+  includeWorkspace: true,
+  endpoint: `/stats/linkedin/${accountId}/overall-stats`,
+});
 
 export const fetchLinkedInDateStats = async ({ accountId, startDate, endDate }) => {
   try {

@@ -14,6 +14,9 @@ import { useAuthStore } from 'src/stores/auth';
 import { isMainApp } from 'src/utils/applyBranding';
 import { getWorkspaceSlugFromUrl } from 'src/utils/helperFunctions';
 
+// Key for tracking chunk reload attempts
+const CHUNK_RELOAD_KEY = 'app_chunk_load_failed';
+
 // methods
 const getWorkspaceSlugFromRoute = () => getWorkspaceSlugFromUrl();
 
@@ -32,6 +35,11 @@ const getWorkspaceAppPath = ({
 
 // CRITICAL: Notice the "async" keyword added here to handle the background backend handshake
 export default boot(({ router }) => {
+  // Clear the reload flag when navigation succeeds
+  router.afterEach(() => {
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+  });
+
   router.beforeEach(async (to, from, next) => {
     // Access the authentication store
     const authStorePinia = useAuthStore();
@@ -161,18 +169,23 @@ export default boot(({ router }) => {
     next();
   });
 
-  /** Handle router errors */
+  /** Handle router chunk load errors gracefully */
   router.onError((error, to) => {
-    const isChunkLoadError = error.name === 'ChunkLoadError'
-    || /Loading chunk.*failed/i.test(error.message)
-    || /Failed to fetch dynamically imported module/i.test(error.message);
-
+    const isChunkLoadError = error?.name === 'ChunkLoadError'
+      || /Loading chunk.*failed/i.test(error?.message)
+      || /Failed to fetch dynamically imported module/i.test(error?.message);
     if (!isChunkLoadError) return;
-
-    alert('A new version is available. The page will reload.');
-
-    const targetPath = to?.fullPath || window.location.pathname;
-
-    window.location.assign(targetPath);
+    const alreadyRetried = sessionStorage.getItem(CHUNK_RELOAD_KEY);
+    if (!alreadyRetried) {
+      // Mark that we're attempting a reload to prevent infinite loops
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, 'true');
+      const targetPath = to?.fullPath || window.location.pathname;
+      // Hard refresh to fetch the latest index.html and chunk manifests
+      window.location.assign(targetPath);
+    } else {
+      // We already retried once and it still failed (e.g., network outage or persistent issue)
+      sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+      console.error('Persistent chunk loading failure:', error);
+    }
   });
 });

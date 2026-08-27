@@ -175,11 +175,13 @@ export default defineComponent({
         // response
         state.statsData = response || {};
       } catch (error) {
-        // error handling
-        appContext.config.globalProperties.$toast({
-          warning: true,
-          message: error?.message || 'Failed to fetch LinkedIn statistics',
-        });
+        const status = error?.status || error?.response?.status;
+        if (status !== 404) {
+          appContext?.config?.globalProperties?.$toast?.({
+            warning: true,
+            message: error.message || 'Failed to fetch overall stats',
+          });
+        }
       } finally {
         state.isLoading = false;
       }
