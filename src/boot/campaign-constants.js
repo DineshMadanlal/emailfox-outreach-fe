@@ -867,6 +867,8 @@ export const SENDING_VOLUME_OPTIONS = {
   },
 };
 
+export const DEFAULT_UNSUBSCRIBE_MESSAGE = 'Unsubscribe';
+
 export const DEFAULT_CAMPAIGN_SETTINGS = {
   // sending schedule configuration
   new_contacts_per_day: 1000,
@@ -902,6 +904,8 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
   // risk management configuration
   pause_campaign_when_bounce_rate_at: 5,
   include_unsubscribe_message: false,
+  include_unsubscribe_headers: false,
+  unsubscribe_message: DEFAULT_UNSUBSCRIBE_MESSAGE,
 };
 
 export const CONNECTED_ACCOUNT_STATUS = {

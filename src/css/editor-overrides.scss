@@ -6,8 +6,42 @@
   }
 }
 
+// .fr-popup .fr-checkbox input:checked+span {
+//   background: $primary !important;
+//   border: 2px solid $primary !important;
+//   border-radius: 4px !important;
+// }
 .fr-popup {
   z-index: 22222 !important;
+
+  // input
+  .fr-input-line input[type="text"] {
+    border-radius: 6px !important;
+    border: 1px solid $blue-grey !important;
+  }
+
+  // checkbox
+  .fr-checkbox-line {
+    margin-top: 0px !important;
+  }
+
+  .fr-checkbox {
+    padding: 0px !important;
+
+    input:checked+span {
+      background: $primary !important;
+      border: 2px solid $primary !important;
+    }
+  }
+
+  // action buttons
+  .fr-action-buttons {
+    button.fr-command {
+      color: $white !important;
+      border-radius: 6px !important;
+      background: $primary !important;
+    }
+  }
 }
 
 .app-editor-container {

@@ -449,6 +449,7 @@ export default defineComponent({
         },
 
         linkList: [],
+        linkInsertButtons: ['linkBack'],
         tableStyles: {
           'fr-no-borders': 'Hide Borders',
           'fr-dashed-borders': 'Dashed Borders',
@@ -627,7 +628,7 @@ export default defineComponent({
     };
 
     onMounted(async () => {
-      loadFroalaAssets();
+      await loadFroalaAssets();
 
       if (props.isEditable) {
         initFroala();

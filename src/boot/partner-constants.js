@@ -1,1 +1,1 @@
-export const CNAME_TARGET = 'cdn.sys-gateway.com';
+export const CNAME_TARGET = 'cdn.trkwater.com';

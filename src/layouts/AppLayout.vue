@@ -201,6 +201,19 @@ export default defineComponent({
       appContext.app.use(Froala.default);
     };
 
+    // Force Chromium compositor to repaint when tab becomes active again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        window.dispatchEvent(new Event('resize'));
+        requestAnimationFrame(() => {
+          document.body.style.transform = 'translateZ(0)';
+          requestAnimationFrame(() => {
+            document.body.style.transform = '';
+          });
+        });
+      }
+    };
+
     // Update height on mount and when resizing
     onMounted(() => {
       updateMainPageMaxHeight();
@@ -217,6 +230,8 @@ export default defineComponent({
         await waitForTimeInSeconds(0.2);
         updateMainPageMaxHeight();
       });
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
     });
 
     window.addEventListener(
@@ -231,6 +246,8 @@ export default defineComponent({
     onUnmounted(() => {
       window.removeEventListener('mousemove', () => {});
       window.removeEventListener('resize', updateMainPageMaxHeight);
+
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     });
 
     return {

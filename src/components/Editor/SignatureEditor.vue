@@ -41,7 +41,7 @@
 <script>
 // vue
 import {
-  defineComponent, computed, defineAsyncComponent, reactive,
+  defineComponent, computed, defineAsyncComponent, reactive, toRefs,
 } from 'vue';
 
 // utils
@@ -49,7 +49,6 @@ import { cleanEditorHtmlForSave } from 'src/utils/helperFunctions';
 
 // constants
 import { SENDER_VARIABLES } from 'src/boot/campaign-constants';
-import { toRefs } from '@vueuse/core';
 
 export default defineComponent({
   name: 'SignatureEditor',
@@ -120,9 +119,9 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
-      computedSignature,
       placeholderText,
       senderVariables,
+      computedSignature,
 
       // methods
       onInsertVariable,
