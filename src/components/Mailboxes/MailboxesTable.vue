@@ -83,6 +83,8 @@
         >
           <MailboxFilters
             :canFilter="!showAllMailboxesIllustration"
+
+            @importHistory="$emit('importHistory')"
           />
         </div>
       </template>
@@ -585,6 +587,10 @@ import { MAILBOX_ACTIONS } from 'src/boot/mailbox-constants';
 export default defineComponent({
   name: 'AllMailboxes',
 
+  emits: [
+    'importHistory',
+  ],
+
   components: {
     AppHeader,
     ApiLoader,
@@ -1060,15 +1066,15 @@ export default defineComponent({
 
     onMounted(() => {
       const {
-        connectionSuccess, mailbox_id, email, error,
+        connectionSuccess, mailbox_id, email,
       } = $route.query;
 
-      if (error) {
-        window.opener.postMessage({
-          type: 'OAUTH_AUTH_ERROR',
-          error: error || 'Authentication failed',
-        }, '*');
-      }
+      // if (error) {
+      //   window.opener.postMessage({
+      //     type: 'OAUTH_AUTH_ERROR',
+      //     error: error || 'Authentication failed',
+      //   }, '*');
+      // }
 
       if (connectionSuccess && mailbox_id) {
         window.opener.postMessage({

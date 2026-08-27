@@ -1,14 +1,17 @@
 <template>
   <div class="all-mailboxes-page">
+    <!-- table -->
     <MailboxesTable
       fromAllMailboxesPage
+
+      @importHistory="modals.importHistory = true"
     />
   </div>
 </template>
 
 <script>
 // vue
-import { defineComponent } from 'vue';
+import { defineComponent, reactive, toRefs } from 'vue';
 
 // quasar
 import { useMeta } from 'quasar';
@@ -32,6 +35,18 @@ export default defineComponent({
 
     // metadata
     useMeta(generateMetadata('All Mailboxes'));
+
+    // state
+    const state = reactive({
+      modals: {
+        importHistory: false,
+      },
+    });
+
+    return {
+      // state
+      ...toRefs(state),
+    };
   },
 });
 </script>
@@ -40,7 +55,7 @@ export default defineComponent({
 .all-mailboxes-page {
   width: 100%;
   display: flex;
-  flex-direction: column;
   min-height: 0;
+  flex-direction: column;
 }
 </style>

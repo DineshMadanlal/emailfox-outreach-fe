@@ -926,12 +926,21 @@ export default defineComponent({
             // ignore cross-origin focus errors
           }
           // 2. Post error or success message
-          if (error) {
-            window.opener.postMessage({
-              type: 'OAUTH_AUTH_ERROR',
-              error: error || 'Authentication failed',
-            }, '*');
-          } else if (connectionSuccess && account_id) {
+          // if (error) {
+          //   window.opener.postMessage({
+          //     type: 'OAUTH_AUTH_ERROR',
+          //     error: error || 'Authentication failed',
+          //   }, '*');
+          // } else if (connectionSuccess && account_id) {
+          //   window.opener.postMessage({
+          //     type: 'OAUTH_AUTH_SUCCESS',
+          //     payload: {
+          //       account_id,
+          //     },
+          //   }, '*');
+          // }
+
+          if (connectionSuccess && account_id) {
             window.opener.postMessage({
               type: 'OAUTH_AUTH_SUCCESS',
               payload: {

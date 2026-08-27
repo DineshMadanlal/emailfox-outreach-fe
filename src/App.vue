@@ -16,6 +16,9 @@
 // lodash
 import isEmpty from 'lodash/isEmpty';
 
+// vue router
+import { useRoute } from 'vue-router';
+
 // vue
 import {
   computed, defineComponent, onBeforeUnmount, onMounted, provide, reactive, toRefs,
@@ -58,6 +61,10 @@ export default defineComponent({
   },
 
   setup() {
+    // route
+    const $route = useRoute();
+
+    // quasar
     const $q = useQuasar();
 
     // Access the user store
@@ -192,6 +199,39 @@ export default defineComponent({
       }
 
       onAppMounted();
+
+      // mailbox oauth
+      const {
+        connectionSuccess, mailbox_id, email, error, account_id,
+      } = $route.query;
+
+      if (error) {
+        window.opener.postMessage({
+          type: 'OAUTH_AUTH_ERROR',
+          error: error || 'Authentication failed',
+        }, '*');
+      }
+
+      // mailbox addition oauth
+      if (connectionSuccess && mailbox_id) {
+        window.opener.postMessage({
+          type: 'OAUTH_AUTH_SUCCESS',
+          payload: {
+            mailbox_id,
+            email,
+          },
+        }, '*');
+      }
+
+      // connected accounts oauth
+      if (connectionSuccess && account_id) {
+        window.opener.postMessage({
+          type: 'OAUTH_AUTH_SUCCESS',
+          payload: {
+            account_id,
+          },
+        }, '*');
+      }
     });
 
     onBeforeUnmount(() => {
