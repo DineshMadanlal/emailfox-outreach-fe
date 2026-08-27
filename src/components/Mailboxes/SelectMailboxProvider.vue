@@ -191,7 +191,7 @@ export default defineComponent({
     };
 
     const moveToIcemailImport = () => {
-      window.open('https://app.outreachfox.ai/domain', '_blank');
+      window.location.href = 'https://app.outreachfox.ai/domain';
     };
 
     // Click-outside: collapse expanded provider when clicking outside the wrapper
