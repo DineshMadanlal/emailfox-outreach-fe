@@ -61,7 +61,7 @@ export default defineComponent({
   },
 
   setup() {
-    // route
+    // route & router
     const $route = useRoute();
 
     // quasar
@@ -134,6 +134,71 @@ export default defineComponent({
       }
     };
 
+    const processOAuthRedirectParams = () => {
+      let redirectParams = {};
+
+      const searchParams = new URLSearchParams(window.location.search);
+      let hashParams = new URLSearchParams();
+      if (window.location.hash.includes('?')) {
+        hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+      }
+
+      const redirect = searchParams.get('redirect')
+        || hashParams.get('redirect')
+        || (typeof $route.query?.redirect === 'string' ? $route.query.redirect : null);
+
+      if (redirect) {
+        if (redirect.includes('?')) {
+          const queryString = redirect.split('?')[1];
+          redirectParams = Object.fromEntries(new URLSearchParams(queryString).entries());
+        } else if (redirect.includes('=')) {
+          redirectParams = Object.fromEntries(new URLSearchParams(redirect).entries());
+        }
+      }
+
+      if (isEmpty(redirectParams)) {
+        redirectParams = {
+          ...Object.fromEntries(searchParams.entries()),
+          ...Object.fromEntries(hashParams.entries()),
+          ...($route.query || {}),
+        };
+      }
+
+      const {
+        connectionSuccess, mailbox_id, email, error, account_id,
+      } = redirectParams;
+
+      if (window.opener && !window.opener.closed) {
+        if (error) {
+          window.opener.postMessage({
+            type: 'OAUTH_AUTH_ERROR',
+            error: error || 'Authentication failed',
+          }, '*');
+        }
+
+        // mailbox addition oauth
+        if (connectionSuccess && mailbox_id) {
+          window.opener.postMessage({
+            type: 'OAUTH_AUTH_SUCCESS',
+            payload: {
+              mailbox_id,
+              email,
+            },
+          }, '*');
+        }
+
+        // connected accounts oauth
+        if (connectionSuccess && account_id) {
+          window.opener.postMessage({
+            type: 'OAUTH_AUTH_SUCCESS',
+            payload: {
+              account_id,
+            },
+          }, '*');
+        }
+      }
+    };
+
     const onAppMounted = async () => {
       // no dark mode
       $q.dark.set(false);
@@ -200,48 +265,7 @@ export default defineComponent({
 
       onAppMounted();
 
-      let redirectParams = {};
-      const { redirect } = $route.query;
-
-      if (redirect) {
-        redirectParams = redirect ? Object.fromEntries(
-          new URLSearchParams(redirect.includes('?') ? redirect.split('?')[1] : redirect).entries(),
-        ) : {};
-      } else {
-        redirectParams = $route.query;
-      }
-
-      const {
-        connectionSuccess, mailbox_id, email, error, account_id,
-      } = redirectParams;
-
-      if (error) {
-        window.opener.postMessage({
-          type: 'OAUTH_AUTH_ERROR',
-          error: error || 'Authentication failed',
-        }, '*');
-      }
-
-      // mailbox addition oauth
-      if (connectionSuccess && mailbox_id) {
-        window.opener.postMessage({
-          type: 'OAUTH_AUTH_SUCCESS',
-          payload: {
-            mailbox_id,
-            email,
-          },
-        }, '*');
-      }
-
-      // connected accounts oauth
-      if (connectionSuccess && account_id) {
-        window.opener.postMessage({
-          type: 'OAUTH_AUTH_SUCCESS',
-          payload: {
-            account_id,
-          },
-        }, '*');
-      }
+      processOAuthRedirectParams();
     });
 
     onBeforeUnmount(() => {

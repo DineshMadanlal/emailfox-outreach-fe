@@ -354,9 +354,7 @@ export default defineComponent({
 
         state.campaignSettings = response || {};
       } catch (error) {
-        if (error?.response?.status !== 404) {
-          //
-        } else {
+        if (error.status !== 404) {
           appContext.config.globalProperties.$toast({
             warning: true,
             message: error.message,

@@ -89,6 +89,37 @@
           class="right-arrow-icon"
         />
       </q-card>
+
+      <!-- Icemail Import -->
+      <q-card
+        flat
+        class="mailbox-provider-card"
+
+        @click="moveToIcemailImport"
+      >
+        <!-- Icon -->
+        <img
+          src="https://whitemail.xyz/logo/icemail.svg"
+          class="mailbox-provider-icon icemail-icon"
+          alt="Icemail"
+        />
+
+        <!-- Provider details -->
+        <div class="provider-details">
+          <p class="provider-label-text">
+            Import from Icemail
+          </p>
+
+          <p class="provider-desc-text">
+            Connect and import your mailboxes directly from Icemail
+          </p>
+        </div>
+
+        <LocalSvgIcon
+          image="plain-down-arrow"
+          class="right-arrow-icon"
+        />
+      </q-card>
     </div>
   </div>
 </template>
@@ -159,6 +190,10 @@ export default defineComponent({
       emit('onCompleteStep', { ...provider, mode });
     };
 
+    const moveToIcemailImport = () => {
+      window.open('https://app.outreachfox.ai/domain', '_blank');
+    };
+
     // Click-outside: collapse expanded provider when clicking outside the wrapper
     const handleOutsideClick = (event) => {
       if (
@@ -189,6 +224,7 @@ export default defineComponent({
       // methods
       onCardClick,
       onSubAction,
+      moveToIcemailImport,
     };
   },
 });
@@ -233,11 +269,13 @@ export default defineComponent({
       position: relative;
       transition: border-color 0.2s ease, background 0.2s ease;
 
+      .mailbox-provider-icon,
       :deep(.mailbox-provider-icon) {
         width: 100%;
         height: 36px;
         max-width: 36px;
         flex-shrink: 0;
+        object-fit: contain;
 
         &.smtp-icon {
           @include svg-icon-stroke('path, circle, rect', $warning);

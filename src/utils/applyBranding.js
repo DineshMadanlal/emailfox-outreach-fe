@@ -32,16 +32,10 @@ export const getPrimaryBrandColor = () => {
 
 export const applyBranding = (brand = {}) => {
   const {
-    description = 'Get Infrastructure That Helps You Land in the Inbox. Not the Spam Folder',
+    description = '',
     themeColor = getPrimaryBrandColor(),
-    analyticsId = 'G-KN3V7N7M95',
-    icons = {
-      128: 'icons/custom-favicon-128x128.png',
-      96: 'icons/custom-favicon-96x96.png',
-      32: 'icons/custom-favicon-32x32.png',
-      16: 'icons/custom-favicon-16x16.png',
-      ico: 'custom-favicon.ico',
-    },
+    analyticsId = '',
+    icons = {},
   } = brand;
 
   // description
