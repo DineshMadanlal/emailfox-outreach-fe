@@ -200,10 +200,20 @@ export default defineComponent({
 
       onAppMounted();
 
-      // mailbox oauth
+      let redirectParams = {};
+      const { redirect } = $route.query;
+
+      if (redirect) {
+        redirectParams = redirect ? Object.fromEntries(
+          new URLSearchParams(redirect.includes('?') ? redirect.split('?')[1] : redirect).entries(),
+        ) : {};
+      } else {
+        redirectParams = $route.query;
+      }
+
       const {
         connectionSuccess, mailbox_id, email, error, account_id,
-      } = $route.query;
+      } = redirectParams;
 
       if (error) {
         window.opener.postMessage({
