@@ -127,7 +127,8 @@ import { isMainApp } from 'src/utils/applyBranding.js';
 import { connectGoogleAccount, connectOutlookAccount } from 'src/utils/domainMailboxesApi.js';
 
 // constants
-import { ESP_PROVIDERS, GOOGLE_API } from 'boot/mailbox-constants';
+import { GOOGLE_API } from 'boot/partner-constants';
+import { ESP_PROVIDERS } from 'boot/mailbox-constants';
 
 export default defineComponent({
   name: 'ConnectionSteps',

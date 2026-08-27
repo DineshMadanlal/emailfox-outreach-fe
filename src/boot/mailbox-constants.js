@@ -57,10 +57,6 @@ export const ESP_PROVIDERS = {
   SKYSENDERS: 'SKYSENDERS',
 };
 
-export const GOOGLE_API = {
-  CLIENT_ID: '927572967434-8e766e2edbv81frcupeucoq4o6pee6v5.apps.googleusercontent.com',
-};
-
 export const MAILBOX_ACTIONS = {
   SET_DAILY_SEND_COUNT: 'setDailySendCount',
   ENABLE_WARMUP: 'enableWarmup',
