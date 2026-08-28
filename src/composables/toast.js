@@ -25,11 +25,9 @@ const triggerToast = ({ message, warning = false, maxWidth }) => {
   toastState.maxWidth = maxWidth || DEFAULT_MAX_WIDTH;
 
   // Auto-close after 5 seconds for non-warning toasts
-  if (!warning) {
-    setTimeout(() => {
-      toastState.showToast = false;
-    }, DEFAULT_TIMEOUT);
-  }
+  setTimeout(() => {
+    toastState.showToast = false;
+  }, DEFAULT_TIMEOUT);
 };
 
 export const useToast = () => ({

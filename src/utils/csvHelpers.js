@@ -212,3 +212,47 @@ export const downloadSmtpCsvTemplate = () => {
 
   URL.revokeObjectURL(url);
 };
+
+/**
+ * Exports failed mailboxes logs as a CSV file and triggers browser download.
+ */
+export const exportFailedMailboxesCsv = ({ filename = 'mailboxes.csv', logs = [] }) => {
+  const failedLogs = logs.filter((log) => log.status === 'failed' || log.error_message);
+  const records = failedLogs.length > 0 ? failedLogs : logs;
+
+  const headers = ['row_number', 'email', 'error_message'];
+
+  const escapeCsv = (val) => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const csvRows = [
+    headers.join(','),
+    ...records.map((log) => [
+      escapeCsv(log.row_number ?? ''),
+      escapeCsv(log.email ?? ''),
+      escapeCsv(log.error_message ?? ''),
+    ].join(',')),
+  ];
+
+  const csvContent = csvRows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const cleanFilename = filename || 'mailboxes.csv';
+  const downloadName = cleanFilename.startsWith('failed_') ? cleanFilename : `failed_${cleanFilename}`;
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', downloadName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+};

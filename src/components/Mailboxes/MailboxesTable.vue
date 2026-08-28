@@ -187,6 +187,10 @@
 
         <q-space />
 
+        <div
+          id="mailboxImporting"
+        />
+
         <!--  -->
         <ColumnsVisibilityButton
           @click="showColumnsVisibilityModal = true"

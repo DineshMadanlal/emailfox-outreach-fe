@@ -867,6 +867,19 @@ export const SENDING_VOLUME_OPTIONS = {
   },
 };
 
+export const LINKEDIN_FAILURE_BEHAVIOR = {
+  PAUSE_LEAD: {
+    label: 'Pause the lead',
+    value: 'PAUSE_LEAD',
+    tooltip: 'Pause the lead if a LinkedIn step fails to execute.',
+  },
+  CONTINUE_TO_NEXT_STEP: {
+    label: 'Continue to Next Step',
+    value: 'CONTINUE_TO_NEXT_STEP',
+    tooltip: 'Continue to the next sequence step if a LinkedIn step fails to execute.',
+  },
+};
+
 export const DEFAULT_UNSUBSCRIBE_MESSAGE = 'Unsubscribe';
 
 export const DEFAULT_CAMPAIGN_SETTINGS = {
@@ -880,6 +893,9 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
   variant_spintax_distribution: VARIANT_SPINTAX_DISTRIBUTION.RANDOM.value,
   stop_contact_on_company_level_reply: true,
   follow_up_percent: 100,
+
+  // linkedin outreach configuration
+  linkedin_failure_behavior: LINKEDIN_FAILURE_BEHAVIOR.PAUSE_LEAD.value,
 
   // smart AI categorization configuration
   ai_categorisation: true,

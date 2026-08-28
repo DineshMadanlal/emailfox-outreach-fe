@@ -78,6 +78,13 @@
         @updateCampaignSettings="updateCampaignSettings"
       />
 
+      <!-- linkedin outreach settings -->
+      <LinkedInFailedBehaviour
+        v-if="canShowLinkedInSettings"
+        :campaignSettings="campaignSettings"
+        @updateCampaignSettings="updateCampaignSettings"
+      />
+
       <!-- smart ai -->
       <SmartAiCategorizationCard
         :campaignSettings="campaignSettings"
@@ -159,7 +166,7 @@
 <script>
 // vue
 import {
-  defineComponent, computed, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted,
+  defineComponent, computed, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted, inject,
 } from 'vue';
 
 // quasar
@@ -175,6 +182,7 @@ import RiskControlCard from 'components/CampaignWorkflow/Settings/RiskControlCar
 import SendingScheduleCard from 'components/CampaignWorkflow/Settings/SendingScheduleCard.vue';
 import DeliverabilitySafetyCard from 'components/CampaignWorkflow/Settings/DeliverabilitySafetyCard.vue';
 import SmartAiCategorizationCard from 'components/CampaignWorkflow/Settings/SmartAiCategorizationCard.vue';
+import LinkedInFailedBehaviour from 'components/CampaignWorkflow/Settings/LinkedInFailedBehaviour.vue';
 import SequenceConfigurationsCard from 'components/CampaignWorkflow/Settings/SequenceConfigurationsCard.vue';
 
 import SaveDailyNewContactsLimit from 'src/components/CampaignWorkflow/Settings/Modals/SaveDailyNewContactsLimit.vue';
@@ -203,6 +211,7 @@ export default defineComponent({
     RiskControlCard,
     SendingScheduleCard,
     DeliverabilitySafetyCard,
+    LinkedInFailedBehaviour,
     SequenceConfigurationsCard,
     SmartAiCategorizationCard,
 
@@ -221,6 +230,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // inject
+    const editCampaignContext = inject('editCampaignContext', null);
+
     // app context
     const { appContext } = getCurrentInstance();
 
@@ -457,6 +469,16 @@ export default defineComponent({
       };
     });
 
+    const canShowLinkedInSettings = computed(() => {
+      if (!editCampaignContext) return true;
+      const {
+        isLinkedInOutreachCampaign,
+        isMultiChannelOutreachCampaign,
+      } = editCampaignContext;
+
+      return isLinkedInOutreachCampaign?.value || isMultiChannelOutreachCampaign?.value;
+    });
+
     // lifecycle hooks
     onMounted(() => {
       fetchCampaignSettings();
@@ -474,6 +496,7 @@ export default defineComponent({
       // computed
       isMobileDevice,
       campaignCtaJson,
+      canShowLinkedInSettings,
 
       // methods
       onGoBack,

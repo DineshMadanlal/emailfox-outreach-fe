@@ -254,6 +254,21 @@ export const getSmtpBulkImportJob = async (jobId) => {
   }
 };
 
+// GET /mailboxes/bulk-import-jobs
+export const getBulkImportJobs = async (params) => {
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: '/mailboxes/bulk-import-jobs',
+      params,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const updateMailboxById = async (mailboxId, payload) => {
   try {
     const response = await putApiCall({

@@ -43,7 +43,7 @@ export default defineComponent({
     const moreActions = computed(() => {
       const actions = [
         {
-          label: 'Import History',
+          label: 'Bulk Import History',
           emitValue: 'importHistory',
         },
       ];

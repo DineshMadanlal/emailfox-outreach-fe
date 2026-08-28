@@ -11,8 +11,6 @@
         outlined
         unelevated
 
-        v-if="false"
-
         class="filter-more-btn"
       >
         <!-- more -->

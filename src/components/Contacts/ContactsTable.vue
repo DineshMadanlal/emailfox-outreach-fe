@@ -148,6 +148,7 @@
 
       <!--  -->
       <q-table
+        virtual-scroll
         v-model:pagination="pagination"
 
         separator="cell"

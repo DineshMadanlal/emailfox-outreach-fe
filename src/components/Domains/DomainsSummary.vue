@@ -85,7 +85,7 @@ export default defineComponent({
       return [
         {
           key: 'connected',
-          label: 'Connected Mailbox',
+          label: 'Domains',
           value: connected_count,
           icon: 'connected',
           color: 'positive',
