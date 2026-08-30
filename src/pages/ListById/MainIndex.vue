@@ -3,12 +3,30 @@
     <!-- Api Loader -->
     <ApiLoader :show="showApiLoader" />
 
+    <!-- Dialog -->
+    <q-dialog
+      v-model="modals.showListByIdContactHistory"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ContactImportHistory
+        :listId="listId"
+        :listByJson="listByJson"
+      />
+    </q-dialog>
+
     <template
       v-if="listByJson.id"
     >
       <!-- Header -->
       <ListByIdHeader
         :listByJson="listByJson"
+
+        @importHistory="modals.showListByIdContactHistory = true"
       />
 
       <router-view
@@ -28,12 +46,16 @@ import {
 // vue router
 import { useRoute, useRouter } from 'vue-router';
 
+// composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
+
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import ListByIdHeader from 'components/ListById/Header.vue';
+import ContactImportHistory from 'components/ListById/Modals/ContactImportHistory.vue';
 
 // utils
-import { getApiCall } from 'src/utils/apiRequests';
+import { getListById } from 'src/utils/listsApi';
 import { convertStringToNumber } from 'src/utils/numbers';
 
 // store
@@ -45,11 +67,15 @@ export default defineComponent({
   components: {
     ApiLoader,
     ListByIdHeader,
+    ContactImportHistory,
   },
 
   setup() {
     // store
     const userStore = useUserPreferencesStore();
+
+    // composition API
+    const { isMobileDevice } = useAppHelpersApi();
 
     // app context
     const { appContext } = getCurrentInstance();
@@ -66,6 +92,10 @@ export default defineComponent({
       listByJson: {},
       isMounted: false,
       fetchListByIdApiLoading: false,
+
+      modals: {
+        showListByIdContactHistory: false,
+      },
     });
 
     // computed
@@ -76,10 +106,7 @@ export default defineComponent({
       try {
         state.fetchListByIdApiLoading = true;
 
-        const response = await getApiCall({
-          endpoint: `/lists/${listId.value}`,
-          includeWorkspace: true,
-        });
+        const response = await getListById(listId.value);
 
         state.listByJson = response;
 
@@ -118,6 +145,7 @@ export default defineComponent({
       // computed
       listId,
       showApiLoader,
+      isMobileDevice,
     };
   },
 });

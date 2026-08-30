@@ -20,6 +20,40 @@
       />
     </q-dialog>
 
+    <!--  -->
+    <q-dialog
+      v-model="showDeleteContactModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <DeleteContactsModal
+        :filters="filters"
+        :selectedContacts="selectedContacts"
+        :multiSelectOptionJson="multiSelectOptionJson"
+
+        @onSuccessfulDelete="onSuccessfulDeleteContacts"
+      />
+    </q-dialog>
+
+    <!--  -->
+    <q-dialog
+      seamless
+      :model-value="!!selectedContactsLength"
+
+      position="bottom"
+      class="app-table-selection-dialog"
+    >
+      <ContactsActionSummary
+        :totalCount="pagination.rowsNumber"
+        :numberOfSelectedContacts="selectedContactsLength"
+
+        @onCancel="selectedContacts = []"
+        @onDelete="showDeleteContactModal = true"
+      />
+    </q-dialog>
+
     <Teleport
       v-if="isMounted && !hideHeader"
       to="#mainContactsRightHeader"
@@ -97,6 +131,8 @@
 
         <!-- Contact Status -->
         <SelectContactStatus
+          v-if="false"
+
           :clearable="true"
           v-model="filters.status"
 
@@ -150,19 +186,96 @@
       <q-table
         virtual-scroll
         v-model:pagination="pagination"
+        v-model:selected="selectedContacts"
 
         separator="cell"
+        selection="multiple"
         class="app-table app-table-rows-fixed all-contacts-table app-paginated-table no-border-left"
 
         :rows="tableData"
         :columns="tableColumns"
         :loading="isApiProcessing"
-        v-model:selected="selectedContacts"
 
         @request="onRequest"
 
         v-if="!showAllContactsIllustration"
       >
+        <!-- Header Slots -->
+        <template #header="props">
+          <q-tr :props="props">
+            <q-th
+              auto-width
+            >
+              <q-checkbox
+                dense
+                color="primary"
+                class="app-checkbox"
+
+                v-model="props.selected"
+
+                v-if="props.selected || props.selected === null"
+
+                @update:modelValue="resetTableMultiSelect"
+              />
+
+              <q-checkbox
+                v-else
+
+                dense
+                color="primary"
+                class="header-selection-checkbox app-checkbox"
+
+                :model-value="props.selected"
+              >
+                <q-menu
+                  transition-show="jump-down"
+                  transition-hide="jump-up"
+
+                  v-model="showTableMultiSelectMenu"
+                >
+                  <!-- quasar list -->
+                  <q-list style="min-width: 270px">
+                    <TableMultiSelect
+                      multiSelectType="mailboxes"
+                      :multiSelectOptionJson="multiSelectOptionJson"
+
+                      :totalList="pagination.rowsNumber"
+                      :totalCurrentList="tableData.length"
+
+                      @updateMultiSelect="updateMultiSelect"
+                    />
+                  </q-list>
+                </q-menu>
+              </q-checkbox>
+            </q-th>
+            <!-- rest of the slot -->
+            <q-th
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+            >
+              <div
+                class="flex no-wrap items-center"
+              >
+                {{ col.label }}
+              </div>
+            </q-th>
+          </q-tr>
+        </template>
+
+        <!-- template body checkbox -->
+        <template v-slot:body-selection="scope">
+          <q-checkbox
+            dense
+            color="primary"
+            class="app-checkbox"
+
+            v-model="scope.selected"
+
+            @click="onTableRowSelect"
+          />
+        </template>
+
         <!--  -->
         <template v-slot:body-cell="props">
           <!-- Email -->
@@ -173,30 +286,6 @@
             <div class="email-and-action-cell">
               <div class="email-cell-text">
                 {{ props.value || '-' }}
-              </div>
-
-              <q-space />
-
-              <div class="actions-cell">
-                <!-- more options -->
-                <q-btn
-                  dense
-                  outlined
-                  unelevated
-                  @click.stop.prevent
-
-                  class="more-action-btn"
-                >
-                  <!-- more -->
-                  <LocalSvgIcon
-                    image="more"
-                    classes="more-menu-icon"
-                  />
-
-                  <ContactsMoreOptions
-                    :contactJson="props.row"
-                  />
-                </q-btn>
               </div>
             </div>
           </q-td>
@@ -332,14 +421,6 @@
             </div>
           </div>
         </template>
-
-        <template v-slot:item="props">
-          <ContactItemMobileView
-            :contactTableProps="props"
-
-            @deleteContact="onDeleteContact(props.row)"
-          />
-        </template>
       </q-table>
 
       <!-- Menu -->
@@ -379,18 +460,19 @@ import ApiLoader from 'components/General/ApiLoader.vue';
 import MailboxEsp from 'components/Contacts/MailboxEsp.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ContactCellCard from 'components/Contacts/ContactCellCard.vue';
-import ContactsMoreOptions from 'components/Menu/ContactsMoreOptions.vue';
-import ContactItemMobileView from 'components/Contacts/ContactItemMobileView.vue';
 import ColumnsVisibility from 'src/components/Modals/ColumnsVisibility.vue';
 import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 import AllContactsIllustration from 'components/Illustrations/AllContacts.vue';
 import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
+import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
+import ContactsActionSummary from 'components/Contacts/ContactsActionSummary.vue';
 
 import MoreFilters from 'components/Buttons/MoreFilters.vue';
 import SelectList from 'components/Dropdown/SelectList.vue';
 import SelectProvider from 'components/Dropdown/SelectProvider.vue';
 import SelectContactStatus from 'components/Dropdown/SelectContactStatus.vue';
 import ContactsMoreFilters from 'components/Menu/ContactsMoreFilters.vue';
+import DeleteContactsModal from 'components/Contacts/Modals/DeleteContacts.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -415,11 +497,11 @@ export default defineComponent({
     MailboxEsp,
 
     AppSearchInput,
+    TableMultiSelect,
     ContactCellCard,
     ColumnsVisibility,
     ResetFiltersButton,
-    ContactsMoreOptions,
-    ContactItemMobileView,
+    DeleteContactsModal,
 
     AllContactsIllustration,
     ColumnsVisibilityButton,
@@ -430,6 +512,7 @@ export default defineComponent({
 
     MoreFilters,
     ContactsMoreFilters,
+    ContactsActionSummary,
   },
 
   props: {
@@ -552,6 +635,12 @@ export default defineComponent({
         align: 'left',
         field: 'esp_provider',
       },
+      {
+        name: 'first_name',
+        label: 'First Name',
+        align: 'left',
+        field: 'first_name',
+      },
       // {
       //   name: 'campaigns_added',
       //   label: 'Campaigns Added',
@@ -564,12 +653,6 @@ export default defineComponent({
 
     const dynamicColumns = computed(() => {
       const otherColumns = [
-        {
-          name: 'first_name',
-          label: 'First Name',
-          align: 'left',
-          field: 'first_name',
-        },
         {
           name: 'last_name',
           label: 'Last Name',
@@ -660,6 +743,7 @@ export default defineComponent({
         state.isApiProcessing = true;
 
         const attributes = [
+          'id',
           ...baseColumns.map((col) => col.name),
           ...state.visibleColumns,
         ];
@@ -777,13 +861,7 @@ export default defineComponent({
       state.selectedContacts = [];
     };
 
-    const onDeleteContact = (propsRow) => {
-      state.selectedContactJson = propsRow;
-
-      state.showDeleteContactModal = true;
-    };
-
-    const onSuccessfulDeleteContact = () => {
+    const onSuccessfulDeleteContacts = () => {
       state.showDeleteContactModal = false;
 
       // refetch data
@@ -860,9 +938,8 @@ export default defineComponent({
 
       // methods
       onRequest,
-      onDeleteContact,
       onTableRowSelect,
-      onSuccessfulDeleteContact,
+      onSuccessfulDeleteContacts,
       resetTableMultiSelect,
       updateMultiSelect,
       onSearchContactInput,
@@ -977,12 +1054,6 @@ export default defineComponent({
         align-items: center;
 
         gap: 12px;
-      }
-
-      .actions-cell {
-        display: flex;
-        align-items: center;
-        gap: 20px;
       }
 
       .email-cell-text {

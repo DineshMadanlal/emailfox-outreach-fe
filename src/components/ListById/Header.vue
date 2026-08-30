@@ -67,6 +67,25 @@
 
       <!-- right -->
       <div class="list-id-right-section">
+        <!-- More options / Import History -->
+        <q-btn
+          dense
+          outlined
+          unelevated
+
+          class="filter-more-btn"
+        >
+          <!-- more -->
+          <LocalSvgIcon
+            image="more"
+            classes="filter-more-icon"
+          />
+
+          <ListByIdMoreOptions
+            @importHistory="$emit('importHistory')"
+          />
+        </q-btn>
+
         <!-- Upload -->
         <q-btn
           no-caps
@@ -129,12 +148,21 @@ import { useMeta } from 'quasar';
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 
+// Components
+import ListByIdMoreOptions from 'components/Menu/ListByIdMoreOptions.vue';
+
 // utils
 import { getNumeralAmount } from 'src/utils/numbers';
 import { formatDateWithTime } from 'src/utils/dates';
 
 export default defineComponent({
   name: 'ListByIdHeader',
+
+  emits: ['importHistory'],
+
+  components: {
+    ListByIdMoreOptions,
+  },
 
   props: {
     listByJson: {
@@ -255,8 +283,18 @@ export default defineComponent({
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      gap: 12px;
 
-      column-gap: 12px;
+      .filter-more-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        border: 1px solid $blue-grey;
+
+        .filter-more-icon {
+          // transform: rotate(90deg);
+        }
+      }
     }
 
     .list-name-text {

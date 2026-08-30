@@ -210,7 +210,7 @@
               :to="`/outreach/lists/view/${props.row.id}`"
               class="list-contacts-route-link"
             >
-              110
+              {{ getNumeralAmount(props.row.total_contacts) }}
             </router-link>
           </q-td>
         </template>
@@ -375,11 +375,11 @@ export default defineComponent({
           label: 'Name',
           align: 'left',
         },
-        // {
-        //   name: 'contactsCount',
-        //   label: 'Total Contacts',
-        //   align: 'left',
-        // },
+        {
+          name: 'contactsCount',
+          label: 'Total Contacts',
+          align: 'left',
+        },
         {
           name: 'updatedAt',
           label: 'Last Updated',
@@ -571,6 +571,7 @@ export default defineComponent({
 
       formatDateWithTime,
       onNewCreatedList,
+      getNumeralAmount,
 
       // constants
       TABLE_MULTI_SELECT_OPTIONS,
