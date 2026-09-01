@@ -18,7 +18,6 @@
       class="unibox-email-list-container"
       :class="{
         'is-active': isActive,
-        'is-unread': isUnread,
         'is-compact': compactView,
       }"
     >
@@ -30,6 +29,8 @@
           class="app-checkbox"
           :model-value="isSelected"
           @update:model-value="$emit('toggle-select', emailJson)"
+
+          @click.stop.prevent
         />
       </div>
 
@@ -46,7 +47,8 @@
           size="sm"
           class="star-action-btn"
           :class="{ 'is-starred': isStarred }"
-          @click="$emit('toggle-star', emailJson)"
+
+          @click.stop.prevent="$emit('toggle-star', emailJson)"
         >
           <LocalSvgIcon
             image="star"
@@ -334,10 +336,8 @@ export default defineComponent({
     // Unread state
     const isUnread = computed(() => {
       const e = props.emailJson;
-      if (typeof e.is_read === 'boolean') {
-        return !e.is_read;
-      }
-      return !!e.is_unread;
+
+      return !e.is_read;
     });
 
     // Starred / Important state
@@ -549,13 +549,7 @@ export default defineComponent({
     width: 100%;
     display: flex;
     border-radius: 6px;
-
     padding: 8px 12px;
-
-    //
-    &.is-unread {
-      background-color: rgba($color: var(--primary-rgb), $alpha: 0.02);
-    }
 
     //
     &.is-active {
@@ -631,7 +625,7 @@ export default defineComponent({
 
       .compact-badges-row {
         gap: 8px;
-        margin-top: 6px;
+        margin-top: 12px;
         flex-wrap: wrap;
         display: flex;
         align-items: center;

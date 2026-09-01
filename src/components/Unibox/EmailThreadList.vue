@@ -27,7 +27,6 @@
           :title="threadTypeConfig.title"
           :compactView="isMobileDevice || !!activeThreadId"
           :isRefreshing="flags.isRefreshing"
-          :totalCurrentList="emailList.length"
           :isApiProcessing="flags.isApiProcessing"
           :replyCategories="replyCategoriesList"
 
@@ -36,50 +35,43 @@
           @update:filters="onUpdateFilters"
         >
           <!-- Selection Subbar Slot (Below Filters) -->
-          <template #headerSelection>
-            <div class="header-select-all-group flex items-center">
-              <!-- When items are selected: Click unchecks all (no menu) -->
-              <q-checkbox
-                v-if="isSelectionActive"
+          <template #headerCheckbox>
+            <!-- When items are selected: Click unchecks all (no menu) -->
+            <q-checkbox
+              v-if="isSelectionActive"
 
-                dense
-                color="primary"
-                class="header-selection-checkbox app-checkbox"
+              dense
+              color="primary"
+              class="app-checkbox"
 
-                :model-value="isAllSelected ? true : null"
-                @update:model-value="resetTableMultiSelect"
-              />
+              :model-value="isAllSelected ? true : null"
+              @update:model-value="resetTableMultiSelect"
+            >
+              <!-- empty div is required here -->
+              <div></div>
+            </q-checkbox>
 
-              <!-- When nothing is selected: Click opens TableMultiSelect menu -->
-              <q-checkbox
-                v-else
-                dense
-                color="primary"
-                label="Select"
-                class="header-selection-checkbox app-checkbox"
-                :model-value="false"
+            <!-- When nothing is selected: Click opens TableMultiSelect menu -->
+            <q-checkbox
+              v-else
+              dense
+              color="primary"
+              class="app-checkbox"
+              :model-value="false"
+            >
+              <q-menu
+                transition-show="jump-down"
+                transition-hide="jump-up"
               >
-                <q-menu
-                  transition-show="jump-down"
-                  transition-hide="jump-up"
-                >
-                  <TableMultiSelect
-                    multiSelectType="unibox"
-                    :totalList="pagination.count"
-                    :totalCurrentList="emailList.length"
-                    :multiSelectOptionJson="multiSelectOptionJson"
-                    @updateMultiSelect="onUpdateMultiSelect"
-                  />
-                </q-menu>
-              </q-checkbox>
-
-              <span
-                v-if="selectedCount > 0"
-                class="select-all-label cursor-pointer"
-              >
-                {{ getNumeralAmount(selectedCount) }} selected
-              </span>
-            </div>
+                <TableMultiSelect
+                  multiSelectType="unibox"
+                  :totalList="pagination.count"
+                  :totalCurrentList="emailList.length"
+                  :multiSelectOptionJson="multiSelectOptionJson"
+                  @updateMultiSelect="onUpdateMultiSelect"
+                />
+              </q-menu>
+            </q-checkbox>
           </template>
         </UniboxHeader>
 
@@ -157,6 +149,20 @@
         class="unibox-leads-right-section hide-scrollbar"
         :style="{ height: pageHeight ? `${pageHeight}px` : '100%' }"
       >
+        <UniboxConversationPreview
+          :threadJson="activeThread"
+          :campaigns="campaignsList"
+          :hasPrevThread="hasPrevThread"
+          :hasNextThread="hasNextThread"
+          :threadTypeConfig="threadTypeConfig"
+          :replyCategories="replyCategoriesList"
+
+          @close="onCloseEmailPreview"
+          @prev-thread="onPrevThread"
+          @next-thread="onNextThread"
+          @toggle-star="onToggleStar"
+          @toggle-read="onToggleReadStatus"
+        />
       </div>
 
       <!-- Mobile Preview Dialog -->
@@ -169,7 +175,20 @@
         transition-show="slide-up"
         transition-hide="slide-down"
       >
-        <!--  -->
+        <q-card class="full-width full-height">
+          <UniboxConversationPreview
+            :threadJson="activeThread"
+            :campaigns="campaignsList"
+            :replyCategories="replyCategoriesList"
+            :hasPrevThread="hasPrevThread"
+            :hasNextThread="hasNextThread"
+            @close="onCloseEmailPreview"
+            @prev-thread="onPrevThread"
+            @next-thread="onNextThread"
+            @toggle-star="onToggleStar"
+            @toggle-read="onToggleReadStatus"
+          />
+        </q-card>
       </q-dialog>
     </div>
   </div>
@@ -203,10 +222,16 @@ import UniboxHeader from 'components/Unibox/Header.vue';
 import UniboxEmptyState from 'components/Unibox/EmptyState.vue';
 import UniboxEmailListItem from 'components/Unibox/EmailListItem.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
+import UniboxConversationPreview from 'components/Unibox/Conversation/ConversationPreview.vue';
 
 // utils
 import { getDateGroupLabel } from 'src/utils/dates';
-import { fetchUniboxThreadList } from 'src/utils/unibox';
+import {
+  fetchUniboxThreadList,
+  updateUniboxThreadImportantStatus,
+  updateUniboxThreadReadStatus,
+  updateUniboxUntrackedReadStatus,
+} from 'src/utils/unibox';
 import { getNumeralAmount } from 'src/utils/numbers';
 
 // pinia
@@ -224,6 +249,7 @@ export default defineComponent({
     UniboxEmptyState,
     UniboxEmailListItem,
     TableMultiSelect,
+    UniboxConversationPreview,
   },
 
   props: {
@@ -297,6 +323,29 @@ export default defineComponent({
     // Active thread ID extracted from path parameter
     const activeThreadId = computed(() => $route.params.threadId || null);
 
+    // Active thread JSON mapped from loaded list or minimal fallback
+    const activeThread = computed(() => {
+      if (!activeThreadId.value) return null;
+      return state.emailList.find((e) => (
+        (e.id && String(e.id) === String(activeThreadId.value))
+        || (e.contact_mapping_id && String(e.contact_mapping_id) === String(activeThreadId.value))
+      )) || { contact_mapping_id: activeThreadId.value };
+    });
+
+    // Active thread index in currently loaded array
+    const activeThreadIndex = computed(() => {
+      if (!activeThreadId.value) return -1;
+      return state.emailList.findIndex((e) => (
+        (e.id && String(e.id) === String(activeThreadId.value))
+        || (e.contact_mapping_id && String(e.contact_mapping_id) === String(activeThreadId.value))
+      ));
+    });
+
+    const hasPrevThread = computed(() => activeThreadIndex.value > 0);
+    const hasNextThread = computed(() => (
+      activeThreadIndex.value >= 0 && activeThreadIndex.value < state.emailList.length - 1
+    ));
+
     // Unread count from store
     const unreadCount = computed(() => uniboxPinia.getInboxUnreadCount || 0);
 
@@ -342,6 +391,11 @@ export default defineComponent({
               cta: 'Go to Inbox',
               ctaRoute: '/unibox/inbox',
             },
+            data: {
+              hideStar: true,
+              isUntracked: true,
+              hideReplyCategory: true,
+            },
           };
 
         case UNIBOX_THREAD_TYPE.IMPORTANT:
@@ -352,6 +406,9 @@ export default defineComponent({
               body: 'Star messages you care about to see them here.',
               cta: 'Go to Inbox',
               ctaRoute: '/unibox/inbox',
+            },
+            data: {
+
             },
           };
 
@@ -364,6 +421,9 @@ export default defineComponent({
               cta: 'Go to Inbox',
               ctaRoute: '/unibox/inbox',
             },
+            data: {
+              hideStar: true,
+            },
           };
 
         case UNIBOX_THREAD_TYPE.INBOX:
@@ -373,6 +433,8 @@ export default defineComponent({
             emptyState: {
               title: 'Your Inbox is Clear',
               body: 'No emails to display. Adjust your filters or start reaching out to leads.',
+            },
+            data: {
             },
           };
       }
@@ -433,6 +495,79 @@ export default defineComponent({
       }
     };
 
+    // Updates a thread's data in the local email list and resyncs grouped views
+    const updateThreadInListById = (threadIdentifier, updatedFields = {}) => {
+      if (!threadIdentifier) return;
+
+      const targetId = typeof threadIdentifier === 'object'
+        ? (threadIdentifier.contact_mapping_id || threadIdentifier.id)
+        : threadIdentifier;
+
+      const threadIndex = state.emailList.findIndex((item) => (
+        (item.contact_mapping_id && String(item.contact_mapping_id) === String(targetId))
+        || (item.id && String(item.id) === String(targetId))
+      ));
+
+      if (threadIndex !== -1) {
+        state.emailList[threadIndex] = {
+          ...state.emailList[threadIndex],
+          ...updatedFields,
+        };
+
+        groupEmailsByDate();
+      }
+    };
+
+    // Updates read status (mark as read or mark as unread)
+    const onUpdateReadStatus = async (email, isRead = true) => {
+      if (!email) return;
+
+      const targetId = email.contact_mapping_id || email.id;
+      const isUUID = !!email.contact_mapping_id
+        || (typeof targetId === 'string' && targetId.includes('-'));
+
+      if (email.is_read === isRead) return;
+
+      const previousReadStatus = !!email.is_read;
+
+      // Optimistic local update
+      updateThreadInListById(targetId, { is_read: isRead });
+
+      // Update Pinia unread counter
+      if (isRead && !previousReadStatus) {
+        uniboxPinia.inboxUnreadCount = Math.max(0, (uniboxPinia.getInboxUnreadCount || 0) - 1);
+      } else if (!isRead && previousReadStatus) {
+        uniboxPinia.inboxUnreadCount = (uniboxPinia.getInboxUnreadCount || 0) + 1;
+      }
+
+      try {
+        if (isUUID) {
+          await updateUniboxThreadReadStatus({
+            contactMappingId: targetId,
+            isRead,
+          });
+        } else {
+          await updateUniboxUntrackedReadStatus({
+            id: targetId,
+            isRead,
+          });
+        }
+      } catch (error) {
+        // Revert local state and counter on error
+        updateThreadInListById(targetId, { is_read: previousReadStatus });
+        if (isRead && !previousReadStatus) {
+          uniboxPinia.inboxUnreadCount = (uniboxPinia.getInboxUnreadCount || 0) + 1;
+        } else if (!isRead && previousReadStatus) {
+          uniboxPinia.inboxUnreadCount = Math.max(0, (uniboxPinia.getInboxUnreadCount || 0) - 1);
+        }
+
+        appContext.config.globalProperties.$toast?.({
+          warning: true,
+          message: error.message || 'Failed to update read status',
+        });
+      }
+    };
+
     // Main fetch function for Unibox threads
     const fetchThreadList = async () => {
       try {
@@ -457,6 +592,18 @@ export default defineComponent({
           && state.emailList.length < (response?.count || Infinity);
 
         groupEmailsByDate();
+
+        // Auto mark active thread as read if opened directly
+        if (activeThreadId.value) {
+          const matchedItem = state.emailList.find((e) => (
+            (e.id && String(e.id) === String(activeThreadId.value))
+            || (e.contact_mapping_id
+              && String(e.contact_mapping_id) === String(activeThreadId.value))
+          ));
+          if (matchedItem && !matchedItem.is_read) {
+            onUpdateReadStatus(matchedItem, true);
+          }
+        }
 
         // Update Inbox unread count badge in store
         if (props.threadType === UNIBOX_THREAD_TYPE.INBOX) {
@@ -578,8 +725,42 @@ export default defineComponent({
     };
 
     // Toggle star / important status for thread
-    const onToggleStar = (email) => {
-      email.is_important = !email.is_important;
+    const onToggleStar = async (email) => {
+      if (!email) return;
+
+      const mappingId = email.contact_mapping_id;
+      const newStatus = !email.is_important;
+
+      // Optimistic local update
+      updateThreadInListById(mappingId, { is_important: newStatus });
+
+      try {
+        const response = await updateUniboxThreadImportantStatus({
+          contactMappingId: mappingId,
+          isImportant: newStatus,
+        });
+
+        if (response?.data) {
+          updateThreadInListById(mappingId, response.data);
+        }
+      } catch (error) {
+        // Revert on error
+        updateThreadInListById(mappingId, { is_important: !newStatus });
+
+        appContext.config.globalProperties.$toast?.({
+          warning: true,
+          message: error.message || 'Failed to update star status',
+        });
+      }
+    };
+
+    // Mark active conversation as unread
+    const onToggleReadStatus = (email) => {
+      const target = email || activeThread.value;
+
+      if (target) {
+        onUpdateReadStatus(target, !target.is_read);
+      }
     };
 
     // Select email item & navigate to thread route
@@ -587,6 +768,10 @@ export default defineComponent({
       const threadId = email.id || email.contact_mapping_id;
       const basePath = props.threadType.toLowerCase().replace('_', '-');
       $router.push(`/unibox/${basePath}/${threadId}`);
+
+      if (!email.is_read) {
+        onUpdateReadStatus(email, true);
+      }
 
       if (isMobileDevice.value) {
         state.modals.showMobilePreview = true;
@@ -598,6 +783,22 @@ export default defineComponent({
       const basePath = props.threadType.toLowerCase().replace('_', '-');
       $router.push(`/unibox/${basePath}`);
       state.modals.showMobilePreview = false;
+    };
+
+    // Navigate to previous thread in the list
+    const onPrevThread = () => {
+      if (hasPrevThread.value) {
+        const prevItem = state.emailList[activeThreadIndex.value - 1];
+        onClickEmailListItem(prevItem);
+      }
+    };
+
+    // Navigate to next thread in the list
+    const onNextThread = () => {
+      if (hasNextThread.value) {
+        const nextItem = state.emailList[activeThreadIndex.value + 1];
+        onClickEmailListItem(nextItem);
+      }
     };
 
     // Load next chunk of emails for infinite scroll
@@ -673,8 +874,19 @@ export default defineComponent({
 
     // Watch active thread parameter changes
     watch(activeThreadId, (newId) => {
-      if (newId && isMobileDevice.value) {
-        state.modals.showMobilePreview = true;
+      if (newId) {
+        if (isMobileDevice.value) {
+          state.modals.showMobilePreview = true;
+        }
+
+        // Auto mark as read when viewing an unread thread
+        const matchedItem = state.emailList.find((e) => (
+          (e.id && String(e.id) === String(newId))
+          || (e.contact_mapping_id && String(e.contact_mapping_id) === String(newId))
+        ));
+        if (matchedItem && !matchedItem.is_read) {
+          onUpdateReadStatus(matchedItem, true);
+        }
       }
     });
 
@@ -705,6 +917,9 @@ export default defineComponent({
 
       // computed
       activeThreadId,
+      activeThread,
+      hasPrevThread,
+      hasNextThread,
       unreadCount,
       selectedCount,
       isSelectionActive,
@@ -728,8 +943,13 @@ export default defineComponent({
       isEmailSelected,
       getNumeralAmount,
       onToggleStar,
+      onToggleReadStatus,
+      onUpdateReadStatus,
       onClickEmailListItem,
       onCloseEmailPreview,
+      onPrevThread,
+      onNextThread,
+      updateThreadInListById,
       loadMoreEmails,
       onScroll,
       fetchThreadList,
@@ -746,17 +966,6 @@ export default defineComponent({
   flex: 1;
   position: relative;
   min-height: inherit;
-
-  .header-select-all-group {
-    .select-all-label {
-      font-size: 14px;
-      color: $black;
-      user-select: none;
-      margin-left: 4px;
-
-      transition: color 0.15s ease;
-    }
-  }
 
   .unibox-leads-wrapper {
     display: flex;
@@ -796,20 +1005,27 @@ export default defineComponent({
         width: 100%;
         min-width: 0;
         flex: 1;
+
         position: relative;
+        overflow-y: auto;
 
         .unibox-date-group-section {
           width: 100%;
 
           .unibox-date-group-header {
-            padding: 10px 20px 6px 20px;
-            background-color: rgba($color: var(--grey-50-rgb), $alpha: 0.15);
+            padding: 8px 16px;
+
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            backdrop-filter: blur(100px);
+            background-color: rgba($color: var(--grey-50-rgb), $alpha: 0.4);
 
             .date-heading-text {
               color: $grey;
-              font-size: 11px;
+              font-size: 12px;
               font-weight: 600;
-              letter-spacing: 0.6px;
+              line-height: 16px;
               text-transform: uppercase;
             }
           }

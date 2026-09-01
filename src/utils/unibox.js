@@ -4,7 +4,7 @@
  */
 
 // utils
-import { getApiCall } from 'src/utils/apiRequests';
+import { getApiCall, patchApiCall } from 'src/utils/apiRequests';
 
 // constants
 import { UNIBOX_THREAD_TYPE } from 'boot/unibox-constants';
@@ -150,4 +150,120 @@ export const fetchUniboxReplyCategories = async () => {
   });
 
   return response?.data || response || [];
+};
+
+/**
+ * Fetches parsed message details for an untracked email reply
+ * @param {Object} options
+ * @param {number|string} options.id - ID of the untracked email
+ * @returns {Promise<Object>} Parsed email details
+ */
+export const fetchUniboxUntrackedParsedMessage = async ({ id }) => {
+  if (!id) {
+    throw new Error('Untracked email ID is required');
+  }
+
+  return getApiCall({
+    endpoint: `/unibox/untracked/${id}/parsed`,
+    includeWorkspace: true,
+  });
+};
+
+/**
+ * Updates the important / starred status of an inbox conversation
+ * @param {Object} options
+ * @param {string} options.contactMappingId - UUID of the contact mapping
+ * @param {boolean} options.isImportant - Whether the conversation is marked important
+ * @returns {Promise<Object>} API response
+ */
+export const updateUniboxThreadImportantStatus = async ({
+  contactMappingId,
+  isImportant = true,
+}) => {
+  if (!contactMappingId) {
+    throw new Error('Contact mapping ID is required to update important status');
+  }
+
+  return patchApiCall({
+    endpoint: `/unibox/inbox/${contactMappingId}/important`,
+    payload: {
+      is_important: isImportant,
+    },
+    includeWorkspace: true,
+  });
+};
+
+/**
+ * Updates the read status of an inbox conversation
+ * @param {Object} options
+ * @param {string} options.contactMappingId - UUID of the contact mapping
+ * @param {boolean} options.isRead - Whether the conversation is marked as read
+ * @returns {Promise<Object>} API response
+ */
+export const updateUniboxThreadReadStatus = async ({
+  contactMappingId,
+  isRead = true,
+}) => {
+  if (!contactMappingId) {
+    throw new Error('Contact mapping ID is required to update read status');
+  }
+
+  return patchApiCall({
+    endpoint: `/unibox/inbox/${contactMappingId}/read`,
+    payload: {
+      is_read: isRead,
+    },
+    includeWorkspace: true,
+  });
+};
+
+/**
+ * Updates the read status of an untracked email
+ * @param {Object} options
+ * @param {number|string} options.id - ID of the untracked email
+ * @param {boolean} options.isRead - Whether the email is marked as read
+ * @returns {Promise<Object>} API response
+ */
+export const updateUniboxUntrackedReadStatus = async ({
+  id,
+  isRead = true,
+}) => {
+  if (!id) {
+    throw new Error('Untracked email ID is required to update read status');
+  }
+
+  return patchApiCall({
+    endpoint: `/unibox/untracked/${id}/read`,
+    payload: {
+      is_read: isRead,
+    },
+    includeWorkspace: true,
+  });
+};
+
+/**
+ * Updates the AI reply category of an inbox conversation
+ * @param {Object} options
+ * @param {string} options.contactMappingId - UUID of the contact mapping
+ * @param {number|null} [options.replyCategoryId] - ID of the selected reply category
+ * @param {boolean} [options.clearReplyCategory] - Whether to clear the assigned category
+ * @returns {Promise<Object>} API response
+ */
+export const updateUniboxThreadReplyCategory = async ({
+  contactMappingId,
+  replyCategoryId = null,
+  clearReplyCategory = false,
+}) => {
+  if (!contactMappingId) {
+    throw new Error('Contact mapping ID is required to update reply category');
+  }
+
+  return patchApiCall({
+    endpoint: `/unibox/inbox/${contactMappingId}/reply-category`,
+    payload: {
+      reply_category_id: replyCategoryId,
+      clear_reply_category: clearReplyCategory,
+    },
+    includeWorkspace: true,
+  });
 };

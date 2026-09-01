@@ -12,10 +12,22 @@
     />
 
     <!-- Top Row: Title, Counter & Action Buttons -->
-    <div class="unibox-header-top-row flex items-center justify-between">
-      <h5 class="header-title">
-        {{ title }}
-      </h5>
+    <div class="unibox-header-top-row">
+      <div class="flex no-wrap items-center">
+        <!-- checkbox slot -->
+        <slot name="headerCheckbox" />
+
+        <!-- header title -->
+        <h5 class="header-title">
+          {{ title }}
+          <span
+            v-if="totalList > 0"
+            class="total-count"
+          >
+            ({{ getNumeralAmount(totalList) }})
+          </span>
+        </h5>
+      </div>
 
       <!-- Right Action Controls -->
       <div class="header-actions flex items-center">
@@ -108,21 +120,6 @@
         <AppTooltip content="Clear all filters" />
       </q-btn>
     </div>
-
-    <!-- Sub-bar: Multi-Select + Conversations Count (Full-width view only) -->
-    <div
-      v-if="totalCurrentList > 0"
-      class="unibox-header-selection-subbar flex items-center justify-between"
-    >
-      <!-- Selection slot: [ ] Select all -->
-      <slot name="headerSelection" />
-
-      <!-- Conversations count -->
-      <div class="conversations-count-text text-grey-700">
-        Showing {{ getNumeralAmount(totalCurrentList) }}
-        of {{ getNumeralAmount(totalList) }} conversations
-      </div>
-    </div>
   </div>
 </template>
 
@@ -175,14 +172,6 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    totalList: {
-      type: Number,
-      default: 0,
-    },
-    totalCurrentList: {
-      type: Number,
-      default: 0,
-    },
     filters: {
       type: Object,
       required: true,
@@ -195,6 +184,10 @@ export default defineComponent({
     replyCategories: {
       type: Array,
       default: () => [],
+    },
+    totalList: {
+      type: Number,
+      default: 0,
     },
   },
 
@@ -273,12 +266,20 @@ export default defineComponent({
   }
 
   .unibox-header-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 12px;
 
     .header-title {
       color: $black;
       font-size: 20px;
       font-weight: 600;
+
+      .total-count {
+        color: $black;
+        font-size: 14px;
+      }
     }
 
     .reload-btn {
@@ -380,20 +381,6 @@ export default defineComponent({
         height: 14px;
         @include svg-icon-stroke('path, circle, rect', $negative);
       }
-    }
-  }
-
-  .unibox-header-selection-subbar {
-    margin-top: 12px;
-    width: 100%;
-    min-width: 0;
-    flex-wrap: wrap;
-    gap: 8px;
-
-    .conversations-count-text {
-      color: $grey;
-      font-size: 12px;
-      font-weight: 400;
     }
   }
 
