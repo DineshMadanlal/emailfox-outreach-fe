@@ -34,6 +34,7 @@
 // vue
 import {
   defineComponent, reactive, toRefs, computed, watch,
+  onMounted,
 } from 'vue';
 
 // components (reusing ComposeEditor for now)
@@ -99,6 +100,22 @@ export default defineComponent({
         refreshButton.click();
       }
     };
+
+    // Pre-loads campaign and reply category options into store cache
+    const loadFilterOptions = async () => {
+      try {
+        await Promise.allSettled([
+          uniboxPinia.fetchCampaigns({ force: true }),
+          uniboxPinia.fetchReplyCategories({ force: true }),
+        ]);
+      } catch (error) {
+        // non-blocking
+      }
+    };
+
+    onMounted(() => {
+      loadFilterOptions();
+    });
 
     // Watch secondary sidebar events (Compose, Refresh)
     watch(secondarySidebarClickEvent, (newVal) => {

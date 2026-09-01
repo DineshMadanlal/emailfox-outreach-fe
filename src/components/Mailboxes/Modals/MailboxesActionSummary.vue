@@ -21,7 +21,7 @@
 
     <!--  -->
     <p class="mailboxes-selection-count">
-      {{ numberOfSelectedMailboxes }} of {{ totalCount }} selected
+      {{ selectionCountLabel }}
     </p>
 
     <!--  -->
@@ -76,7 +76,11 @@ import { defineComponent, computed } from 'vue';
 import MoreButton from 'components/Buttons/MoreButton.vue';
 import MailboxesMoreActions from 'components/Mailboxes/MailboxesMoreActions.vue';
 
+// Utils
+import { getNumeralAmount } from 'src/utils/numbers.js';
+
 // constants
+import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 import { MAILBOX_ACTIONS } from 'src/boot/mailbox-constants.js';
 
 export default defineComponent({
@@ -101,9 +105,14 @@ export default defineComponent({
       default: 0,
       required: true,
     },
+    multiSelectOptionJson: {
+      type: Object,
+      default: () => ({}),
+      required: false,
+    },
   },
 
-  setup() {
+  setup(props) {
     // actions
     const mailboxActions = computed(() => {
       const actions = [
@@ -124,9 +133,21 @@ export default defineComponent({
       return actions;
     });
 
+    const selectionCountLabel = computed(() => {
+      const totalCount = getNumeralAmount(props.totalCount);
+
+      if (props.multiSelectOptionJson?.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL) {
+        return `${totalCount} selected`;
+      }
+      const selectedCount = getNumeralAmount(props.numberOfSelectedMailboxes);
+
+      return `${selectedCount} of ${totalCount} selected`;
+    });
+
     return {
       // computed
       mailboxActions,
+      selectionCountLabel,
     };
   },
 });

@@ -7,19 +7,15 @@
     <q-linear-progress
       v-if="isApiProcessing"
       indeterminate
-
       color="primary"
       class="linear-progress-bar"
     />
 
     <!-- Top Row: Title, Counter & Action Buttons -->
     <div class="unibox-header-top-row flex items-center justify-between">
-      <!-- Title & Unread Count -->
-      <div class="title-and-counter flex items-center">
-        <h5 class="header-title">
-          {{ title }}
-        </h5>
-      </div>
+      <h5 class="header-title">
+        {{ title }}
+      </h5>
 
       <!-- Right Action Controls -->
       <div class="header-actions flex items-center">
@@ -61,7 +57,6 @@
         clearable
         :debounce="400"
         v-model="computedSearchText"
-
         class="unibox-search-input"
         placeholder="Search by contact..."
       />
@@ -90,10 +85,8 @@
         <!-- Unibox Filters Menu -->
         <UniboxFilters
           v-model:filters="computedFilters"
-
           :campaigns="campaigns"
           :replyCategories="replyCategories"
-
           @reset="onResetFilters"
         />
       </q-btn>
@@ -103,12 +96,9 @@
         flat
         dense
         no-caps
-
         v-if="areFiltersActive"
-
         color="negative"
         class="clear-filters-btn"
-
         @click="onResetFilters"
       >
         <LocalSvgIcon
@@ -117,6 +107,21 @@
         />
         <AppTooltip content="Clear all filters" />
       </q-btn>
+    </div>
+
+    <!-- Sub-bar: Multi-Select + Conversations Count (Full-width view only) -->
+    <div
+      v-if="totalCurrentList > 0"
+      class="unibox-header-selection-subbar flex items-center justify-between"
+    >
+      <!-- Selection slot: [ ] Select all -->
+      <slot name="headerSelection" />
+
+      <!-- Conversations count -->
+      <div class="conversations-count-text text-grey-700">
+        Showing {{ getNumeralAmount(totalCurrentList) }}
+        of {{ getNumeralAmount(totalList) }} conversations
+      </div>
     </div>
   </div>
 </template>
@@ -130,6 +135,9 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // stores
 import { storeExclusions } from 'src/stores/storeExclusions.js';
+
+// Utils
+import { getNumeralAmount } from 'src/utils/numbers.js';
 
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -166,6 +174,14 @@ export default defineComponent({
     compactView: {
       type: Boolean,
       default: false,
+    },
+    totalList: {
+      type: Number,
+      default: 0,
+    },
+    totalCurrentList: {
+      type: Number,
+      default: 0,
     },
     filters: {
       type: Object,
@@ -231,6 +247,7 @@ export default defineComponent({
 
       // methods
       onResetFilters,
+      getNumeralAmount,
       toggleLeftDrawer: storeExclusionsPinia.toggleLeftDrawer,
     };
   },
@@ -241,9 +258,12 @@ export default defineComponent({
 .unibox-header {
   width: 100%;
   padding: 20px;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 3;
   border-bottom: 1px solid $grey-50;
   background-color: $white;
+  flex-shrink: 0;
 
   .linear-progress-bar {
     position: absolute;
@@ -291,10 +311,17 @@ export default defineComponent({
 
   .unibox-header-search-row {
     gap: 8px;
+    width: 100%;
+    min-width: 0;
+
+    .header-multi-select-wrapper {
+      margin-right: 4px;
+    }
 
     .unibox-search-input {
       flex: 1;
       max-width: 262px;
+      min-width: 0;
 
       :deep(.q-field__control) {
         height: 32px;
@@ -308,6 +335,7 @@ export default defineComponent({
       height: 32px;
       min-height: unset;
       padding: 0;
+      flex-shrink: 0;
 
       border-radius: 6px;
       border: 1px solid $grey-50;
@@ -345,11 +373,36 @@ export default defineComponent({
       height: 28px;
       min-height: unset;
       padding: 0;
+      flex-shrink: 0;
 
       :deep(.clear-icon) {
         width: 14px;
         height: 14px;
         @include svg-icon-stroke('path, circle, rect', $negative);
+      }
+    }
+  }
+
+  .unibox-header-selection-subbar {
+    margin-top: 12px;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .conversations-count-text {
+      color: $grey;
+      font-size: 12px;
+      font-weight: 400;
+    }
+  }
+
+  @media (max-width: $breakpoint-sm-max) {
+    padding: 12px 14px;
+
+    .unibox-header-search-row {
+      .unibox-search-input {
+        max-width: 100%;
       }
     }
   }

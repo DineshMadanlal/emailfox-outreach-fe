@@ -35,52 +35,6 @@
         </p>
       </q-item>
 
-      <!--  -->
-      <q-item
-        clickable
-
-        class="multi-select-item"
-
-        @click="onSelectOption(TABLE_MULTI_SELECT_OPTIONS.SELECT_SPECIFIC_LIMIT)"
-
-        v-if="false"
-      >
-        <p>
-          Select number of {{ multiSelectType }}
-        </p>
-
-        <!-- Set specific limit -->
-        <div
-          class="full-width"
-          v-if="selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_SPECIFIC_LIMIT"
-        >
-          <!--  -->
-          <q-input
-            dense
-            outlined
-            autofocus
-            hide-bottom-space
-
-            v-model="limitNumber"
-
-            type="number"
-            color="primary"
-            lazy-rules="ondemand"
-            class="app-input-field-height limit-number-input"
-
-            :rules="limitNumberRules"
-
-            @update:modelValue="onNumberInputChange"
-          />
-
-          <!-- Info Alert -->
-          <PlainInfoAlert
-            alert="It will select the first set of the specified number."
-          />
-        </div>
-
-      </q-item>
-
       <!-- footer action -->
       <div
         v-if="selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_SPECIFIC_LIMIT"
@@ -112,9 +66,6 @@ import {
   defineComponent, onMounted, reactive, toRefs,
 } from 'vue';
 
-// components
-import PlainInfoAlert from 'components/Alerts/PlainInfoAlert.vue';
-
 // uits
 import { convertStringToNumber } from 'src/utils/numbers';
 
@@ -125,10 +76,6 @@ export default defineComponent({
   name: 'TableMultiSelect',
 
   emits: ['updateMultiSelect'],
-
-  components: {
-    PlainInfoAlert,
-  },
 
   props: {
     showSelectAllOption: {
@@ -147,10 +94,6 @@ export default defineComponent({
     multiSelectOptionJson: {
       type: Object,
       default: () => {},
-    },
-    multiSelectType: {
-      type: String,
-      default: 'domains',
     },
   },
 

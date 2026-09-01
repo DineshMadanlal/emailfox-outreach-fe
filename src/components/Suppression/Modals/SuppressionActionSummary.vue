@@ -21,7 +21,7 @@
 
     <!--  -->
     <p class="suppression-selection-count">
-      {{ numberOfSelectedData }} of {{ totalCount }} selected
+      {{ selectionCountLabel }}
     </p>
 
     <!--  -->
@@ -56,6 +56,12 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
+// Utils
+import { getNumeralAmount } from 'src/utils/numbers.js';
+
+// constants
+import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
+
 export default defineComponent({
   name: 'SuppressionActionSummary',
 
@@ -73,9 +79,14 @@ export default defineComponent({
       default: 0,
       required: true,
     },
+
+    multiSelectOptionJson: {
+      type: Object,
+      required: true,
+    },
   },
 
-  setup() {
+  setup(props) {
     // actions
     const suppressionActions = computed(() => {
       const actions = [
@@ -88,9 +99,21 @@ export default defineComponent({
       return actions;
     });
 
+    const selectionCountLabel = computed(() => {
+      const totalCount = getNumeralAmount(props.totalCount);
+
+      if (props.multiSelectOptionJson?.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL) {
+        return `${totalCount} selected`;
+      }
+      const selectedCount = getNumeralAmount(props.numberOfSelectedData);
+
+      return `${selectedCount} of ${totalCount} selected`;
+    });
+
     return {
       // computed
       suppressionActions,
+      selectionCountLabel,
     };
   },
 });

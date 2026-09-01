@@ -48,6 +48,7 @@
       <DomainsActionSummary
         :totalCount="pagination.rowsNumber"
         :numberOfSelectedDomains="selectedDomainsLength"
+        :multiSelectOptionJson="multiSelectOptionJson"
 
         @onCancel="selectedDomains = []"
         @onDelete="showDeleteDomainModal = true"
@@ -176,7 +177,6 @@
                   <!-- quasar list -->
                   <q-list style="min-width: 270px">
                     <TableMultiSelect
-                      multiSelectType="domains"
                       :multiSelectOptionJson="multiSelectOptionJson"
 
                       :totalList="pagination.rowsNumber"

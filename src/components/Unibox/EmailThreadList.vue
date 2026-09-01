@@ -16,26 +16,75 @@
         id="uniboxLeadsLeftSection"
         class="unibox-leads-left-section"
         :class="{ 'right--active': !!activeThreadId }"
+        :style="{ height: pageHeight ? `${pageHeight}px` : '100%' }"
+        @scroll.passive="onScroll"
       >
         <!-- Unibox Header -->
         <UniboxHeader
           :filters="filters"
-          :compactView="!!activeThreadId"
-          :title="threadTypeConfig.title"
           :campaigns="campaignsList"
+          :totalList="pagination.count"
+          :title="threadTypeConfig.title"
+          :compactView="isMobileDevice || !!activeThreadId"
           :isRefreshing="flags.isRefreshing"
+          :totalCurrentList="emailList.length"
           :isApiProcessing="flags.isApiProcessing"
           :replyCategories="replyCategoriesList"
 
           @refresh="onRefreshEmailList"
           @reset-filters="onResetFilters"
           @update:filters="onUpdateFilters"
-        />
+        >
+          <!-- Selection Subbar Slot (Below Filters) -->
+          <template #headerSelection>
+            <div class="header-select-all-group flex items-center">
+              <!-- When items are selected: Click unchecks all (no menu) -->
+              <q-checkbox
+                v-if="isSelectionActive"
+
+                dense
+                color="primary"
+                class="header-selection-checkbox app-checkbox"
+
+                :model-value="isAllSelected ? true : null"
+                @update:model-value="resetTableMultiSelect"
+              />
+
+              <!-- When nothing is selected: Click opens TableMultiSelect menu -->
+              <q-checkbox
+                v-else
+                dense
+                color="primary"
+                label="Select"
+                class="header-selection-checkbox app-checkbox"
+                :model-value="false"
+              >
+                <q-menu
+                  transition-show="jump-down"
+                  transition-hide="jump-up"
+                >
+                  <TableMultiSelect
+                    multiSelectType="unibox"
+                    :totalList="pagination.count"
+                    :totalCurrentList="emailList.length"
+                    :multiSelectOptionJson="multiSelectOptionJson"
+                    @updateMultiSelect="onUpdateMultiSelect"
+                  />
+                </q-menu>
+              </q-checkbox>
+
+              <span
+                v-if="selectedCount > 0"
+                class="select-all-label cursor-pointer"
+              >
+                {{ getNumeralAmount(selectedCount) }} selected
+              </span>
+            </div>
+          </template>
+        </UniboxHeader>
 
         <!-- Email List Container -->
-        <div
-          class="unibox-email-list-wrapper hide-scrollbar"
-        >
+        <div class="unibox-email-list-wrapper hide-scrollbar">
           <!-- No search results state when filters are applied -->
           <div
             v-if="emailList.length === 0 && !flags.isApiProcessing"
@@ -46,11 +95,57 @@
             </p>
           </div>
 
-          <!-- Email Items Placeholder (will render email list items) -->
+          <!-- Email Items grouped by date headings -->
           <div
             v-else
             class="email-items-container full-width"
           >
+            <div
+              v-for="(groupedEmails, dateHeading) in groupedEmailsByDate"
+              :key="`unibox-date-group-${dateHeading}`"
+              class="unibox-date-group-section full-width"
+            >
+              <!-- Date Header Heading -->
+              <div class="unibox-date-group-header">
+                <span class="date-heading-text">
+                  {{ dateHeading.toUpperCase() }}
+                </span>
+              </div>
+
+              <!-- List Items -->
+              <UniboxEmailListItem
+                v-for="email in groupedEmails"
+                :key="`unibox-email-thread-${email.id || email.contact_mapping_id}`"
+                :emailJson="email"
+                :compactView="isMobileDevice || !!activeThreadId"
+                :isActive="email.contact_mapping_id === activeThreadId
+                  || String(email.id) === activeThreadId"
+                :isSelected="isEmailSelected(email)"
+
+                @click="onClickEmailListItem(email)"
+                @toggle-star="onToggleStar(email)"
+                @toggle-select="onToggleSelect(email)"
+              />
+            </div>
+
+            <!-- Infinite Scroll Loading Spinner -->
+            <div
+              v-if="flags.isLoadingMore"
+              class="unibox-loading-more-spinner flex flex-center q-py-md full-width"
+            >
+              <q-spinner-dots
+                color="primary"
+                size="28px"
+              />
+            </div>
+
+            <!-- End of list notice -->
+            <div
+              v-else-if="!pagination.hasMore && emailList.length > 0 && flags.areResultsFetchedOnce"
+              class="unibox-end-of-results-notice"
+            >
+              All emails loaded ({{ pagination.count }})
+            </div>
           </div>
         </div>
       </div>
@@ -60,6 +155,7 @@
         v-if="activeThreadId && !isMobileDevice"
         id="uniboxLeadsRightSection"
         class="unibox-leads-right-section hide-scrollbar"
+        :style="{ height: pageHeight ? `${pageHeight}px` : '100%' }"
       >
       </div>
 
@@ -82,7 +178,14 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, computed, onMounted, watch, getCurrentInstance,
+  defineComponent,
+  reactive,
+  toRefs,
+  computed,
+  onMounted,
+  onUnmounted,
+  watch,
+  getCurrentInstance,
 } from 'vue';
 
 // vue router
@@ -98,18 +201,20 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 // components
 import UniboxHeader from 'components/Unibox/Header.vue';
 import UniboxEmptyState from 'components/Unibox/EmptyState.vue';
+import UniboxEmailListItem from 'components/Unibox/EmailListItem.vue';
+import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 
 // utils
 import { getDateGroupLabel } from 'src/utils/dates';
-import {
-  fetchUniboxThreadList,
-} from 'src/utils/unibox';
+import { fetchUniboxThreadList } from 'src/utils/unibox';
+import { getNumeralAmount } from 'src/utils/numbers';
 
 // pinia
 import { useUniboxStore } from 'src/stores/unibox';
 
 // constants
 import { UNIBOX_THREAD_TYPE, DEFAULT_UNIBOX_FILTERS } from 'boot/unibox-constants';
+import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
 export default defineComponent({
   name: 'UniboxEmailThreadList',
@@ -117,6 +222,8 @@ export default defineComponent({
   components: {
     UniboxHeader,
     UniboxEmptyState,
+    UniboxEmailListItem,
+    TableMultiSelect,
   },
 
   props: {
@@ -158,6 +265,10 @@ export default defineComponent({
       // filters JSON
       filters: { ...DEFAULT_UNIBOX_FILTERS },
 
+      // state
+      selectedThreadIds: [],
+      multiSelectOptionJson: {},
+
       // pagination
       pagination: {
         page: 1,
@@ -177,12 +288,43 @@ export default defineComponent({
       flags: {
         isApiProcessing: true,
         isRefreshing: false,
+        isLoadingMore: false,
         areResultsFetchedOnce: false,
       },
+      pageHeight: '100%',
     });
 
     // Active thread ID extracted from path parameter
     const activeThreadId = computed(() => $route.params.threadId || null);
+
+    // Unread count from store
+    const unreadCount = computed(() => uniboxPinia.getInboxUnreadCount || 0);
+
+    // Check if Select All (total across all pages) is active
+    const isSelectAllTotalActive = computed(() => (
+      state.multiSelectOptionJson?.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL
+    ));
+
+    // Dynamic selection count (displays total pagination count if Select All is active)
+    const selectedCount = computed(() => {
+      if (isSelectAllTotalActive.value) {
+        return state.pagination.count;
+      }
+      return state.selectedThreadIds.length;
+    });
+
+    // Multi-selection state
+    const isSelectionActive = computed(() => selectedCount.value > 0);
+
+    const isAllSelected = computed(() => {
+      if (isSelectAllTotalActive.value) {
+        return true;
+      }
+      return (
+        state.selectedThreadIds.length > 0
+        && state.selectedThreadIds.length === state.emailList.length
+      );
+    });
 
     // Cached filter lists from store
     const campaignsList = computed(() => uniboxPinia.getCampaignsList);
@@ -280,6 +422,17 @@ export default defineComponent({
       state.groupedEmailsByDate = newGrouped;
     };
 
+    // Calculate maximum usable content height
+    const updatePageMaxHeight = () => {
+      const mainPageContent = document.getElementById('appMainPageContent');
+
+      if (mainPageContent) {
+        const maxHeight = mainPageContent.style.maxHeight
+          || `${mainPageContent.clientHeight}px`;
+        state.pageHeight = maxHeight ? maxHeight.replace('px', '') : null;
+      }
+    };
+
     // Main fetch function for Unibox threads
     const fetchThreadList = async () => {
       try {
@@ -299,10 +452,21 @@ export default defineComponent({
 
         state.emailList = response?.data || [];
         state.pagination.count = response?.count || 0;
-        state.pagination.hasMore = !!response?.has_next;
         state.pagination.offset = response?.offset || offset;
+        state.pagination.hasMore = !!response?.has_next
+          && state.emailList.length < (response?.count || Infinity);
 
         groupEmailsByDate();
+
+        // Update Inbox unread count badge in store
+        if (props.threadType === UNIBOX_THREAD_TYPE.INBOX) {
+          uniboxPinia.setField({
+            field: 'inboxUnreadCount',
+            value: response?.count || 0,
+          });
+        }
+
+        updatePageMaxHeight();
 
         state.flags.areResultsFetchedOnce = true;
         return true;
@@ -318,18 +482,6 @@ export default defineComponent({
       }
     };
 
-    // Pre-loads campaign and reply category options into store cache
-    const loadFilterOptions = async () => {
-      try {
-        await Promise.allSettled([
-          uniboxPinia.fetchCampaigns({ force: true }),
-          uniboxPinia.fetchReplyCategories({ force: true }),
-        ]);
-      } catch (error) {
-        // non-blocking
-      }
-    };
-
     // Apply active filters and reset pagination
     const onApplyFilters = () => {
       state.pagination.page = 1;
@@ -340,7 +492,6 @@ export default defineComponent({
     // Filter update handler
     const onUpdateFilters = (updatedFilters) => {
       state.filters = { ...updatedFilters };
-
       onApplyFilters();
     };
 
@@ -358,9 +509,83 @@ export default defineComponent({
       await fetchThreadList();
     };
 
+    // Checks if individual email thread item is selected
+    const isEmailSelected = (email) => {
+      const id = email.id || email.contact_mapping_id;
+      if (isSelectAllTotalActive.value) {
+        return true;
+      }
+      return state.selectedThreadIds.includes(id);
+    };
+
+    // Toggle single thread selection
+    const onToggleSelect = (email) => {
+      const id = email.id || email.contact_mapping_id;
+
+      if (isSelectAllTotalActive.value) {
+        state.selectedThreadIds = state.emailList
+          .map((e) => e.id || e.contact_mapping_id)
+          .filter((threadId) => threadId !== id);
+        state.multiSelectOptionJson = {};
+        return;
+      }
+
+      const idx = state.selectedThreadIds.indexOf(id);
+      if (idx > -1) {
+        state.selectedThreadIds.splice(idx, 1);
+        state.multiSelectOptionJson = {};
+      } else {
+        state.selectedThreadIds.push(id);
+        if (state.selectedThreadIds.length === state.emailList.length) {
+          state.multiSelectOptionJson = {
+            limit: state.emailList.length,
+            selectedOption: TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST,
+          };
+        }
+      }
+    };
+
+    // Apply bulk selection from TableMultiSelect
+    const onUpdateMultiSelect = (selectionData) => {
+      state.multiSelectOptionJson = selectionData;
+
+      if (selectionData.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST) {
+        state.selectedThreadIds = state.emailList.map(
+          (e) => e.id || e.contact_mapping_id,
+        );
+      } else if (selectionData.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL) {
+        state.selectedThreadIds = state.emailList.map(
+          (e) => e.id || e.contact_mapping_id,
+        );
+      }
+    };
+
+    // Reset all table multi selections
+    const resetTableMultiSelect = () => {
+      state.selectedThreadIds = [];
+      state.multiSelectOptionJson = {};
+    };
+
+    // Toggle all currently loaded threads
+    const onToggleSelectAllCurrent = () => {
+      if (isSelectionActive.value) {
+        resetTableMultiSelect();
+      } else {
+        state.selectedThreadIds = state.emailList.map(
+          (e) => e.id || e.contact_mapping_id,
+        );
+      }
+    };
+
+    // Toggle star / important status for thread
+    const onToggleStar = (email) => {
+      email.is_important = !email.is_important;
+    };
+
     // Select email item & navigate to thread route
-    const onClickEmailListItem = (threadId) => {
-      const basePath = $route.path.split('/')[2] || 'inbox';
+    const onClickEmailListItem = (email) => {
+      const threadId = email.id || email.contact_mapping_id;
+      const basePath = props.threadType.toLowerCase().replace('_', '-');
       $router.push(`/unibox/${basePath}/${threadId}`);
 
       if (isMobileDevice.value) {
@@ -370,9 +595,73 @@ export default defineComponent({
 
     // Close preview pane & return to list route
     const onCloseEmailPreview = () => {
-      const basePath = $route.path.split('/')[2] || 'inbox';
+      const basePath = props.threadType.toLowerCase().replace('_', '-');
       $router.push(`/unibox/${basePath}`);
       state.modals.showMobilePreview = false;
+    };
+
+    // Load next chunk of emails for infinite scroll
+    const loadMoreEmails = async () => {
+      if (
+        state.flags.isLoadingMore
+        || state.flags.isApiProcessing
+        || !state.pagination.hasMore
+      ) {
+        return;
+      }
+
+      try {
+        state.flags.isLoadingMore = true;
+
+        const nextOffset = state.emailList.length;
+        const nextPage = state.pagination.page + 1;
+
+        const response = await fetchUniboxThreadList({
+          threadType: props.threadType,
+          params: {
+            offset: nextOffset,
+            limit: state.pagination.limit,
+            ...state.filters,
+          },
+        });
+
+        const newItems = response?.data || [];
+        if (newItems.length > 0) {
+          state.emailList = [...state.emailList, ...newItems];
+          state.pagination.page = nextPage;
+          state.pagination.offset = nextOffset;
+          state.pagination.count = response?.count || state.pagination.count;
+          state.pagination.hasMore = !!response?.has_next
+            && state.emailList.length < (response?.count || Infinity);
+
+          groupEmailsByDate();
+        } else {
+          state.pagination.hasMore = false;
+        }
+      } catch (error) {
+        appContext.config.globalProperties.$toast?.({
+          warning: true,
+          message: error.message || 'Failed to load more emails',
+        });
+      } finally {
+        state.flags.isLoadingMore = false;
+      }
+    };
+
+    // Scroll handler for left section container
+    const onScroll = (event) => {
+      if (
+        !state.pagination.hasMore
+        || state.flags.isLoadingMore
+        || state.flags.isApiProcessing
+      ) {
+        return;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = event.target;
+      if (scrollTop + clientHeight >= scrollHeight - 250) {
+        loadMoreEmails();
+      }
     };
 
     // Escape shortcut to close preview
@@ -394,14 +683,20 @@ export default defineComponent({
       state.pagination.page = 1;
       state.pagination.offset = 0;
       state.emailList = [];
+      state.selectedThreadIds = [];
       state.groupedEmailsByDate = {};
       state.flags.areResultsFetchedOnce = false;
       fetchThreadList();
     });
 
     onMounted(() => {
+      updatePageMaxHeight();
+      window.addEventListener('resize', updatePageMaxHeight);
       fetchThreadList();
-      loadFilterOptions();
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', updatePageMaxHeight);
     });
 
     return {
@@ -410,6 +705,10 @@ export default defineComponent({
 
       // computed
       activeThreadId,
+      unreadCount,
+      selectedCount,
+      isSelectionActive,
+      isAllSelected,
       campaignsList,
       replyCategoriesList,
       isMobileDevice,
@@ -422,8 +721,17 @@ export default defineComponent({
       onApplyFilters,
       onResetFilters,
       onRefreshEmailList,
+      onToggleSelect,
+      onToggleSelectAllCurrent,
+      onUpdateMultiSelect,
+      resetTableMultiSelect,
+      isEmailSelected,
+      getNumeralAmount,
+      onToggleStar,
       onClickEmailListItem,
       onCloseEmailPreview,
+      loadMoreEmails,
+      onScroll,
       fetchThreadList,
     };
   },
@@ -439,6 +747,17 @@ export default defineComponent({
   position: relative;
   min-height: inherit;
 
+  .header-select-all-group {
+    .select-all-label {
+      font-size: 14px;
+      color: $black;
+      user-select: none;
+      margin-left: 4px;
+
+      transition: color 0.15s ease;
+    }
+  }
+
   .unibox-leads-wrapper {
     display: flex;
     flex: 1;
@@ -450,10 +769,10 @@ export default defineComponent({
     // Left Section: Header, Email list & Pagination
     .unibox-leads-left-section {
       width: 100%;
+      min-width: 0;
       position: relative;
       overflow-y: auto;
-
-      flex: 1;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
 
@@ -461,19 +780,47 @@ export default defineComponent({
 
       // When an email thread is active, shrink left section to compact width
       &.right--active {
-        max-width: 360px;
+        max-width: 450px;
         border-right: 1px solid $grey-50;
 
         @media (max-width: $breakpoint-xs-max) {
           max-width: 100%;
         }
+
+        .unibox-date-group-header {
+          padding: 8px 14px 4px 14px;
+        }
       }
 
       .unibox-email-list-wrapper {
         width: 100%;
+        min-width: 0;
         flex: 1;
         position: relative;
-        overflow-y: auto;
+
+        .unibox-date-group-section {
+          width: 100%;
+
+          .unibox-date-group-header {
+            padding: 10px 20px 6px 20px;
+            background-color: rgba($color: var(--grey-50-rgb), $alpha: 0.15);
+
+            .date-heading-text {
+              color: $grey;
+              font-size: 11px;
+              font-weight: 600;
+              letter-spacing: 0.6px;
+              text-transform: uppercase;
+            }
+          }
+        }
+
+        .unibox-end-of-results-notice {
+          text-align: center;
+          padding: 8px;
+          color: $grey;
+          font-size: 12px;
+        }
       }
     }
 

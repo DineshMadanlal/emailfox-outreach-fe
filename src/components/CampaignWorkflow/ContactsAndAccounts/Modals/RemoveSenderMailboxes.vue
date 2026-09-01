@@ -107,7 +107,6 @@
                   <!-- quasar list -->
                   <q-list style="min-width: 270px">
                     <TableMultiSelect
-                      multiSelectType="mailboxes"
                       :multiSelectOptionJson="multiSelectOptionJson"
 
                       :totalList="pagination.rowsNumber"
