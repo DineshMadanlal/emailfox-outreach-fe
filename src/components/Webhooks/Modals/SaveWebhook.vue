@@ -81,6 +81,8 @@
 
               v-model="form.url"
 
+              ref="webhookUrlFormRef"
+
               lazy-rules="ondemand"
               placeholder="Eg. https://your-domain.com/webhook/endpoint"
 
@@ -113,6 +115,8 @@
               :rules="[val => val || 'At least one event type must be selected']"
               lazy-rules="ondemand"
               class="event-types-list"
+
+              ref="eventTypesFormRef"
             >
               <div
                 v-for="(event) in webhookEventTypes"
@@ -152,17 +156,17 @@
 
         <!-- Test Webhook -->
         <q-btn
-          v-if="false"
 
           flat
           no-caps
           unelevated
 
           color="primary"
-          label="Test Webhook"
           class="light-primary-btn"
 
+          :label="testWebhookCta"
           :loading="loaders.isTesting"
+          :disable="eventTypesLength !== 1"
 
           @click="onTestWebhook"
         />
@@ -227,10 +231,22 @@ export default defineComponent({
 
       // refs
       saveWebhookFormRef: null,
+      webhookUrlFormRef: null,
+      eventTypesFormRef: null,
     });
 
     //
     const isNewWebhook = computed(() => isEmpty(props.editWebhookJson));
+
+    const eventTypesLength = computed(() => state.form.event_types.length);
+
+    const testWebhookCta = computed(() => {
+      if (state.form.url && eventTypesLength.value !== 1) {
+        return 'Select exactly one event type to test';
+      }
+
+      return 'Test Webhook';
+    });
 
     const webhookEventTypes = computed(() => Object.values(WEBHOOK_EVENT_TYPE));
 
@@ -319,10 +335,26 @@ export default defineComponent({
 
     const onTestWebhook = async () => {
       try {
-        const isValid = await state.saveWebhookFormRef.validate();
+        // url and event type check is required.. ignore name
+        let isValid = await state.webhookUrlFormRef.validate();
+        isValid = isValid && await state.eventTypesFormRef.validate();
 
         if (isValid) {
           state.loaders.isTesting = true;
+
+          await postApiCall({
+            payload: {
+              url: state.form.url,
+              event_type: state.form.event_types[0],
+            },
+            includeWorkspace: true,
+            endpoint: '/webhooks/test-endpoint',
+          });
+
+          // Show a success message when the webhook test is successful
+          appContext.config.globalProperties.$toast({
+            message: 'Webhook test successful',
+          });
         }
       } catch (error) {
         appContext.config.globalProperties.$toast({
@@ -352,6 +384,8 @@ export default defineComponent({
       // computed
       isNewWebhook,
       webhookEventTypes,
+      eventTypesLength,
+      testWebhookCta,
 
       // methods
       onSaveWebhook,
