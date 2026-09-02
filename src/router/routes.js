@@ -364,7 +364,6 @@ const routes = [
       },
 
       // unibox
-      /** SkyBox */
       {
         path: 'unibox/raw',
         component: () => import('pages/SkyBox/ShowOriginalMessage.vue'),
@@ -373,38 +372,32 @@ const routes = [
 
       {
         path: 'unibox',
-        component: () => import('pages/SkyBox/MainIndex.vue'),
+        component: () => import('pages/Unibox/MainIndex.vue'),
         redirect: '/unibox/inbox',
         meta: { requiresAuth: true },
         children: [
           {
-            path: 'inbox',
-            component: () => import('pages/SkyBox/Inbox.vue'),
+            path: 'inbox/:threadId?',
+            name: 'UniboxInbox',
+            component: () => import('pages/Unibox/Inbox.vue'),
             meta: { requiresAuth: true },
           },
           {
-            path: 'sent',
-            component: () => import('pages/SkyBox/Sent.vue'),
+            path: 'untracked-replies/:threadId?',
+            name: 'UniboxUntrackedReplies',
+            component: () => import('pages/Unibox/UntrackedReplies.vue'),
             meta: { requiresAuth: true },
           },
           {
-            path: 'important',
-            component: () => import('pages/SkyBox/Important.vue'),
+            path: 'important/:threadId?',
+            name: 'UniboxImportant',
+            component: () => import('pages/Unibox/Important.vue'),
             meta: { requiresAuth: true },
           },
           {
-            path: 'bounced',
-            component: () => import('pages/SkyBox/Bounced.vue'),
-            meta: { requiresAuth: true },
-          },
-          {
-            path: 'spam',
-            component: () => import('pages/SkyBox/Spam.vue'),
-            meta: { requiresAuth: true },
-          },
-          {
-            path: 'folder/:folderId/inbox',
-            component: () => import('pages/SkyBox/FolderByIdEmails.vue'),
+            path: 'bounced/:threadId?',
+            name: 'UniboxBounced',
+            component: () => import('pages/Unibox/Bounced.vue'),
             meta: { requiresAuth: true },
           },
         ],

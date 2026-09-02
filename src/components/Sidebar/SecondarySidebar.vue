@@ -3,77 +3,159 @@
     class="secondary-sidebar"
     :class="{ 'secondary-sidebar--mini': drawerMiniState }"
   >
-    <!-- Master Inbox Routes -->
-    <SkyBoxSidebarContent
-      v-if="isMasterInboxRoute"
-      :mini-drawer="drawerMiniState"
-    />
+    <div class="secondary-nav-container">
+      <!-- 1. MASTER INBOX / UNIBOX VIEW -->
+      <template v-if="isMasterInboxRoute">
+        <!-- HEADER ROW FOR UNIBOX VIEW -->
+        <div class="nav-header-row settings-header-row">
+          <div class="flex items-center">
+            <q-btn
+              flat
+              round
+              dense
+              size="sm"
+              class="back-btn"
+              @click="goBackToOutreach"
+            >
+              <q-icon name="arrow_back" size="18px" color="grey" />
 
-    <!-- Main Navigation Container -->
-    <div
-      v-else
-      class="secondary-nav-container"
-    >
-      <!-- HEADER ROW FOR MAIN VIEW -->
-      <div
-        v-if="!isWorkspaceSettingsRoute"
-        class="nav-header-row"
-      >
-        <span
-          v-if="!drawerMiniState"
-          class="header-section-title"
-        >
-          Engage
-        </span>
+              <AppTooltip
+                v-if="drawerMiniState"
+                anchor="center right"
+                self="center left"
+                content="Back to Outreach"
+              />
+            </q-btn>
 
-        <q-btn
-          flat
-          round
-          unelevated
-          size="xs"
-          color="secondary"
-          class="drawer-resizer"
-          @click="toggleDrawerMiniState()"
-        >
-          <LocalSvgIcon image="resizer-1" class="resizer-icon" />
-        </q-btn>
-      </div>
+            <span
+              v-if="!drawerMiniState"
+              class="header-section-title q-ml-xs"
+            >
+              Unibox
+            </span>
+          </div>
 
-      <!-- HEADER ROW FOR SETTINGS VIEW -->
-      <div v-else class="nav-header-row settings-header-row">
-        <q-btn
-          flat
-          round
-          dense
-          size="sm"
-          class="back-btn"
-          @click="goBackToOutreach"
-        >
-          <q-icon name="arrow_back" size="18px" color="grey" />
+          <q-btn
+            flat
+            round
+            unelevated
+            size="xs"
+            color="secondary"
+            class="drawer-resizer"
+            @click="toggleDrawerMiniState()"
+          >
+            <LocalSvgIcon image="resizer-1" class="resizer-icon" />
+          </q-btn>
+        </div>
 
-          <AppTooltip
-            v-if="drawerMiniState"
-            anchor="center right"
-            self="center left"
-            content="Back to Outreach"
+        <div class="nav-sections-scroll-area">
+          <UniboxSidebarContent
+            :mini-drawer="drawerMiniState"
           />
-        </q-btn>
+        </div>
+      </template>
 
-        <q-btn
-          flat
-          round
-          unelevated
-          size="xs"
-          color="secondary"
-          class="drawer-resizer"
-          @click="toggleDrawerMiniState()"
-        >
-          <LocalSvgIcon image="resizer-1" class="resizer-icon" />
-        </q-btn>
-      </div>
+      <!-- 2. CAMPAIGN SETTINGS VIEW -->
+      <template v-else-if="isWorkspaceSettingsRoute">
+        <!-- HEADER ROW FOR SETTINGS VIEW -->
+        <div class="nav-header-row settings-header-row">
+          <div class="flex items-center">
+            <q-btn
+              flat
+              round
+              dense
+              size="sm"
+              class="back-btn"
+              @click="goBackToOutreach"
+            >
+              <q-icon name="arrow_back" size="18px" color="grey" />
 
-      <!-- MAIN OUTREACH VIEW CONTENT -->
-      <template v-if="!isWorkspaceSettingsRoute">
+              <AppTooltip
+                v-if="drawerMiniState"
+                anchor="center right"
+                self="center left"
+                content="Back to Outreach"
+              />
+            </q-btn>
+
+            <span
+              v-if="!drawerMiniState"
+              class="header-section-title q-ml-xs"
+            >
+              Campaign Settings
+            </span>
+          </div>
+
+          <q-btn
+            flat
+            round
+            unelevated
+            size="xs"
+            color="secondary"
+            class="drawer-resizer"
+            @click="toggleDrawerMiniState()"
+          >
+            <LocalSvgIcon image="resizer-1" class="resizer-icon" />
+          </q-btn>
+        </div>
+
+        <div class="nav-sections-scroll-area">
+          <div class="each-secondary-route-container">
+            <div class="sidebar-all-routes-grid">
+              <q-item
+                v-for="(page, index) in campaignSettingsRoutes"
+                :key="`settings-route-${page.name}-${index}`"
+                clickable
+                class="sidebar-route-item"
+                :to="page.route"
+                :class="{ active: page.isActive }"
+              >
+                <LocalSvgIcon
+                  :image="page.icon"
+                  :class="`sidebar-route-icon ${page.iconClass || ''}`"
+                />
+
+                <p v-if="!drawerMiniState" class="page-label-text">
+                  {{ page.label }}
+                </p>
+
+                <!-- Tooltip for mini drawer -->
+                <AppTooltip
+                  v-if="drawerMiniState"
+                  anchor="center right"
+                  self="center left"
+                  :content="page.label"
+                />
+              </q-item>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- 3. MAIN OUTREACH VIEW CONTENT -->
+      <template v-else>
+        <!-- HEADER ROW FOR MAIN VIEW -->
+        <div class="nav-header-row">
+          <span
+            v-if="!drawerMiniState"
+            class="header-section-title"
+          >
+            Engage
+          </span>
+
+          <q-btn
+            flat
+            round
+            unelevated
+            size="xs"
+            color="secondary"
+            class="drawer-resizer"
+            @click="toggleDrawerMiniState()"
+          >
+            <LocalSvgIcon image="resizer-1" class="resizer-icon" />
+          </q-btn>
+        </div>
+
         <div class="nav-sections-scroll-area">
           <div
             v-for="(section, sectionIndex) in outreachSections"
@@ -144,46 +226,6 @@
           </q-item>
         </div>
       </template>
-
-      <!-- CAMPAIGN SETTINGS VIEW CONTENT -->
-      <template v-else>
-        <!-- Heading title -->
-        <p v-if="!drawerMiniState" class="secondary-route-heading settings-heading">
-          Campaign Settings
-        </p>
-
-        <div class="nav-sections-scroll-area">
-          <div class="each-secondary-route-container">
-            <div class="sidebar-all-routes-grid">
-              <q-item
-                v-for="(page, index) in campaignSettingsRoutes"
-                :key="`settings-route-${page.name}-${index}`"
-                clickable
-                class="sidebar-route-item"
-                :to="page.route"
-                :class="{ active: page.isActive }"
-              >
-                <LocalSvgIcon
-                  :image="page.icon"
-                  :class="`sidebar-route-icon ${page.iconClass || ''}`"
-                />
-
-                <p v-if="!drawerMiniState" class="page-label-text">
-                  {{ page.label }}
-                </p>
-
-                <!-- Tooltip for mini drawer -->
-                <AppTooltip
-                  v-if="drawerMiniState"
-                  anchor="center right"
-                  self="center left"
-                  :content="page.label"
-                />
-              </q-item>
-            </div>
-          </div>
-        </div>
-      </template>
     </div>
   </aside>
 </template>
@@ -205,14 +247,14 @@ import { useWorkspace } from 'src/composables/useWorkspace';
 
 // Components
 import AppTooltip from 'components/General/AppTooltip.vue';
-import SkyBoxSidebarContent from 'components/MasterInbox/Sidebar/Content.vue';
+import UniboxSidebarContent from 'components/Unibox/Sidebar/Content.vue';
 
 export default defineComponent({
   name: 'SecondarySidebar',
 
   components: {
     AppTooltip,
-    SkyBoxSidebarContent,
+    UniboxSidebarContent,
   },
 
   setup() {
@@ -260,6 +302,13 @@ export default defineComponent({
         route: '/outreach/campaigns-all',
         isActive: activeRoutePath.value.includes('/outreach/campaigns'),
       },
+      // {
+      //   name: 'unibox',
+      //   label: 'Unibox',
+      //   icon: 'inbox',
+      //   route: '/unibox/inbox',
+      //   isActive: activeRoutePath.value.includes('/unibox'),
+      // },
       {
         name: 'contacts',
         label: 'Contacts',

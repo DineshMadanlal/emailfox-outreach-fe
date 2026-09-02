@@ -19,7 +19,7 @@
 
     <!--  -->
     <p class="contacts-selection-count">
-      {{ numberOfSelectedContacts }} of {{ totalCount }} selected
+      {{ selectionCountLabel }}
     </p>
 
     <!-- Actions -->
@@ -45,7 +45,13 @@
 
 <script>
 // vue
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
+
+// Utils
+import { getNumeralAmount } from 'src/utils/numbers.js';
+
+// constants
+import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
 export default defineComponent({
   name: 'ContactsActionSummary',
@@ -64,6 +70,29 @@ export default defineComponent({
       default: 0,
       required: true,
     },
+    multiSelectOptionJson: {
+      type: Object,
+      default: () => ({}),
+      required: false,
+    },
+  },
+
+  setup(props) {
+    const selectionCountLabel = computed(() => {
+      const totalCount = getNumeralAmount(props.totalCount);
+
+      if (props.multiSelectOptionJson?.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL) {
+        return `${totalCount} selected`;
+      }
+      const selectedCount = getNumeralAmount(props.numberOfSelectedContacts);
+
+      return `${selectedCount} of ${totalCount} selected`;
+    });
+
+    return {
+      // computed
+      selectionCountLabel,
+    };
   },
 });
 </script>

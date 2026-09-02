@@ -119,7 +119,6 @@
                   <!-- quasar list -->
                   <q-list style="min-width: 270px">
                     <TableMultiSelect
-                      multiSelectType="list"
                       :multiSelectOptionJson="multiSelectOptionJson"
 
                       :totalList="pagination.rowsNumber"
