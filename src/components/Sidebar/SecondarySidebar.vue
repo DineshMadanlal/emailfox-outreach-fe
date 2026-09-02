@@ -302,13 +302,13 @@ export default defineComponent({
         route: '/outreach/campaigns-all',
         isActive: activeRoutePath.value.includes('/outreach/campaigns'),
       },
-      {
-        name: 'unibox',
-        label: 'Unibox',
-        icon: 'inbox',
-        route: '/unibox/inbox',
-        isActive: activeRoutePath.value.includes('/unibox'),
-      },
+      // {
+      //   name: 'unibox',
+      //   label: 'Unibox',
+      //   icon: 'inbox',
+      //   route: '/unibox/inbox',
+      //   isActive: activeRoutePath.value.includes('/unibox'),
+      // },
       {
         name: 'contacts',
         label: 'Contacts',
