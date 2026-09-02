@@ -77,9 +77,6 @@
 </template>
 
 <script>
-// quasar
-import { useQuasar } from 'quasar';
-
 // vue
 import {
   computed, defineComponent, onMounted, reactive, toRefs,
@@ -117,9 +114,6 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
-    // quasar
-    const $q = useQuasar();
-
     // state
     const state = reactive({
       mappedCsvHeaders: [],
@@ -169,12 +163,7 @@ export default defineComponent({
       );
 
       if (emailFieldIndex === -1) {
-        $q.dialog({
-          title: 'Email field is required',
-          message: 'Please map the email field as it is mandatory',
-        });
-
-        return;
+        // logic to handle missing email field
       }
 
       emit('onCompleteStep', {

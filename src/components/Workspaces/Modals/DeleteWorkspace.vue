@@ -45,7 +45,7 @@
         dense
         v-model="agreeToDelete"
 
-        color="primary"
+        color="negative"
         label="I understand the consequences of deleting the workspace"
       />
     </div>
@@ -121,7 +121,7 @@ export default defineComponent({
         });
 
         // redirect to workspace choose page
-        window.location.href = 'https://app.emailfox.ai/workspace/choose';
+        window.location.href = 'https://app.skysenders.ai/workspace/choose';
       } catch (error) {
         // show toast
         appContext.config.globalProperties.$toast({

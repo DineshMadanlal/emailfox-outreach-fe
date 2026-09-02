@@ -295,6 +295,7 @@ export default defineComponent({
           merge_strategy: state.csvDataJson.mergeStrategy,
           source: CONTACTS_IMPORT_SOURCE_TYPE.CSV_UPLOAD,
           source_file_name: state.csvDataJson.fileName,
+          allow_missing_emails: true,
         };
 
         await postApiCall({

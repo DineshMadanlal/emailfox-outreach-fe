@@ -28,23 +28,43 @@
 
     <!-- Content -->
     <div class="app-modal-content">
-      <p class="delete-warning-text">
-        Deleting the {{ deleteMultiple ? 'selected contacts' : 'contact' }} will
-        <span class="permanent-delete-text">
-          permanently delete
-        </span>
-        all selected contacts and their associated data.
-        <br />
-        <br />
-        This action cannot be undone. Are you sure you want to continue?
-      </p>
+      <!-- Dynamic Warning Text -->
+        <p class="delete-warning-text">
+          <template v-if="listId">
+            This action will remove
+            <strong>{{ deleteMultipleText }}</strong>
+            from this list.
+          </template>
+
+          <template v-else>
+            This will permanently delete
+            <strong>{{ deleteMultipleText }}</strong>
+            across your entire workspace.
+            <span class="subtext">
+              To remove {{ deleteMultiple ? 'them' : 'it' }} from a specific
+              list instead, manage it from
+              the
+              <router-link
+                to="/outreach/lists/all"
+                class="text-black q-mr-sm text-weight-medium"
+              >
+                Lists
+              </router-link>page or within the list itself.
+            </span>
+          </template>
+
+          <br />
+          <br />
+
+          This action is irreversible. Are you sure you want to proceed?
+        </p>
 
       <!-- Agree to delete -->
       <q-checkbox
         dense
         v-model="agreeToDelete"
 
-        color="primary"
+        color="negative"
         label="I understand the consequences of deleting the selected contact(s)"
       />
     </div>
@@ -116,6 +136,14 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    listId: {
+      type: [String, Number],
+      default: '',
+    },
+    deleteAllContactsForAList: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   setup(props, { emit }) {
@@ -132,15 +160,32 @@ export default defineComponent({
     // computed
     const deleteMultiple = computed(() => size(props.selectedContacts) > 1);
 
+    const deleteMultipleText = computed(() => {
+      if (props.deleteAllContactsForAList) {
+        return 'all contacts';
+      }
+
+      if (deleteMultiple.value) {
+        return 'the selected contacts';
+      }
+
+      return 'this contact';
+    });
+
     const isAllSelected = computed(() => props.multiSelectOptionJson?.selectedOption
       === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL);
 
     // methods
     const getdeleteMultiplePayload = () => {
+      // if the user wants to delete all contacts for a list, we set select_all to true
+      if (props.deleteAllContactsForAList) {
+        return { select_all: true };
+      }
+
       const filterJson = {};
 
       const {
-        searchText, provider, listJson,
+        searchText, provider,
       } = props.filters;
 
       // search text filter
@@ -152,10 +197,11 @@ export default defineComponent({
       if (provider) {
         filterJson.esp_provider = provider;
       }
-      // list filter
-      if (listJson?.id) {
-        filterJson.list_id = listJson.id;
-      }
+
+      // we don't support delete list by ID from all contacts page
+      // if (listJson?.id) {
+      //   filterJson.list_id = listJson.id;
+      // }
 
       if (isAllSelected.value) {
         filterJson.select_all = true;
@@ -170,22 +216,20 @@ export default defineComponent({
       try {
         state.isApiLoading = true;
 
-        if (size(props.selectedContacts) === 1) {
-          // delete single domain
-          await deleteApiCall({
-            includeWorkspace: true,
-            endpoint: `/contacts/${props.selectedContacts[0].id}`,
-          });
-        } else {
-          const payload = getdeleteMultiplePayload();
+        const payload = getdeleteMultiplePayload();
 
-          // delete multiple domains
-          await deleteApiCall({
-            data: payload,
-            includeWorkspace: true,
-            endpoint: '/contacts',
-          });
+        let endpoint = '/contacts';
+
+        if (props.listId) {
+          endpoint = `/lists/${props.listId}/contacts`;
         }
+
+        // delete multiple domains
+        await deleteApiCall({
+          endpoint,
+          payload,
+          includeWorkspace: true,
+        });
 
         appContext.config.globalProperties.$toast({
           message: `${deleteMultiple.value ? 'Contacts' : 'Contact'} deleted successfully`,
@@ -209,6 +253,7 @@ export default defineComponent({
 
       // computed
       deleteMultiple,
+      deleteMultipleText,
 
       // methods
       onDeleteContact,

@@ -37,7 +37,7 @@
         dense
         v-model="agreeToDelete"
 
-        color="primary"
+        color="negative"
         label="I understand the consequences of deleting the member"
       />
     </div>

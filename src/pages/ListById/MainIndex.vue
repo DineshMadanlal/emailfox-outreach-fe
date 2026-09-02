@@ -5,7 +5,57 @@
 
     <!-- Dialog -->
     <q-dialog
-      v-model="modals.showListByIdContactHistory"
+      v-model="modals.showSaveListName"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SaveListName
+        :listJson="listByJson"
+
+        @onUpdateList="onListNameUpdated"
+      />
+    </q-dialog>
+
+    <!-- Delete Contacts -->
+    <q-dialog
+      v-model="modals.showDeleteContacts"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <DeleteContacts
+        :listId="listByJson.id"
+        :deleteAllContactsForAList="true"
+
+        :filters="{}"
+        :multiSelectOptionJson="{}"
+
+        @onSuccessfulDelete="onSuccessfulDeleteContacts"
+      />
+    </q-dialog>
+
+    <!-- Delete List -->
+    <q-dialog
+      v-model="modals.showDeleteList"
+
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <DeleteList
+        :listId="listByJson.id"
+
+        @onSuccessfulDelete="onSuccessfulDeleteList"
+      />
+    </q-dialog>
+
+    <!-- Import History -->
+    <q-dialog
+      v-model="modals.showContactsImportHistory"
 
       :class="isMobileDevice
         ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
@@ -15,7 +65,6 @@
     >
       <ContactImportHistory
         :listId="listId"
-        :listByJson="listByJson"
       />
     </q-dialog>
 
@@ -26,18 +75,27 @@
       <ListByIdHeader
         :listByJson="listByJson"
 
-        @importHistory="modals.showListByIdContactHistory = true"
+        @deleteList="modals.showDeleteList = true"
+        @updateListName="modals.showSaveListName = true"
+        @deleteContacts="modals.showDeleteContacts = true"
+        @importHistory="modals.showContactsImportHistory = true"
       />
 
       <router-view
         :listId="listId"
+        :key="routerViewKey"
         :listByJson="listByJson"
+
+        @refetchListById="fetchListById"
       />
     </template>
   </div>
 </template>
 
 <script>
+// lodash
+import isEmpty from 'lodash/isEmpty';
+
 // vue
 import {
   defineComponent, reactive, toRefs, computed, onMounted, getCurrentInstance,
@@ -52,6 +110,11 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import ListByIdHeader from 'components/ListById/Header.vue';
+
+// modals
+import DeleteList from 'components/Lists/Modals/DeleteList.vue';
+import SaveListName from 'components/Lists/Modals/SaveListName.vue';
+import DeleteContacts from 'components/Contacts/Modals/DeleteContacts.vue';
 import ContactImportHistory from 'components/ListById/Modals/ContactImportHistory.vue';
 
 // utils
@@ -67,6 +130,11 @@ export default defineComponent({
   components: {
     ApiLoader,
     ListByIdHeader,
+
+    // modals
+    DeleteList,
+    SaveListName,
+    DeleteContacts,
     ContactImportHistory,
   },
 
@@ -91,10 +159,14 @@ export default defineComponent({
     const state = reactive({
       listByJson: {},
       isMounted: false,
+      routerViewKey: 1,
       fetchListByIdApiLoading: false,
 
       modals: {
-        showListByIdContactHistory: false,
+        showDeleteList: false,
+        showSaveListName: false,
+        showDeleteContacts: false,
+        showContactsImportHistory: false,
       },
     });
 
@@ -104,7 +176,7 @@ export default defineComponent({
     // methods
     const fetchListById = async () => {
       try {
-        state.fetchListByIdApiLoading = true;
+        state.fetchListByIdApiLoading = isEmpty(state.listByJson);
 
         const response = await getListById(listId.value);
 
@@ -132,6 +204,28 @@ export default defineComponent({
       }
     };
 
+    const onListNameUpdated = (updatedListJson) => {
+      state.listByJson = {
+        ...state.listByJson,
+        ...updatedListJson,
+      };
+
+      state.modals.showSaveListName = false;
+    };
+
+    const onSuccessfulDeleteContacts = () => {
+      state.modals.showDeleteContacts = false;
+
+      state.routerViewKey += 1;
+    };
+
+    const onSuccessfulDeleteList = () => {
+      state.modals.showDeleteList = false;
+
+      // move to all lists page
+      $router.push('/outreach/lists/all');
+    };
+
     onMounted(() => {
       fetchListById();
 
@@ -146,6 +240,12 @@ export default defineComponent({
       listId,
       showApiLoader,
       isMobileDevice,
+
+      // methods
+      fetchListById,
+      onListNameUpdated,
+      onSuccessfulDeleteContacts,
+      onSuccessfulDeleteList,
     };
   },
 });

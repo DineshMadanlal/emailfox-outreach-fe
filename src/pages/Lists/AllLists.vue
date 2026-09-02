@@ -2,14 +2,67 @@
   <div class="all-lists-container">
     <!-- Dialog -->
     <q-dialog
-      v-model="showSaveListNameModal"
+      v-model="modals.showSaveListName"
       class="app-modal-dialog"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveListName
+        :listJson="selectedListJson"
+
+        @onUpdateList="onListNameUpdated"
         @newCreatedList="onNewCreatedList"
+      />
+    </q-dialog>
+
+    <!-- Import History -->
+    <q-dialog
+      v-model="modals.showContactsImportHistory"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ContactImportHistory
+        :listId="selectedListJson.id"
+      />
+    </q-dialog>
+
+    <!-- Delete Contacts -->
+    <q-dialog
+      v-model="modals.showDeleteContacts"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <DeleteContacts
+        :listId="selectedListJson.id"
+        :deleteAllContactsForAList="true"
+
+        :filters="{}"
+        :multiSelectOptionJson="{}"
+
+        @onSuccessfulDelete="onSuccessfulDeleteContacts"
+      />
+    </q-dialog>
+
+    <!-- Delete List -->
+    <q-dialog
+      v-model="modals.showDeleteList"
+
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <DeleteList
+        :listId="selectedListJson.id"
+
+        @onSuccessfulDelete="onSuccessfulDeleteList"
       />
     </q-dialog>
 
@@ -22,7 +75,7 @@
           <!-- search input -->
           <AppSearchInput
             :debounce="500"
-            v-model="searchListInput"
+            v-model="filters.searchText"
 
             class="list-filter-input"
             placeholder="Search list..."
@@ -74,7 +127,7 @@
         v-model:pagination="pagination"
 
         separator="cell"
-        class="app-table all-lists-table app-paginated-table no-border-left"
+        class="app-table all-lists-table app-table-rows-fixed app-paginated-table no-border-left"
 
         :rows="tableData"
         :columns="tableColumns"
@@ -183,7 +236,7 @@
               :to="`/outreach/lists/view/${props.row.id}`"
               class="list-contacts-route-link"
             >
-              <div class="flex no-wrap">
+              <div class="flex no-wrap full-width">
                 <LocalSvgIcon
                   image="folder"
                   classes="folder-icon"
@@ -198,6 +251,35 @@
                     Created on {{ formatDateWithTime(props.row.created_at) }}
                   </div>
                 </div>
+
+                <q-space />
+
+                <!-- more options -->
+                <q-btn
+                  dense
+                  outlined
+                  unelevated
+
+                  class="more-action-btn"
+
+                  @click.stop.prevent
+                >
+                  <!-- more -->
+                  <LocalSvgIcon
+                    image="more"
+                    classes="more-menu-icon"
+                  />
+
+                  <!--  -->
+                  <ListByIdMoreOptions
+                    :listJson="props.row"
+
+                    @deleteList="handleDeleteList"
+                    @deleteContacts="handleDeleteContacts"
+                    @updateListName="handleUpdateListName"
+                    @importHistory="handleImportHistory"
+                  />
+                </q-btn>
               </div>
             </router-link>
           </q-td>
@@ -252,7 +334,13 @@ import AppHeader from 'components/Headers/AppHeader.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import AllListsIllustration from 'components/Illustrations/AllLists.vue';
+import ListByIdMoreOptions from 'components/Menu/ListByIdMoreOptions.vue';
+
+// modals
+import DeleteList from 'components/Lists/Modals/DeleteList.vue';
 import SaveListName from 'components/Lists/Modals/SaveListName.vue';
+import DeleteContacts from 'components/Contacts/Modals/DeleteContacts.vue';
+import ContactImportHistory from 'components/ListById/Modals/ContactImportHistory.vue';
 
 // utils
 import { formatDateWithTime } from 'src/utils/dates';
@@ -268,6 +356,11 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 // constants
 import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
+// filters
+const allListsFilters = {
+  searchText: '',
+};
+
 export default defineComponent({
   name: 'AllLists',
 
@@ -276,7 +369,11 @@ export default defineComponent({
     ApiLoader,
     AppSearchInput,
     AllListsIllustration,
+    DeleteList,
     SaveListName,
+    ListByIdMoreOptions,
+    ContactImportHistory,
+    DeleteContacts,
   },
 
   setup() {
@@ -299,7 +396,9 @@ export default defineComponent({
     const state = reactive({
       isMounted: false,
 
-      searchListInput: '',
+      filters: {
+        ...allListsFilters,
+      },
 
       isApiProcessing: false,
       areResultsFetchedOnce: false,
@@ -315,16 +414,17 @@ export default defineComponent({
       showTableMultiSelectMenu: false,
 
       selectedListJson: null,
-      showDeleteListModal: false,
 
-      // modals
-      showSaveListNameModal: false,
+      // modal state
+      modals: {
+        showDeleteList: false,
+        showSaveListName: false,
+        showDeleteContacts: false,
+        showContactsImportHistory: false,
+      },
     });
 
     // computed
-    const localStoredPagination = computed(() => userStore.allListsPreferences?.pagination
-      || DEFAULT_TABLE_PAGINATION);
-
     const showApiLoader = computed(() => {
       if (state.areResultsFetchedOnce) {
         return false;
@@ -334,7 +434,7 @@ export default defineComponent({
     });
 
     const isFilterApplied = computed(() => {
-      if (isEmpty(state.searchListInput)) {
+      if (isEmpty(state.filters.searchText)) {
         return false;
       }
 
@@ -391,6 +491,15 @@ export default defineComponent({
     });
 
     // methods
+    const updateDataToStore = (inputObject) => {
+      userStore.setMultipleFields({
+        allListsState: {
+          ...userStore.allListsState,
+          ...inputObject,
+        },
+      });
+    };
+
     const updateMultiSelect = (multiSelectOptionJson) => {
       state.multiSelectOptionJson = multiSelectOptionJson;
 
@@ -414,8 +523,11 @@ export default defineComponent({
         const params = {
           offset: (page - 1) * perPage,
           limit: perPage,
-          search_text: state.searchListInput,
         };
+
+        if (state.filters.searchText) {
+          params.search_text = state.filters.searchText;
+        }
 
         const response = await getApiCall({
           includeWorkspace: true,
@@ -433,13 +545,10 @@ export default defineComponent({
         state.pagination.rowsNumber = count;
 
         // store in pinia
-        userStore.setMultipleFields({
-          allListsTableData: state.tableData,
-          allListsPreferences: {
-            pagination: state.pagination,
-            filterDomainId: state.filterDomainId,
-            searchListInput: state.searchListInput,
-          },
+        updateDataToStore({
+          tableData: state.tableData,
+          pagination: state.pagination,
+          filters: state.filters,
         });
       } catch (error) {
         // Show a toaster that domain have been setup successfully
@@ -492,21 +601,81 @@ export default defineComponent({
       state.selectedLists = [];
     };
 
-    const onDeleteList = (propsRow) => {
-      state.selectedListJson = propsRow;
+    const handleUpdateList = (propsRow) => {
+      state.tableData = state.tableData.map((list) => {
+        if (list.id === propsRow.id) {
+          return { ...list, ...propsRow };
+        }
 
-      state.showDeleteListModal = true;
+        return list;
+      });
+
+      //
+      updateDataToStore({
+        tableData: state.tableData,
+      });
+    };
+
+    // updates
+    const onListNameUpdated = (propsRow) => {
+      handleUpdateList(propsRow);
+
+      state.modals.showSaveListName = false;
     };
 
     const onSuccessfulDeleteList = () => {
-      state.showDeleteListModal = false;
+      state.modals.showDeleteList = false;
 
       // remove the entry from the table
       state.tableData = state.tableData.filter(
         (list) => list.id !== state.selectedListJson.id,
       );
 
+      // count
+      state.pagination.rowsNumber = state.tableData.length;
+
+      //
+      updateDataToStore({
+        tableData: state.tableData,
+        pagination: state.pagination,
+        filters: state.filters,
+      });
+
       state.selectedListJson = null;
+    };
+
+    const onSuccessfulDeleteContacts = () => {
+      state.modals.showDeleteContacts = false;
+
+      handleUpdateList({
+        ...state.selectedListJson,
+        total_contacts: 0,
+      });
+    };
+
+    // handles
+    const handleDeleteList = (propsRow) => {
+      state.selectedListJson = propsRow;
+
+      state.modals.showDeleteList = true;
+    };
+
+    const handleDeleteContacts = (propsRow) => {
+      state.selectedListJson = propsRow;
+
+      state.modals.showDeleteContacts = true;
+    };
+
+    const handleUpdateListName = (propsRow) => {
+      state.selectedListJson = propsRow;
+
+      state.modals.showSaveListName = true;
+    };
+
+    const handleImportHistory = (propsRow) => {
+      state.selectedListJson = propsRow;
+
+      state.modals.showContactsImportHistory = true;
     };
 
     const onSearchInput = async () => {
@@ -515,10 +684,14 @@ export default defineComponent({
 
     const makeApiCallOnMounted = () => {
       //
-      state.pagination = localStoredPagination.value;
+      const {
+        pagination, filters, tableData,
+      } = userStore.allListsState || {};
 
-      state.tableData = userStore.allListsTableData || [];
-      state.searchListInput = userStore.allListsPreferences?.searchListInput || '';
+      state.pagination = pagination || DEFAULT_TABLE_PAGINATION;
+
+      state.tableData = tableData || [];
+      state.filters = filters || { ...allListsFilters };
 
       state.areResultsFetchedOnce = !isEmpty(state.tableData);
 
@@ -528,11 +701,13 @@ export default defineComponent({
     };
 
     const onCreateNewList = () => {
-      state.showSaveListNameModal = true;
+      state.selectedListJson = {};
+
+      state.modals.showSaveListName = true;
     };
 
     const onNewCreatedList = (newListJson) => {
-      state.showSaveListNameModal = false;
+      state.modals.showSaveListName = false;
 
       $router.push(`/outreach/contacts/${newListJson.id}/upload`);
     };
@@ -554,13 +729,16 @@ export default defineComponent({
       isFilterApplied,
       showListsFilters,
       selectedListsLength,
-      localStoredPagination,
       tablePaginationLabel,
       showAllListsIllustration,
 
       // methods
       onRequest,
-      onDeleteList,
+      onListNameUpdated,
+      handleDeleteList,
+      handleDeleteContacts,
+      handleUpdateListName,
+      handleImportHistory,
       onTableRowSelect,
       onSuccessfulDeleteList,
       resetTableMultiSelect,
@@ -572,6 +750,7 @@ export default defineComponent({
       formatDateWithTime,
       onNewCreatedList,
       getNumeralAmount,
+      onSuccessfulDeleteContacts,
 
       // constants
       TABLE_MULTI_SELECT_OPTIONS,
@@ -663,6 +842,12 @@ export default defineComponent({
           font-size: 14px;
           font-weight: 400;
           line-height: 16px; /* 114.286% */
+        }
+
+        .more-action-btn {
+          .more-menu-icon {
+            // transform: rotate(90deg);
+          }
         }
       }
     }

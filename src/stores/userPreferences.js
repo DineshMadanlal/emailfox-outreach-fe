@@ -45,6 +45,13 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
       visibleColumns: [],
     },
 
+    // all lists
+    allListsState: {
+      filters: {},
+      pagination: null,
+      tableData: [],
+    },
+
     listByIdContactsState: {
       filters: {},
       pagination: null,

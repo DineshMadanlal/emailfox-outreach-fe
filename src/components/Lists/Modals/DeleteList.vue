@@ -1,10 +1,10 @@
-<template lang="">
-  <q-card flat class="app-modal-card delete-profile-card">
+<template>
+  <q-card flat class="app-modal-card delete-list-card">
     <!-- header -->
     <div class="app-modal-header">
       <!--  -->
       <h4 class="modal-header-text">
-        Delete Profile
+        Delete List
       </h4>
 
       <q-space />
@@ -29,8 +29,14 @@
     <!-- Content -->
     <div class="app-modal-content">
       <p class="delete-warning-text">
-        Are you sure you want to delete this profile? This action cannot be undone.
-        Warmup will be disabled for all mailboxes currently using this profile.
+        Deleting the list will
+        <span class="permanent-delete-text">
+          permanently delete
+        </span>
+        all contacts within it.
+        <br />
+        <br />
+        This action cannot be undone. Are you sure you want to continue?
       </p>
 
       <!-- Agree to delete -->
@@ -39,7 +45,7 @@
         v-model="agreeToDelete"
 
         color="negative"
-        label="I understand the consequences of deleting the profile"
+        label="I understand the consequences of deleting the selected list."
       />
     </div>
 
@@ -51,12 +57,12 @@
         unelevated
 
         color="negative"
-        label="Delete Profile"
+        label="Permanently Delete"
 
         :loading="isApiLoading"
         :disabled="!agreeToDelete"
 
-        @click="onConfirmDelete"
+        @click="onDeleteAccount"
       />
 
       <!-- Delete -->
@@ -68,8 +74,8 @@
 
         :loading="isApiLoading"
 
-        color="negative"
         label="Cancel"
+        color="negative"
 
         class="light-negative-btn"
       />
@@ -87,14 +93,14 @@ import {
 import { deleteApiCall } from 'src/utils/apiRequests';
 
 export default defineComponent({
-  name: 'DeleteWarmupProfile',
+  name: 'DeleteList',
 
-  emits: ['deleteSuccess'],
+  emits: ['onSuccessfulDelete'],
 
   props: {
-    selectedTableDataJson: {
-      type: Object,
-      default: () => ({}),
+    listId: {
+      type: [String, Number],
+      required: true,
     },
   },
 
@@ -110,20 +116,22 @@ export default defineComponent({
     });
 
     // methods
-    const onConfirmDelete = async () => {
+    const onDeleteAccount = async () => {
       try {
         state.isApiLoading = true;
 
+        // delete single domain
         await deleteApiCall({
           includeWorkspace: true,
-          endpoint: `/warmup/profiles/${props.selectedTableDataJson.id}`,
+          endpoint: `/lists/${props.listId}`,
         });
 
+        // toaster
         appContext.config.globalProperties.$toast({
-          message: 'Profile deleted successfully',
+          message: 'List deleted successfully',
         });
 
-        emit('deleteSuccess');
+        emit('onSuccessfulDelete');
       } catch (error) {
         // show toast
         appContext.config.globalProperties.$toast({
@@ -140,15 +148,15 @@ export default defineComponent({
       ...toRefs(state),
 
       // methods
-      onConfirmDelete,
+      onDeleteAccount,
     };
   },
 });
 </script>
 
 <style lang="scss" scoped>
-.delete-profile-card {
-  max-width: 540px;
+.delete-list-card {
+  max-width: 600px;
 
   .light-negative-btn {
     margin-left: 12px;

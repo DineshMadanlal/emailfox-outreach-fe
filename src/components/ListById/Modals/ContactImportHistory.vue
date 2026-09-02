@@ -218,8 +218,8 @@
                   @click="scope.prevPage"
                 >
                   <LocalSvgIcon
-                    image="pagination-arrow-left"
-                    class="pagination-icon"
+                    image="plain-down-arrow"
+                    classes="pagination-icon left-arrow"
                   />
                 </q-btn>
 
@@ -240,8 +240,8 @@
                   @click="scope.nextPage"
                 >
                   <LocalSvgIcon
-                    image="pagination-arrow-right"
-                    class="pagination-icon"
+                    image="plain-down-arrow"
+                    classes="pagination-icon right-arrow"
                   />
                 </q-btn>
               </div>
@@ -304,10 +304,6 @@ export default defineComponent({
     listId: {
       type: [Number, String],
       required: true,
-    },
-    listByJson: {
-      type: Object,
-      default: () => ({}),
     },
   },
 

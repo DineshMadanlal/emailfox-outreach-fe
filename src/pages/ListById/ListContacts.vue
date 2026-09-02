@@ -9,6 +9,8 @@
   <ContactsTable
     hideHeader
     :listId="listId"
+
+    @contactsDeleted="$emit('refetchListById')"
   />
 </template>
 
@@ -22,6 +24,8 @@ import ListContactsProgress from 'components/ListById/ListContactsProgress.vue';
 
 export default defineComponent({
   name: 'ListContacts',
+
+  emits: ['refetchListById'],
 
   components: {
     ContactsTable,

@@ -12,19 +12,18 @@
       style="min-width: 196px"
       class="more-action-list"
     >
-      <q-item
-        clickable
+      <div
         :class="`${action.class || ''} more-action-item`"
 
         v-for="action in moreActions"
         :key="`each-more-action-${action.emitValue}`"
 
-        @click="$emit(action.emitValue)"
+        @click="$emit(action.emitValue, listJson)"
       >
         <div class="more-action-text">
           {{ action.label }}
         </div>
-      </q-item>
+      </div>
     </q-list>
   </q-menu>
 </template>
@@ -37,14 +36,38 @@ export default defineComponent({
 
   emits: [
     'importHistory',
+    'updateListName',
+    'deleteContacts',
+    'deleteList',
   ],
+
+  props: {
+    listJson: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
 
   setup() {
     const moreActions = computed(() => {
       const actions = [
         {
+          label: 'Update List Name',
+          emitValue: 'updateListName',
+        },
+        {
           label: 'Contact Import History',
           emitValue: 'importHistory',
+        },
+        {
+          label: 'Delete Contacts',
+          emitValue: 'deleteContacts',
+          class: 'negative-action',
+        },
+        {
+          label: 'Delete List',
+          emitValue: 'deleteList',
+          class: 'negative-action',
         },
       ];
 
@@ -68,7 +91,7 @@ export default defineComponent({
 
   .more-action-item {
     padding: 8px 12px;
-    min-height: unset !important;
+    cursor: pointer;
 
     .more-action-text {
       font-size: 14px;

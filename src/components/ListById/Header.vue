@@ -82,7 +82,12 @@
           />
 
           <ListByIdMoreOptions
+            :listJson="listByJson"
+
+            @deleteList="$emit('deleteList')"
             @importHistory="$emit('importHistory')"
+            @deleteContacts="$emit('deleteContacts')"
+            @updateListName="$emit('updateListName')"
           />
         </q-btn>
 
@@ -158,7 +163,7 @@ import { formatDateWithTime } from 'src/utils/dates';
 export default defineComponent({
   name: 'ListByIdHeader',
 
-  emits: ['importHistory'],
+  emits: ['importHistory', 'deleteList', 'deleteContacts', 'updateListName'],
 
   components: {
     ListByIdMoreOptions,

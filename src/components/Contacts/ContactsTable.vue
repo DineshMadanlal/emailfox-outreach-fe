@@ -29,6 +29,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <DeleteContactsModal
+        :listId="listId"
         :filters="filters"
         :selectedContacts="selectedContacts"
         :multiSelectOptionJson="multiSelectOptionJson"
@@ -492,6 +493,8 @@ import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/const
 export default defineComponent({
   name: 'ContactsTable',
 
+  emits: ['contactsDeleted'],
+
   components: {
     ApiLoader,
     MailboxEsp,
@@ -530,7 +533,7 @@ export default defineComponent({
     },
   },
 
-  setup(props) {
+  setup(props, { emit }) {
     // hardcoded
     const contactFilters = {
       searchText: '',
@@ -862,10 +865,16 @@ export default defineComponent({
     };
 
     const onSuccessfulDeleteContacts = () => {
+      state.selectedContacts = [];
+      state.multiSelectOptionJson = {};
       state.showDeleteContactModal = false;
 
       // refetch data
       onFetchAllContacts();
+
+      if (props.listId) {
+        emit('contactsDeleted');
+      }
     };
 
     const onSearchContactInput = () => {
