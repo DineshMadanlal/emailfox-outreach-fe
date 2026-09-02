@@ -17,7 +17,6 @@
         class="unibox-leads-left-section"
         :class="{ 'right--active': !!activeThreadId }"
         :style="{ height: pageHeight ? `${pageHeight}px` : '100%' }"
-        @scroll.passive="onScroll"
       >
         <!-- Unibox Header -->
         <UniboxHeader
@@ -76,7 +75,11 @@
         </UniboxHeader>
 
         <!-- Email List Container -->
-        <div class="unibox-email-list-wrapper hide-scrollbar">
+        <div
+          class="unibox-email-list-wrapper hide-scrollbar"
+
+          @scroll.passive="onScroll"
+        >
           <!-- No search results state when filters are applied -->
           <div
             v-if="emailList.length === 0 && !flags.isApiProcessing"
@@ -113,6 +116,7 @@
                 :isActive="email.contact_mapping_id === activeThreadId
                   || String(email.id) === activeThreadId"
                 :isSelected="isEmailSelected(email)"
+                :threadTypeConfig="threadTypeConfig"
 
                 @click="onClickEmailListItem(email)"
                 @toggle-star="onToggleStar(email)"
@@ -392,9 +396,10 @@ export default defineComponent({
               ctaRoute: '/unibox/inbox',
             },
             data: {
-              hideStar: true,
               isUntracked: true,
+              hideStarInHeader: true,
               hideReplyCategory: true,
+              hideStarInListItem: true,
             },
           };
 
@@ -408,7 +413,7 @@ export default defineComponent({
               ctaRoute: '/unibox/inbox',
             },
             data: {
-
+              hideStarInListItem: true,
             },
           };
 
@@ -422,7 +427,8 @@ export default defineComponent({
               ctaRoute: '/unibox/inbox',
             },
             data: {
-              hideStar: true,
+              hideStarInHeader: true,
+              hideStarInListItem: true,
             },
           };
 

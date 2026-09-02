@@ -4,8 +4,8 @@
     <Toolbar
       :hasPrev="hasPrevThread"
       :hasNext="hasNextThread"
-      :isStarred="isThreadStarred"
-      :isUnread="isThreadUnread"
+      :threadJson="threadJson"
+      :fetchedData="fetchedData"
       :threadTypeConfig="threadTypeConfig"
 
       @toggle-star="onToggleStar"
@@ -22,17 +22,16 @@
       <!-- Loading State -->
       <div
         v-if="isLoading || isFetchingMessages"
-        class="loading-container flex flex-center q-pa-xl"
+        class="loading-container flex flex-center"
       >
-        <q-spinner-dots
-          color="primary"
-          size="36px"
+        <ApiLoader
+          show
         />
       </div>
 
       <div
         v-else
-        class="conversation-content-wrapper q-pa-md"
+        class="conversation-content-wrapper"
       >
       </div>
     </div>
@@ -45,12 +44,12 @@ import {
   defineComponent,
   reactive,
   toRefs,
-  computed,
   watch,
   onMounted,
 } from 'vue';
 
 // components
+import ApiLoader from 'components/General/ApiLoader.vue';
 import Toolbar from 'components/Unibox/Conversation/Toolbar.vue';
 
 // utils
@@ -64,6 +63,7 @@ export default defineComponent({
 
   components: {
     Toolbar,
+    ApiLoader,
   },
 
   emits: [
@@ -104,10 +104,6 @@ export default defineComponent({
       fetchedData: null,
       isFetchingMessages: false,
     });
-
-    // computed
-    const isThreadStarred = computed(() => !!props.threadJson?.is_important);
-    const isThreadUnread = computed(() => !props.threadJson?.is_read);
 
     // methods
     // Fetch conversation message history for contact_mapping_id (tracked) or id (untracked)
@@ -172,10 +168,6 @@ export default defineComponent({
       // state
       ...toRefs(state),
 
-      // computed
-      isThreadStarred,
-      isThreadUnread,
-
       // methods
       onToggleStar,
       onMarkUnread,
@@ -194,6 +186,11 @@ export default defineComponent({
   .conversation-scroll-container {
     overflow-y: auto;
     background-color: #F8FAFC;
+
+    .loading-container {
+      position: relative;
+      padding: 60px 16px;
+    }
 
     .conversation-content-wrapper {
     }

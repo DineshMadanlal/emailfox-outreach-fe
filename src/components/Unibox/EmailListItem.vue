@@ -36,7 +36,7 @@
 
       <!-- Star / Important Button (Full-width mode only) -->
       <div
-        v-if="!compactView"
+        v-if="canStar &&!compactView"
         class="item-star-wrapper"
       >
         <q-btn
@@ -137,7 +137,7 @@
 
         <!-- Row 3: Badges (Category + Campaign) -->
         <div
-          v-if="replyCategoryName || campaignName"
+          v-if="replyCategoryName"
           class="compact-badges-row"
         >
           <!-- Category pill -->
@@ -153,16 +153,9 @@
           </div>
 
           <!-- Campaign pill -->
-          <div
-            v-if="campaignName"
-            class="pill-campaign-badge flex items-center no-wrap"
-          >
-            <LocalSvgIcon
-              image="sequence"
-              class="campaign-icon"
-            />
-            <span class="campaign-text ellipsis">{{ campaignName }}</span>
-          </div>
+          <CampaignPill
+            :seqId="emailJson.seq_id"
+          />
         </div>
       </div>
 
@@ -249,16 +242,9 @@
             </div>
 
             <!-- Campaign Badge -->
-            <div
-              v-if="campaignName"
-              class="pill-campaign-badge flex items-center no-wrap"
-            >
-              <LocalSvgIcon
-                image="sequence"
-                class="campaign-icon"
-              />
-              <span class="campaign-text ellipsis">{{ campaignName }}</span>
-            </div>
+            <CampaignPill
+              :seqId="emailJson.seq_id"
+            />
 
             <!-- Timestamp -->
             <span class="timestamp-text">
@@ -277,6 +263,7 @@ import { defineComponent, computed } from 'vue';
 
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
+import CampaignPill from 'components/Unibox/Components/CampaignPill.vue';
 
 // utils
 import { formateDateInAgo } from 'src/utils/dates';
@@ -306,6 +293,7 @@ export default defineComponent({
 
   components: {
     AppTooltip,
+    CampaignPill,
   },
 
   emits: ['click', 'toggle-star', 'toggle-select'],
@@ -328,9 +316,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    threadTypeConfig: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 
   setup(props) {
+    // store
     const uniboxPinia = useUniboxStore();
 
     // Unread state
@@ -417,24 +410,6 @@ export default defineComponent({
         || e.latest_subject;
     });
 
-    // Sequence / Campaign mapped by seq_id from store
-    const campaign = computed(() => {
-      const seqId = props.emailJson.seq_id;
-
-      if (!seqId) return null;
-      return uniboxPinia.getCampaignsList.find(
-        (camp) => camp.id === seqId,
-      ) || null;
-    });
-
-    const campaignName = computed(() => {
-      if (campaign.value) {
-        return campaign.value.name || '';
-      }
-
-      return '';
-    });
-
     // Reply Category mapped by reply_category_id from store
     const replyCategory = computed(() => {
       //
@@ -478,12 +453,15 @@ export default defineComponent({
       return formateDateInAgo(rawDate);
     });
 
+    // computed
+    const canStar = computed(() => !props.threadTypeConfig?.data?.hideStarInListItem);
+
     return {
       // computed
+      canStar,
       isUnread,
       isStarred,
       contactEmail,
-      campaignName,
       contactInitial,
       profilePicUrl,
       messagePreview,
@@ -630,10 +608,15 @@ export default defineComponent({
         display: flex;
         align-items: center;
 
-        .pill-reply-category,
-        .pill-campaign-badge {
-          .category-text,
+        :deep(.unibox-campaign-pill) {
           .campaign-text {
+            max-width: 120px;
+            font-size: 11px;
+          }
+        }
+
+        .pill-reply-category {
+          .category-text {
             max-width: 120px;
             font-size: 11px;
           }
@@ -813,6 +796,13 @@ export default defineComponent({
     }
   }
 
+  :deep(.unibox-campaign-pill) {
+    .campaign-text {
+      max-width: 160px;
+      font-size: 11px;
+    }
+  }
+
   .pill-reply-category {
     padding: 2px 8px;
     border-radius: 34px;
@@ -832,29 +822,6 @@ export default defineComponent({
       font-size: 13px;
       color: $black;
       max-width: 140px;
-      white-space: nowrap;
-    }
-  }
-
-  .pill-campaign-badge {
-    padding: 2px 8px;
-    border-radius: 34px;
-    background: $white;
-    border: 1px solid $grey-50;
-    gap: 6px;
-    flex-shrink: 0;
-
-    :deep(.campaign-icon) {
-      width: 13px;
-      height: 13px;
-      @include svg-icon-stroke('path, circle, rect', $grey);
-    }
-
-    .campaign-text {
-      font-size: 13px;
-      font-weight: 400;
-      color: $grey;
-      max-width: 160px;
       white-space: nowrap;
     }
   }
