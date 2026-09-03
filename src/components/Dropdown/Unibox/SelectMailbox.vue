@@ -1,16 +1,17 @@
 <template>
   <q-select
-    v-bind="$attrs"
     dense
     outlined
     clearable
     emit-value
     map-options
     options-dense
-    class="app-filter-dropdown unibox-filter-dropdown"
+
+    clear-icon="clear"
     menu-class="app-filter-dd-menu"
-    popup-content-class="app-filter-dd-menu"
     dropdown-icon="keyboard_arrow_down"
+    popup-content-class="app-filter-dd-menu"
+    class="app-filter-dropdown unibox-filter-dropdown"
     :class="{
       'show-placeholder': !internalValue,
     }"
@@ -20,7 +21,10 @@
     option-label="email"
     option-value="email"
     v-model="internalValue"
+
     @filter="onDropdownFilter"
+
+    v-bind="$attrs"
   >
     <!-- No option slot -->
     <template v-slot:no-option>

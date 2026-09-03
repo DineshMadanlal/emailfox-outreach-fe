@@ -6,14 +6,16 @@
   >
     <!-- Compose Editor Modal Dialog -->
     <q-dialog
-      :position="modals.composeEditorType.maximized ? 'standard' : 'bottom'"
-      :class="{ 'app-bottom-dialog': !modals.composeEditorType.maximized }"
       v-model="modals.showComposeEditor"
+
       :maximized="modals.composeEditorType.maximized"
       :persistent="modals.composeEditorType.persistent"
+      :position="modals.composeEditorType.maximized ? 'standard' : 'bottom'"
+      :class="{ 'app-bottom-dialog': !modals.composeEditorType.maximized }"
     >
-      <SkyBoxComposeEditor
+      <ComposeEditor
         :maximized="modals.composeEditorType.maximized"
+
         @onMaximize="handleComposeEditorResize"
         @onSuccessSentEmail="onSuccessSentEmail"
         @updatePersistentStatus="handleComposeEditorPersistentStatus"
@@ -38,7 +40,7 @@ import {
 } from 'vue';
 
 // components (reusing ComposeEditor for now)
-import SkyBoxComposeEditor from 'components/MasterInbox/Modals/ComposeEditor.vue';
+import ComposeEditor from 'components/Unibox/Modals/ComposeEditor.vue';
 
 // store pinia
 import { useUniboxStore } from 'src/stores/unibox.js';
@@ -53,7 +55,7 @@ export default defineComponent({
   name: 'UniboxMainIndex',
 
   components: {
-    SkyBoxComposeEditor,
+    ComposeEditor,
   },
 
   setup() {
@@ -67,6 +69,7 @@ export default defineComponent({
     const state = reactive({
       modals: {
         showComposeEditor: false,
+
         composeEditorType: {
           maximized: false,
           persistent: false,
