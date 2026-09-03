@@ -577,6 +577,8 @@ export default defineComponent({
             background-color: $white;
             transition: width 0.3s ease, max-width 0.3s ease;
 
+            min-height: 655px;
+
             &.mode-web {
               max-width: 655px;
             }
@@ -697,6 +699,8 @@ export default defineComponent({
           padding: 16px 12px;
 
           .email-preview-card-body {
+            min-height: unset !important;
+
             &.mode-web, &.mode-mobile {
               max-width: 100%;
             }

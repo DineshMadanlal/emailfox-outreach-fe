@@ -180,10 +180,13 @@
         <!-- Reply Category -->
         <div>
           <SelectReplyCategory
-            :options="[]"
+            :options="replyCategoriesList"
+            :modelValue="fetchedData.reply_category_id"
 
             placeholderText="Select Reply Category"
             class="medium-height reply-category-dd"
+
+            @update:modelValue="handleReplyCategoryUpdate"
           />
         </div>
       </div>
@@ -200,25 +203,29 @@ import AppTooltip from 'components/General/AppTooltip.vue';
 import CampaignPill from 'components/Unibox/Components/CampaignPill.vue';
 import SelectReplyCategory from 'src/components/Dropdown/Unibox/SelectReplyCategory.vue';
 
+// pinia
+import { useUniboxStore } from 'src/stores/unibox';
+
 export default defineComponent({
   name: 'UniboxConversationToolbar',
-
-  components: {
-    AppTooltip,
-    CampaignPill,
-    SelectReplyCategory,
-  },
 
   emits: [
     'toggle-star',
     'toggle-read',
     'delete',
+    'update:replyCategory',
 
     'view-activities',
     'prev-thread',
     'next-thread',
     'close',
   ],
+
+  components: {
+    AppTooltip,
+    CampaignPill,
+    SelectReplyCategory,
+  },
 
   props: {
     hasPrev: {
@@ -243,13 +250,18 @@ export default defineComponent({
     },
   },
 
-  setup(props) {
+  setup(props, { emit }) {
+    // store
+    const uniboxPinia = useUniboxStore();
+
     // computed
     const isUnread = computed(() => !props.threadJson?.is_read);
     const isStarred = computed(() => !!props.threadJson?.is_important);
 
     const canStar = computed(() => !props.threadTypeConfig?.data?.hideStarInHeader);
     const isUntrackedReply = computed(() => props.threadTypeConfig?.data?.isUntracked);
+
+    const replyCategoriesList = computed(() => uniboxPinia.getReplyCategoriesList);
 
     const contactDisplayName = computed(() => {
       const data = props.fetchedData;
@@ -266,6 +278,14 @@ export default defineComponent({
       return data.contact_email || '';
     });
 
+    // methods
+    const handleReplyCategoryUpdate = (newValue) => {
+      console.log('Reply category updated:', newValue);
+
+      // Emit the update event to the parent component
+      emit('update:replyCategory', newValue);
+    };
+
     // return
     return {
       // computed
@@ -274,6 +294,10 @@ export default defineComponent({
       isStarred,
       isUntrackedReply,
       contactDisplayName,
+      replyCategoriesList,
+
+      // methods
+      handleReplyCategoryUpdate,
     };
   },
 });
@@ -389,8 +413,34 @@ export default defineComponent({
       flex-wrap: wrap;
       gap: 12px;
 
-      .reply-category-dd {
+      :deep(.reply-category-dd) {
         min-width: 200px;
+
+        &.show-placeholder {
+          .q-field__native {
+            &::before {
+              color: $primary;
+            }
+          }
+        }
+
+        .q-field__control {
+          &::before {
+            background: rgba($color: var(--primary-rgb), $alpha: 0.1);
+            border-color: rgba($color: var(--primary-rgb), $alpha: 0.3);
+          }
+
+          i {
+            color: $primary;
+          }
+        }
+
+        .q-field__append {
+          [aria-label="Clear"] {
+            font-size: 18px;
+            color: $negative;
+          }
+        }
       }
     }
   }

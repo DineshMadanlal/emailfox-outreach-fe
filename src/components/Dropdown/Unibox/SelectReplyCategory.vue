@@ -9,10 +9,12 @@
     v-bind="$attrs"
     v-model="internalValue"
     :options="categoryOptions"
-    option-label="label"
+
     option-value="id"
-    class="app-filter-dropdown unibox-filter-dropdown"
+    clear-icon="clear"
+    option-label="label"
     dropdown-icon="keyboard_arrow_down"
+    class="app-filter-dropdown unibox-filter-dropdown"
     :class="{
       'show-placeholder': !internalValue,
     }"
@@ -24,9 +26,9 @@
         v-if="scope.opt"
         class="flex no-wrap items-center selected-item-container"
       >
-        <p class="selected-item-text ellipsis">
-          {{ scope.opt.label || scope.opt.name || scope.opt }}
-        </p>
+        <div class="selected-item-text ellipsis">
+          {{ scope.opt.name }}
+        </div>
       </div>
     </template>
 
@@ -34,8 +36,15 @@
     <template v-slot:option="{ itemProps, opt }">
       <q-item v-bind="itemProps">
         <q-item-section>
+          <div
+            :style="{
+              height: '12px', width: '12px', borderRadius: '50%',
+              backgroundColor: `var(--${opt.color}-color)`,
+            }"
+          >
+          </div>
           <q-item-label class="ellipsis">
-            {{ opt.label || opt.name || opt }}
+            {{ opt.name }}
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -44,7 +53,7 @@
     <!-- Empty state slot -->
     <template v-slot:no-option>
       <q-item>
-        <q-item-section class="text-grey text-caption">
+        <q-item-section class="text-black">
           No categories available
         </q-item-section>
       </q-item>

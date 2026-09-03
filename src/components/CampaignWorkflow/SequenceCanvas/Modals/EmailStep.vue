@@ -258,7 +258,14 @@ export default defineComponent({
       const currentWorkflowJson = { ...props.workflow };
 
       const updatedEmailVariants = [...props.emailVariants];
-      updatedEmailVariants[props.vIndex] = updatedVariantJson;
+      if (updatedEmailVariants[props.vIndex]) {
+        updatedEmailVariants[props.vIndex] = {
+          ...updatedEmailVariants[props.vIndex],
+          ...updatedVariantJson,
+        };
+      } else {
+        updatedEmailVariants[props.vIndex] = updatedVariantJson;
+      }
 
       const updatedWorkflowJson = {
         ...currentWorkflowJson,

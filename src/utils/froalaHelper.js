@@ -10,7 +10,7 @@ export const wrapVariable = (value) => {
     .replace('}}', '')
     .trim();
 
-  return `<span class="editor-token editor-token-variable" data-token-type="variable" data-variable="${variableName}" contenteditable="false">${value}</span>&nbsp;`;
+  return `<span class="editor-token editor-token-variable" data-token-type="variable" data-variable="${variableName}" contenteditable="false">${value}</span>`;
 };
 
 export const createTag = (tag, attrs, content = '') => {
@@ -66,7 +66,7 @@ export const wrapSpintax = (value = '{}') => {
     class: 'editor-token editor-token-spintax',
     'data-token-type': 'spintax',
     contenteditable: 'true',
-  }, `${startBraceHtml}${optionsHtml}${endBraceHtml}`)}&nbsp;`;
+  }, `${startBraceHtml}${optionsHtml}${endBraceHtml}`)}`;
 };
 
 export const highlightVariablesAndSpintax = (html = '') => {

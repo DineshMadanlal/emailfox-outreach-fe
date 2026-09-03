@@ -78,6 +78,8 @@
         flat
         no-caps
         unelevated
+
+        color="primary"
         class="filter-trigger-btn"
         :class="{ 'filters-active': areFiltersActive }"
       >
