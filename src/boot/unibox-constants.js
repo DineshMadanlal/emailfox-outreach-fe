@@ -17,10 +17,11 @@ export const UNIBOX_SIDEBAR_CLICK_EVENTS = {
   COMPOSE_EMAIL: 'COMPOSE_EMAIL',
 };
 
-// Email message type
+// Email message type / direction
 export const UNIBOX_EMAIL_TYPE = {
   SENT: 'SENT',
-  REPLY: 'REPLY',
+  RECEIVED: 'RECEIVED',
+  REPLY: 'RECEIVED',
 };
 
 // Outreach channel filter types
@@ -58,3 +59,12 @@ export const DEFAULT_UNIBOX_FILTERS = {
   reply_category_id: null,
   channel: null,
 };
+
+// Deterministic pastel color palettes for avatar boxes
+export const AVATAR_COLOR_PALETTES = [
+  { bg: '#EBF5FF', color: '#2563EB' }, // Blue
+  { bg: '#FFF4E6', color: '#D97706' }, // Amber
+  { bg: '#E8F8F0', color: '#059669' }, // Emerald
+  { bg: '#F3E8FF', color: '#7C3AED' }, // Purple
+  { bg: '#FFE4E6', color: '#E11D48' }, // Rose
+];

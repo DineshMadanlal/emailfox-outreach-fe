@@ -277,16 +277,7 @@ import { getBrandColorByName } from 'src/utils/quasarHelpers';
 
 // constants
 import { REPLY_SENTIMENT } from 'boot/campaign-constants';
-import { UNIBOX_CHANNEL_TYPE } from 'boot/unibox-constants';
-
-// Deterministic pastel color palettes for avatar boxes
-const AVATAR_COLOR_PALETTES = [
-  { bg: '#EBF5FF', color: '#2563EB' }, // Blue
-  { bg: '#FFF4E6', color: '#D97706' }, // Amber / Peach
-  { bg: '#E8F8F0', color: '#059669' }, // Emerald / Mint
-  { bg: '#F3E8FF', color: '#7C3AED' }, // Purple
-  { bg: '#FFE4E6', color: '#E11D48' }, // Rose
-];
+import { UNIBOX_CHANNEL_TYPE, AVATAR_COLOR_PALETTES } from 'boot/unibox-constants';
 
 export default defineComponent({
   name: 'UniboxEmailListItem',

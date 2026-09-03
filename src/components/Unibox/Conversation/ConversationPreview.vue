@@ -1,5 +1,11 @@
 <template>
-  <div class="unibox-conversation-preview">
+  <div
+    class="unibox-conversation-preview custom-scrollbar"
+  >
+    <q-intersection
+      @visibility="onVisibilityChange"
+    />
+
     <!-- Top Action Toolbar -->
     <Toolbar
       :hasPrev="hasPrevThread"
@@ -7,6 +13,8 @@
       :threadJson="threadJson"
       :fetchedData="fetchedData"
       :threadTypeConfig="threadTypeConfig"
+
+      :class="{ 'page-scrolled': isPageScrolled }"
 
       @toggle-star="onToggleStar"
       @toggle-read="onMarkUnread"
@@ -19,11 +27,13 @@
     />
 
     <!-- Main Container -->
-    <div class="conversation-scroll-container hide-scrollbar">
+    <div
+      class="conversation-scroll-container"
+    >
       <!-- Loading State -->
       <div
         v-if="isLoading || isFetchingMessages"
-        class="loading-container flex flex-center"
+        class="loading-container"
       >
         <ApiLoader
           show
@@ -34,6 +44,23 @@
         v-else
         class="conversation-content-wrapper"
       >
+        <template
+          v-for="(message, index) in conversationMessages"
+          :key="`conversation-preview-${index}-${message.id || message.message_id || ''}`"
+        >
+          <!-- Email Message Branch -->
+          <template v-if="isEmailMessage(message)">
+            <EmailMessageCard
+              :messageJson="message"
+              :contactData="fetchedData"
+              :defaultExpanded="index === conversationMessages.length - 1"
+            />
+          </template>
+
+          <!-- LinkedIn Message Branch -->
+          <template v-else-if="isLinkedInMessage(message)">
+          </template>
+        </template>
       </div>
     </div>
   </div>
@@ -42,16 +69,13 @@
 <script>
 // vue
 import {
-  defineComponent,
-  reactive,
-  toRefs,
-  watch,
-  onMounted,
+  defineComponent, reactive, toRefs, computed, watch, onMounted,
 } from 'vue';
 
 // components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import Toolbar from 'components/Unibox/Conversation/Toolbar.vue';
+import EmailMessageCard from 'components/Unibox/Conversation/MessageCards/EmailMessageCard.vue';
 
 // utils
 import {
@@ -59,12 +83,16 @@ import {
   fetchUniboxUntrackedParsedMessage,
 } from 'src/utils/unibox';
 
+// constants
+import { UNIBOX_CHANNEL_TYPE } from 'boot/unibox-constants';
+
 export default defineComponent({
   name: 'UniboxConversationPreview',
 
   components: {
     Toolbar,
     ApiLoader,
+    EmailMessageCard,
   },
 
   emits: [
@@ -105,6 +133,8 @@ export default defineComponent({
     const state = reactive({
       fetchedData: null,
       isFetchingMessages: false,
+
+      isPageScrolled: false,
     });
 
     // methods
@@ -164,6 +194,30 @@ export default defineComponent({
       emit('update:replyCategory', newValue);
     };
 
+    const onVisibilityChange = (isVisible) => {
+      state.isPageScrolled = !isVisible;
+    };
+
+    // Computed messages list from fetchedData
+    const conversationMessages = computed(() => {
+      if (!state.fetchedData) return [];
+      if (Array.isArray(state.fetchedData.messages)) {
+        return state.fetchedData.messages;
+      }
+      // Single message fallback (e.g. untracked parsed reply)
+      return [state.fetchedData];
+    });
+
+    // Helper condition checks for message channels
+    const isEmailMessage = (message) => (
+      !message?.step_type
+      || message.step_type === UNIBOX_CHANNEL_TYPE.EMAIL
+    );
+
+    const isLinkedInMessage = (message) => !!(
+      message?.step_type?.startsWith(UNIBOX_CHANNEL_TYPE.LINKEDIN)
+    );
+
     // lifecycle hooks
     watch(() => props.threadJson?.contact_mapping_id || props.threadJson?.id, () => {
       loadMessages();
@@ -177,10 +231,16 @@ export default defineComponent({
       // state
       ...toRefs(state),
 
+      // computed
+      conversationMessages,
+
       // methods
+      isEmailMessage,
+      isLinkedInMessage,
       onToggleStar,
       onMarkUnread,
       onViewActivities,
+      onVisibilityChange,
       handleReplyCategoryUpdate,
     };
   },
@@ -197,12 +257,21 @@ export default defineComponent({
     overflow-y: auto;
     background-color: #F8FAFC;
 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
     .loading-container {
       position: relative;
       padding: 60px 16px;
     }
 
     .conversation-content-wrapper {
+      padding: 20px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
   }
 }

@@ -306,16 +306,13 @@ export default defineComponent({
   width: 100%;
   padding: 20px;
 
-  // sm min
-  @media (min-width: $breakpoint-sm-min) {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
+  position: sticky;
+  top: 0;
+  z-index: 3;
 
-  &.scrolled {
-    background-color: $white;
-    border-bottom: 1px solid $grey-50;
+  &.page-scrolled {
+    background-color: #f9fafc;
+    // border-bottom: 1px solid $grey-50;
   }
 
   // top

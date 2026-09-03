@@ -170,6 +170,23 @@ export const fetchUniboxUntrackedParsedMessage = async ({ id }) => {
 };
 
 /**
+ * Fetches parsed message details for an email message
+ * @param {Object} options
+ * @param {number|string} options.messageId - ID of the message
+ * @returns {Promise<Object>} Parsed email details
+ */
+export const fetchUniboxParsedMessage = async ({ messageId }) => {
+  if (!messageId) {
+    throw new Error('Message ID is required to fetch parsed email');
+  }
+
+  return getApiCall({
+    endpoint: `/unibox/messages/${messageId}/parsed`,
+    includeWorkspace: true,
+  });
+};
+
+/**
  * Updates the important / starred status of an inbox conversation
  * @param {Object} options
  * @param {string} options.contactMappingId - UUID of the contact mapping

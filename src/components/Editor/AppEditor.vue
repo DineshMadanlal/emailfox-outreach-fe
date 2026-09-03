@@ -14,7 +14,7 @@
     <iframe
       v-else-if="useIframeToLoadContent"
       ref="nonEditableEmailRef"
-      :srcdoc="editorModelValue"
+      :srcdoc="iframeSrcDoc"
       frameborder="0"
       scrolling="no"
       class="email-editor-content iframe-editor"
@@ -221,7 +221,7 @@ export default defineComponent({
     },
     addExtraHeightForIframe: {
       type: Number,
-      default: 48,
+      default: 0,
     },
     hideToolbar: {
       /** If toolbar is not required however v-model is. */
@@ -315,36 +315,125 @@ export default defineComponent({
       }
     };
 
+    const SYSTEM_FONTS = [
+      '-apple-system',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      'Helvetica',
+      'Arial',
+      'sans-serif',
+    ].join(', ');
+
+    const iframeSrcDoc = computed(() => {
+      const rawHtml = editorModelValue.value || '';
+      if (!rawHtml) return '';
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      background: transparent;
+      font-family: ${SYSTEM_FONTS};
+      font-size: 14px;
+      line-height: 1.5;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    p {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    p:last-child {
+      margin-bottom: 0;
+    }
+    a, a * {
+      color: #2563eb;
+      text-decoration: underline;
+      pointer-events: none;
+      cursor: default;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    blockquote, .gmail_quote {
+      margin: 8px 0;
+      padding-left: 12px;
+      border-left: 2px solid #cbd5e1;
+      color: #64748b;
+    }
+    table {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>${rawHtml}</body>
+</html>`;
+    });
+
     const adjustIframeHeight = () => {
-      if (state.nonEditableEmailRef) {
-        const iframe = state.nonEditableEmailRef;
-        const contentDocument = iframe.contentWindow.document;
-        // Force body margin to 0 to get accurate scrollHeight
+      if (!state.nonEditableEmailRef) return;
+      const iframe = state.nonEditableEmailRef;
+
+      try {
+        const contentDocument = iframe.contentWindow?.document;
+        if (!contentDocument || !contentDocument.body) return;
+
+        // Force body and html margin/padding to 0 for exact measurement
         contentDocument.body.style.margin = '0';
+        contentDocument.body.style.padding = '0';
+        contentDocument.documentElement.style.margin = '0';
+        contentDocument.documentElement.style.padding = '0';
 
-        // Reset height to avoid accumulation issues
-        state.nonEditableEmailRef.style.height = '0px';
-        state.nonEditableEmailRef.style.minHeight = '0px';
+        // Reset height before measuring to avoid stale accumulation
+        iframe.style.height = '0px';
 
-        // Correct calculation using parentheses
-        const newHeight = contentDocument.documentElement.scrollHeight
-          + (props.addExtraHeightForIframe || 0);
+        // Calculate exact content height
+        const bodyHeight = contentDocument.body.offsetHeight
+          || contentDocument.body.scrollHeight
+          || 0;
+        const docHeight = contentDocument.documentElement.scrollHeight || 0;
+        const scrollHeight = Math.max(bodyHeight, docHeight);
+        const extra = props.addExtraHeightForIframe || 0;
+        const calculatedHeight = Math.max(scrollHeight + extra, 20);
 
-        if (newHeight < 60) {
-          // Set a minimum height to avoid collapsing
-          state.nonEditableEmailRef.style.minHeight = '60px';
-        } else {
-          // Set the updated height
-          state.nonEditableEmailRef.style.height = `${newHeight + 20}px`;
+        iframe.style.height = `${calculatedHeight}px`;
+
+        // Prevent click navigation on all links inside the iframe
+        const links = contentDocument.getElementsByTagName('a');
+        for (let i = 0; i < links.length; i += 1) {
+          links[i].addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          });
         }
 
-        contentDocument.body.style.font = '14px/1.4 Inter, sans-serif';
-
-        // Ensure all links open in a new tab
-        const links = contentDocument.getElementsByTagName('a');
-        Array.from(links).forEach((eachLink) => {
-          eachLink.setAttribute('target', '_blank');
-        });
+        // Attach listener for images loading dynamically
+        const images = contentDocument.getElementsByTagName('img');
+        for (let i = 0; i < images.length; i += 1) {
+          if (!images[i].complete) {
+            images[i].addEventListener('load', () => {
+              adjustIframeHeight();
+            }, { once: true });
+          }
+        }
+      } catch (err) {
+        // Fallback for cross-origin or detached iframe
       }
     };
 
@@ -656,6 +745,7 @@ export default defineComponent({
       // computed
       componentUid,
       editorModelValue,
+      iframeSrcDoc,
       personalisationIssues,
       showPersonalisationError,
 
@@ -751,8 +841,8 @@ export default defineComponent({
     width: 100%;
     border: 0px;
     overflow: hidden;
-
     min-height: unset;
+    display: block;
   }
 
   /* loader */

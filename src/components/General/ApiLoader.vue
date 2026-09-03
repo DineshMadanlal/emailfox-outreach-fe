@@ -38,5 +38,6 @@ export default defineComponent({
 /* Scoped style if any custom styling is required */
 .app-api-loader {
   z-index: 2;
+  background: inherit;
 }
 </style>

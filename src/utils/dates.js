@@ -228,3 +228,30 @@ export const formatUTCDate = (dateInput) => {
 };
 
 export const isExpiredDate = (expiresOn) => new Date(expiresOn) < new Date();
+
+/**
+ * Formats a date string into a readable date and 12-hour time format
+ * Example output: "29 Jul 2026, 8:42 AM"
+ * @param {string|Date} rawDate
+ * @returns {string}
+ */
+export const formatMessageDateTime = (rawDate) => {
+  if (!rawDate) return '';
+
+  const dateObj = new Date(rawDate);
+  if (Number.isNaN(dateObj.getTime())) return '';
+
+  const datePart = dateObj.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  const timePart = dateObj.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  return `${datePart}, ${timePart}`;
+};
