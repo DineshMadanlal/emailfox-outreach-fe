@@ -166,6 +166,7 @@
           @next-thread="onNextThread"
           @toggle-star="onToggleStar"
           @toggle-read="onToggleReadStatus"
+          @update:reply-category="handleReplyCategoryUpdate"
         />
       </div>
 
@@ -186,11 +187,14 @@
             :replyCategories="replyCategoriesList"
             :hasPrevThread="hasPrevThread"
             :hasNextThread="hasNextThread"
+            :threadTypeConfig="threadTypeConfig"
+
             @close="onCloseEmailPreview"
             @prev-thread="onPrevThread"
             @next-thread="onNextThread"
             @toggle-star="onToggleStar"
             @toggle-read="onToggleReadStatus"
+            @update:reply-category="handleReplyCategoryUpdate"
           />
         </q-card>
       </q-dialog>
@@ -235,6 +239,7 @@ import {
   updateUniboxThreadImportantStatus,
   updateUniboxThreadReadStatus,
   updateUniboxUntrackedReadStatus,
+  updateUniboxThreadReplyCategory,
 } from 'src/utils/unibox';
 import { getNumeralAmount } from 'src/utils/numbers';
 
@@ -769,6 +774,45 @@ export default defineComponent({
       }
     };
 
+    // Update reply category for the active conversation thread
+    const handleReplyCategoryUpdate = async (newCategoryId) => {
+      const activeItem = activeThread.value;
+      if (!activeItem) return;
+
+      const mappingId = activeItem.contact_mapping_id;
+      if (!mappingId) return;
+
+      const previousCategoryId = activeItem.reply_category_id;
+      const clearCategory = !newCategoryId;
+
+      // Optimistic local update in thread list
+      updateThreadInListById(mappingId, {
+        reply_category_id: newCategoryId || null,
+      });
+
+      try {
+        const response = await updateUniboxThreadReplyCategory({
+          contactMappingId: mappingId,
+          replyCategoryId: newCategoryId || null,
+          clearReplyCategory: clearCategory,
+        });
+
+        if (response?.data) {
+          updateThreadInListById(mappingId, response.data);
+        }
+      } catch (error) {
+        // Revert local update on error
+        updateThreadInListById(mappingId, {
+          reply_category_id: previousCategoryId,
+        });
+
+        appContext.config.globalProperties.$toast?.({
+          warning: true,
+          message: error.message || 'Failed to update reply category',
+        });
+      }
+    };
+
     // Select email item & navigate to thread route
     const onClickEmailListItem = (email) => {
       const threadId = email.id || email.contact_mapping_id;
@@ -951,6 +995,7 @@ export default defineComponent({
       onToggleStar,
       onToggleReadStatus,
       onUpdateReadStatus,
+      handleReplyCategoryUpdate,
       onClickEmailListItem,
       onCloseEmailPreview,
       onPrevThread,

@@ -181,7 +181,7 @@
         <div>
           <SelectReplyCategory
             :options="replyCategoriesList"
-            :modelValue="fetchedData.reply_category_id"
+            :modelValue="threadJson.reply_category_id"
 
             placeholderText="Select Reply Category"
             class="medium-height reply-category-dd"
@@ -280,8 +280,6 @@ export default defineComponent({
 
     // methods
     const handleReplyCategoryUpdate = (newValue) => {
-      console.log('Reply category updated:', newValue);
-
       // Emit the update event to the parent component
       emit('update:replyCategory', newValue);
     };
@@ -308,9 +306,17 @@ export default defineComponent({
   width: 100%;
   padding: 20px;
 
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  // sm min
+  @media (min-width: $breakpoint-sm-min) {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  &.scrolled {
+    background-color: $white;
+    border-bottom: 1px solid $grey-50;
+  }
 
   // top
   .unibox-toolbar-top {

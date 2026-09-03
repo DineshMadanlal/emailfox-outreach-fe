@@ -24,9 +24,21 @@
     <template v-slot:selected-item="scope">
       <div
         v-if="scope.opt"
-        class="flex no-wrap items-center selected-item-container"
+        class="flex no-wrap items-center q-gutter-sm selected-item-container"
+
+        :title="scope.opt.name"
       >
-        <div class="selected-item-text ellipsis">
+        <div
+          :style="{
+            height: '8px', minWidth: '8px', borderRadius: '50%',
+            backgroundColor: getCategoryColor(scope.opt.sentiment),
+          }"
+        >
+        </div>
+
+        <div
+          class="selected-item-text ellipsis"
+        >
           {{ scope.opt.name }}
         </div>
       </div>
@@ -36,16 +48,18 @@
     <template v-slot:option="{ itemProps, opt }">
       <q-item v-bind="itemProps">
         <q-item-section>
-          <div
-            :style="{
-              height: '12px', width: '12px', borderRadius: '50%',
-              backgroundColor: `var(--${opt.color}-color)`,
-            }"
-          >
+          <div class="flex no-wrap items-center q-gutter-sm">
+            <div
+              :style="{
+                height: '8px', width: '8px', borderRadius: '50%',
+                backgroundColor: getCategoryColor(opt.sentiment),
+              }"
+            >
+            </div>
+            <div class="ellipsis">
+              {{ opt.name }}
+            </div>
           </div>
-          <q-item-label class="ellipsis">
-            {{ opt.name }}
-          </q-item-label>
         </q-item-section>
       </q-item>
     </template>
@@ -64,6 +78,9 @@
 <script>
 // vue
 import { defineComponent, computed } from 'vue';
+
+// constants
+import { REPLY_SENTIMENT } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'SelectReplyCategory',
@@ -103,10 +120,21 @@ export default defineComponent({
       return props.options;
     });
 
+    const getCategoryColor = (sentiment) => {
+      if (REPLY_SENTIMENT[sentiment]) {
+        return `var(--${REPLY_SENTIMENT[sentiment].color}-color)`;
+      }
+
+      return 'var(--warning-color)';
+    };
+
     return {
       // computed
       internalValue,
       categoryOptions,
+
+      // methods
+      getCategoryColor,
     };
   },
 });
@@ -117,7 +145,7 @@ export default defineComponent({
 
   .selected-item-container {
     width: 100%;
-    max-width: 130px;
+    max-width: 160px;
 
     .selected-item-text {
       color: $black;

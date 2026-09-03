@@ -137,7 +137,7 @@
 
         <!-- Row 3: Badges (Category + Campaign) -->
         <div
-          v-if="replyCategoryName"
+          v-if="replyCategoryName || emailJson.seq_id"
           class="compact-badges-row"
         >
           <!-- Category pill -->

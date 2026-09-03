@@ -15,6 +15,7 @@
       @close="$emit('close')"
       @prev-thread="$emit('prev-thread')"
       @next-thread="$emit('next-thread')"
+      @update:reply-category="handleReplyCategoryUpdate"
     />
 
     <!-- Main Container -->
@@ -73,6 +74,7 @@ export default defineComponent({
     'update-category',
     'toggle-star',
     'toggle-read',
+    'update:replyCategory',
   ],
 
   props: {
@@ -155,6 +157,13 @@ export default defineComponent({
       // Activities panel toggle
     };
 
+    const handleReplyCategoryUpdate = async (newValue) => {
+      if (state.fetchedData) {
+        state.fetchedData.reply_category_id = newValue;
+      }
+      emit('update:replyCategory', newValue);
+    };
+
     // lifecycle hooks
     watch(() => props.threadJson?.contact_mapping_id || props.threadJson?.id, () => {
       loadMessages();
@@ -172,6 +181,7 @@ export default defineComponent({
       onToggleStar,
       onMarkUnread,
       onViewActivities,
+      handleReplyCategoryUpdate,
     };
   },
 });
