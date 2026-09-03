@@ -111,6 +111,8 @@
             <span
               class="contact-name-text ellipsis"
               :class="{ 'text-unread': isUnread }"
+
+              :title="contactEmail"
             >
               {{ contactEmail }}
             </span>
@@ -130,6 +132,8 @@
           <p
             class="subject-snippet-text ellipsis"
             :class="{ 'text-unread': isUnread }"
+
+            :title="messagePreview"
           >
             {{ messagePreview }}
           </p>
@@ -149,7 +153,12 @@
               class="category-status-dot"
               :style="{ backgroundColor: replyCategoryDotColor }"
             />
-            <span class="category-text ellipsis">{{ replyCategoryName }}</span>
+            <span
+              class="category-text ellipsis"
+              :title="replyCategoryName"
+            >
+              {{ replyCategoryName }}
+            </span>
           </div>
 
           <!-- Campaign pill -->
@@ -191,6 +200,7 @@
               <span
                 class="contact-name-text ellipsis"
                 :class="{ 'text-unread': isUnread }"
+                :title="contactEmail"
               >
                 {{ contactEmail }}
               </span>
@@ -238,7 +248,12 @@
                 class="category-status-dot"
                 :style="{ backgroundColor: replyCategoryDotColor }"
               />
-              <span class="category-text ellipsis">{{ replyCategoryName }}</span>
+              <span
+                class="category-text ellipsis"
+                :title="replyCategoryName"
+              >
+                {{ replyCategoryName }}
+              </span>
             </div>
 
             <!-- Campaign Badge -->

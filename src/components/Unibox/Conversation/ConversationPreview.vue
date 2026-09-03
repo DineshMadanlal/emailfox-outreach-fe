@@ -59,6 +59,11 @@
 
           <!-- LinkedIn Message Branch -->
           <template v-else-if="isLinkedInMessage(message)">
+            <LinkedInMessageCard
+              :messageJson="message"
+              :contactData="fetchedData"
+              :defaultExpanded="index === conversationMessages.length - 1"
+            />
           </template>
         </template>
       </div>
@@ -76,6 +81,7 @@ import {
 import ApiLoader from 'components/General/ApiLoader.vue';
 import Toolbar from 'components/Unibox/Conversation/Toolbar.vue';
 import EmailMessageCard from 'components/Unibox/Conversation/MessageCards/EmailMessageCard.vue';
+import LinkedInMessageCard from 'components/Unibox/Conversation/MessageCards/LinkedInMessageCard.vue';
 
 // utils
 import {
@@ -93,6 +99,7 @@ export default defineComponent({
     Toolbar,
     ApiLoader,
     EmailMessageCard,
+    LinkedInMessageCard,
   },
 
   emits: [
