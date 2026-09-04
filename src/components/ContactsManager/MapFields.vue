@@ -132,9 +132,10 @@ export default defineComponent({
       state.mappedCsvHeaders = [];
 
       const csvHeaders = props.csvDataJson.csvHeaders || [];
+      const assignedSystemFields = new Set();
 
-      // normalizeString system field lookup
-      const normalizeStringdSystemFields = Object.entries(SYSTEM_FIELD_ALIASES).flatMap(
+      // Normalized system field lookup
+      const normalizedSystemFields = Object.entries(SYSTEM_FIELD_ALIASES).flatMap(
         ([systemField, aliases]) => aliases.map((alias) => ({
           alias: normalizeString(alias),
           systemField,
@@ -144,12 +145,13 @@ export default defineComponent({
       csvHeaders.forEach((header, headerIndex) => {
         const normHeader = normalizeString(header);
 
-        const match = normalizeStringdSystemFields.find(
-          (entry) => normHeader.includes(entry.alias) || entry.alias.includes(normHeader),
+        const match = normalizedSystemFields.find(
+          (entry) => entry.alias === normHeader && !assignedSystemFields.has(entry.systemField),
         );
 
         if (match) {
           state.mappedCsvHeaders[headerIndex] = match.systemField;
+          assignedSystemFields.add(match.systemField);
         } else {
           state.mappedCsvHeaders[headerIndex] = CUSTOM_FIELD.value;
         }
