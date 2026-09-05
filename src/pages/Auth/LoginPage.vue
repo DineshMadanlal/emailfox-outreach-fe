@@ -84,6 +84,7 @@ export default defineComponent({
     };
 
     const handleMessage = async (event) => {
+      console.log('login event', event);
       if (event.data?.type !== 'EMAILFOX_SSO') {
         return;
       }

@@ -8,6 +8,16 @@
       <div class="text-h2" style="opacity:.4">
         Oops. Nothing here...
       </div>
+
+      <!-- Home link -->
+      <q-btn
+        no-caps
+        unelevated
+
+        to="/outreach"
+        class="q-mt-md"
+        label="Back Home"
+      />
     </div>
   </div>
 </template>
