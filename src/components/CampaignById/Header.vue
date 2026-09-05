@@ -140,6 +140,7 @@
             @cloneCampaign="onCloneCampaign"
             @renameCampaign="onRenameCampaign"
             @pauseCampaign="onPauseCampaign"
+            @resumeCampaign="handleResumeCampaign"
             @archiveCampaign="showArchiveCampaignModal = true"
           />
         </q-btn>
@@ -239,7 +240,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { getNumeralAmount } from 'src/utils/numbers.js';
-import { pauseCampaignById, cloneCampaignById } from 'src/utils/campaignApi.js';
+import { pauseCampaignById, cloneCampaignById, startCampaignById } from 'src/utils/campaignApi.js';
 
 // constants
 import { CAMPAIGN_STATUS } from 'src/boot/campaign-constants';
@@ -410,6 +411,30 @@ export default defineComponent({
       }
     };
 
+    const handleResumeCampaign = async () => {
+      const oldStatus = props.campaignByIdJson.status;
+
+      // update the campaign status in the parent component
+      emit('onUpdateCampaign', {
+        ...props.campaignByIdJson,
+        status: CAMPAIGN_STATUS.ACTIVE.value,
+      });
+
+      // try catch is handled in the api function
+      const response = await startCampaignById({
+        campaignId: props.campaignByIdJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (!response) {
+        // update the campaign status in the parent component
+        emit('onUpdateCampaign', {
+          ...props.campaignByIdJson,
+          status: oldStatus,
+        });
+      }
+    };
+
     return {
       // state
       ...toRefs(state),
@@ -424,6 +449,7 @@ export default defineComponent({
       onRenameCampaign,
       onUpdateCampaign,
       onPauseCampaign,
+      handleResumeCampaign,
       onSuccessfulArchiveCampaign,
     };
   },

@@ -1,11 +1,3 @@
-.app-forward-editor {
-  .gmail_quote_wrapper {
-    .gmail_quote_content {
-      display: block !important;
-    }
-  }
-}
-
 // .fr-popup .fr-checkbox input:checked+span {
 //   background: $primary !important;
 //   border: 2px solid $primary !important;
@@ -228,23 +220,6 @@
         max-width: unset;
       }
 
-      .gmail_quote_content {
-        color: #500050;
-
-        blockquote {
-          color: #500050;
-          margin: 0px 0px 0px 0.8ex;
-          border-left: 1px solid rgb(204, 204, 204);
-          padding-left: 1ex;
-        }
-
-        .gmail_quote_wrapper {
-          .gmail_quote_content {
-            display: block !important;
-          }
-        }
-      }
-
       span[data-token-type="variable"] {
         color: $primary;
         font-size: 13px;
@@ -293,49 +268,6 @@
         user-select: text;
         margin: 0px 2px;
         color: $primary;
-      }
-
-      .gmail_quote_wrapper {
-        margin-top: 12px;
-        font-size: 14px;
-        color: #444;
-
-        /* Clear-dot fallback for better visibility (optional) */
-        .show-trimmed-button {
-          border: none;
-          width: 24px;
-          height: 11px;
-          cursor: pointer;
-          pointer-events: none;
-          border-radius: 5.5px;
-          background-color: rgb(232, 234, 237);
-
-          pointer-events: auto;
-          user-select: none;
-          caret-color: transparent;
-
-          &:hover {
-            background-color: rgb(218, 220, 224);
-          }
-
-          .ss-clear-dot {
-            pointer-events: none;
-            user-select: none;
-
-            background-size: 21px;
-            background-position: bottom;
-            background-repeat: no-repeat;
-
-            width: 24px;
-            height: 15px;
-            background-image: url(https://www.gstatic.com/images/icons/material/system_gm/2x/more_horiz_black_20dp.png);
-          }
-
-          /* Hidden quote content */
-          .trimmed-content {
-            font-size: 13px;
-          }
-        }
       }
     }
   }

@@ -164,6 +164,8 @@
           <!-- Campaign pill -->
           <CampaignPill
             :seqId="emailJson.seq_id"
+
+            v-if="emailJson.seq_id"
           />
         </div>
       </div>
@@ -259,6 +261,8 @@
             <!-- Campaign Badge -->
             <CampaignPill
               :seqId="emailJson.seq_id"
+
+              v-if="emailJson.seq_id"
             />
 
             <!-- Timestamp -->

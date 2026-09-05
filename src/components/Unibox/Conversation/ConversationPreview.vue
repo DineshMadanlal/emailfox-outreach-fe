@@ -54,6 +54,9 @@
               :messageJson="message"
               :contactData="fetchedData"
               :defaultExpanded="index === conversationMessages.length - 1"
+
+              @reply="handleEmailReply"
+              @forward="handleEmailForward"
             />
           </template>
 
@@ -68,6 +71,43 @@
         </template>
       </div>
     </div>
+    <!-- Reply Editor Modal Dialog -->
+    <q-dialog
+      v-model="modals.showReplyEditor"
+      :maximized="modals.replyEditorType.maximized"
+      :persistent="modals.replyEditorType.persistent"
+      :position="modals.replyEditorType.maximized ? 'standard' : 'bottom'"
+      :class="{ 'app-bottom-dialog': !modals.replyEditorType.maximized }"
+    >
+      <ReplyEditor
+        :maximized="modals.replyEditorType.maximized"
+        :messageJson="activeReplyMessage"
+        :threadJson="threadJson"
+        :contactData="fetchedData"
+        @onMaximize="handleReplyEditorResize"
+        @onSuccessReply="onSuccessReply"
+        @updatePersistentStatus="handleReplyEditorPersistentStatus"
+      />
+    </q-dialog>
+
+    <!-- Forward Editor Modal Dialog -->
+    <q-dialog
+      v-model="modals.showForwardEditor"
+      :maximized="modals.forwardEditorType.maximized"
+      :persistent="modals.forwardEditorType.persistent"
+      :position="modals.forwardEditorType.maximized ? 'standard' : 'bottom'"
+      :class="{ 'app-bottom-dialog': !modals.forwardEditorType.maximized }"
+    >
+      <ForwardEditor
+        :maximized="modals.forwardEditorType.maximized"
+        :messageJson="activeForwardMessage"
+        :threadJson="threadJson"
+        :contactData="fetchedData"
+        @onMaximize="handleForwardEditorResize"
+        @onSuccessForward="onSuccessForward"
+        @updatePersistentStatus="handleForwardEditorPersistentStatus"
+      />
+    </q-dialog>
   </div>
 </template>
 
@@ -75,13 +115,15 @@
 // vue
 import {
   defineComponent, reactive, toRefs, computed, watch, onMounted,
+  defineAsyncComponent,
 } from 'vue';
 
 // components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import Toolbar from 'components/Unibox/Conversation/Toolbar.vue';
 import EmailMessageCard from 'components/Unibox/Conversation/MessageCards/EmailMessageCard.vue';
-import LinkedInMessageCard from 'components/Unibox/Conversation/MessageCards/LinkedInMessageCard.vue';
+import LinkedInMessageCard from
+  'components/Unibox/Conversation/MessageCards/LinkedInMessageCard.vue';
 
 // utils
 import {
@@ -100,6 +142,12 @@ export default defineComponent({
     ApiLoader,
     EmailMessageCard,
     LinkedInMessageCard,
+    ReplyEditor: defineAsyncComponent(
+      () => import('components/Unibox/Modals/ReplyEditor.vue'),
+    ),
+    ForwardEditor: defineAsyncComponent(
+      () => import('components/Unibox/Modals/ForwardEditor.vue'),
+    ),
   },
 
   emits: [
@@ -110,6 +158,8 @@ export default defineComponent({
     'toggle-star',
     'toggle-read',
     'update:replyCategory',
+    'onSuccessReply',
+    'onSuccessForward',
   ],
 
   props: {
@@ -140,8 +190,23 @@ export default defineComponent({
     const state = reactive({
       fetchedData: null,
       isFetchingMessages: false,
-
       isPageScrolled: false,
+
+      // Modal dialogs state
+      modals: {
+        showReplyEditor: false,
+        replyEditorType: {
+          maximized: false,
+          persistent: false,
+        },
+        showForwardEditor: false,
+        forwardEditorType: {
+          maximized: false,
+          persistent: false,
+        },
+      },
+      activeReplyMessage: null,
+      activeForwardMessage: null,
     });
 
     // methods
@@ -225,6 +290,54 @@ export default defineComponent({
       message?.step_type?.startsWith(UNIBOX_CHANNEL_TYPE.LINKEDIN)
     );
 
+    // Reply trigger: open ReplyEditor with active message context
+    const handleEmailReply = (messageJson) => {
+      state.activeReplyMessage = messageJson;
+      state.modals.showReplyEditor = true;
+    };
+
+    // Callback on successful email reply: close modal and reload conversation
+    const onSuccessReply = () => {
+      state.modals.showReplyEditor = false;
+      loadMessages();
+      emit('onSuccessReply');
+    };
+
+    // Toggle full-screen / maximized modal view
+    const handleReplyEditorResize = () => {
+      const isMax = state.modals.replyEditorType.maximized;
+      state.modals.replyEditorType.maximized = !isMax;
+    };
+
+    // Keep modal open if user has draft content
+    const handleReplyEditorPersistentStatus = (status) => {
+      state.modals.replyEditorType.persistent = status;
+    };
+
+    // Forward trigger: open ForwardEditor with active message context
+    const handleEmailForward = (messageJson) => {
+      state.activeForwardMessage = messageJson;
+      state.modals.showForwardEditor = true;
+    };
+
+    // Callback on successful email forward: close modal and reload conversation
+    const onSuccessForward = () => {
+      state.modals.showForwardEditor = false;
+      loadMessages();
+      emit('onSuccessForward');
+    };
+
+    // Toggle full-screen / maximized modal view for forward editor
+    const handleForwardEditorResize = () => {
+      const isMax = state.modals.forwardEditorType.maximized;
+      state.modals.forwardEditorType.maximized = !isMax;
+    };
+
+    // Keep forward modal open if user has draft content
+    const handleForwardEditorPersistentStatus = (status) => {
+      state.modals.forwardEditorType.persistent = status;
+    };
+
     // lifecycle hooks
     watch(() => props.threadJson?.contact_mapping_id || props.threadJson?.id, () => {
       loadMessages();
@@ -249,6 +362,16 @@ export default defineComponent({
       onViewActivities,
       onVisibilityChange,
       handleReplyCategoryUpdate,
+
+      handleEmailReply,
+      onSuccessReply,
+      handleReplyEditorResize,
+      handleReplyEditorPersistentStatus,
+
+      handleEmailForward,
+      onSuccessForward,
+      handleForwardEditorResize,
+      handleForwardEditorPersistentStatus,
     };
   },
 });

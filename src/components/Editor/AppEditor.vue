@@ -371,7 +371,7 @@ export default defineComponent({
       max-width: 100%;
       height: auto;
     }
-    blockquote, .gmail_quote {
+    blockquote {
       margin: 8px 0;
       padding-left: 12px;
       border-left: 2px solid #cbd5e1;

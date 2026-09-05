@@ -174,6 +174,8 @@
         <div>
           <CampaignPill
             :seqId="threadJson?.seq_id"
+
+            v-if="threadJson?.seq_id"
           />
         </div>
 

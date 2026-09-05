@@ -57,8 +57,8 @@
         <!-- 3. Bottom Footer Action Bar -->
         <MessageCardFooter
           v-if="isExpanded"
-          @reply="$emit('reply', messageJson)"
-          @forward="$emit('forward', messageJson)"
+          @reply="handleEmailReply"
+          @forward="handleEmailForward"
         />
       </div>
     </div>
@@ -274,6 +274,20 @@ export default defineComponent({
       emit('toggle-expand', false);
     };
 
+    const handleEmailReply = () => {
+      emit('reply', {
+        ...props.messageJson,
+        ...(state.parsedData ? { parsedData: state.parsedData } : {}),
+      });
+    };
+
+    const handleEmailForward = () => {
+      emit('forward', {
+        ...props.messageJson,
+        ...(state.parsedData ? { parsedData: state.parsedData } : {}),
+      });
+    };
+
     // Watch defaultExpanded prop
     watch(
       () => props.defaultExpanded,
@@ -323,6 +337,8 @@ export default defineComponent({
       toggleExpand,
       loadParsedContent,
       toggleQuotedText,
+      handleEmailReply,
+      handleEmailForward,
     };
   },
 });

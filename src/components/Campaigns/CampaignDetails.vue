@@ -90,6 +90,7 @@
         @cloneCampaign="onCloneCampaign"
         @renameCampaign="onRenameCampaign"
         @pauseCampaign="onPauseCampaign"
+        @resumeCampaign="handleResumeCampaign"
         @archiveCampaign="$emit('archiveCampaign')"
       />
     </q-btn>
@@ -114,7 +115,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { formatDate2 } from 'src/utils/dates';
-import { pauseCampaignById, cloneCampaignById } from 'src/utils/campaignApi.js';
+import { pauseCampaignById, cloneCampaignById, startCampaignById } from 'src/utils/campaignApi.js';
 
 // constants
 import { CAMPAIGN_TYPES, CAMPAIGN_STATUS } from 'src/boot/campaign-constants';
@@ -217,6 +218,30 @@ export default defineComponent({
       }
     };
 
+    const handleResumeCampaign = async () => {
+      const oldStatus = props.tableRowJson.status;
+
+      // update the campaign status in the parent component
+      emit('onUpdateCampaign', {
+        ...props.tableRowJson,
+        status: CAMPAIGN_STATUS.ACTIVE.value,
+      });
+
+      // try catch is handled in the api function
+      const response = await startCampaignById({
+        campaignId: props.tableRowJson.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (!response) {
+        // update the campaign status in the parent component
+        emit('onUpdateCampaign', {
+          ...props.tableRowJson,
+          status: oldStatus,
+        });
+      }
+    };
+
     const onCloneCampaign = async () => {
       showQuasarLoader();
 
@@ -248,6 +273,7 @@ export default defineComponent({
       onRenameCampaign,
       onCloneCampaign,
       onPauseCampaign,
+      handleResumeCampaign,
     };
   },
 });
