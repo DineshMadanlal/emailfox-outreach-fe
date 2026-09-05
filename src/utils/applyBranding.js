@@ -15,8 +15,6 @@ export const isMainApp = () => {
   try {
     const { hostname } = window.parent.location;
 
-    console.log('Hostname:', hostname);
-
     return hostname === 'icemail.ai'
       || hostname.endsWith('.icemail.ai')
       || hostname === 'outreachfox.ai'
@@ -24,7 +22,6 @@ export const isMainApp = () => {
       || hostname === 'emailfox.ai'
       || hostname.endsWith('.emailfox.ai');
   } catch (error) {
-    console.error('Error accessing parent window location:', error);
     return false;
   }
 };
