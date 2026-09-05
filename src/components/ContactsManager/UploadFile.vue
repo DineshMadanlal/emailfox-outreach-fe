@@ -262,7 +262,7 @@ export default defineComponent({
       csvData: null,
       csvHeaders: [],
 
-      mergeStrategy: CONTACT_IMPORT_CONFLICT_ACTION.SKIP.value,
+      mergeStrategy: CONTACT_IMPORT_CONFLICT_ACTION.MERGE.value,
 
       selectListRef: null,
       importCsvFileInputRef: null,
