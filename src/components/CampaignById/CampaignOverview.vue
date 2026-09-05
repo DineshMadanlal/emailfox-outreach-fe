@@ -116,7 +116,6 @@ export default defineComponent({
 
     .overview-title-text {
       color: $black;
-      font-family: Inter;
       font-size: 16px;
       font-style: normal;
       font-weight: 600;

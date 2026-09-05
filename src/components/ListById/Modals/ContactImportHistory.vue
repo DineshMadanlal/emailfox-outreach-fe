@@ -52,7 +52,7 @@
           virtual-scroll
           v-model:pagination="tableState.pagination"
           separator="cell"
-          class="app-table import-history-table app-paginated-table app-table-rows-fixed"
+          class="app-table import-history-table app-paginated-table app-table-rows-fixed no-cursor"
           :rows="tableState.data"
           :columns="tableColumns"
           :loading="loaders.isFetchApi"
@@ -76,6 +76,27 @@
                     {{ getFileSubtitle(props.row) }}
                   </div>
                 </div>
+              </div>
+            </q-td>
+          </template>
+
+          <!-- Import Strategy Column -->
+          <template v-slot:body-cell-import_strategy="props">
+            <q-td :props="props">
+              <div class="flex no-wrap items-center strategy-cell-content">
+                <span
+                  class="strategy-value"
+                  :class="{ 'muted-text': getImportStrategyLabel(props.row) === '-' }"
+                >
+                  {{ getImportStrategyLabel(props.row) }}
+                </span>
+
+                <InfoTooltip
+                  v-if="getImportStrategyDescription(props.row)"
+                  iconName="info-circle"
+                  :tooltipText="getImportStrategyDescription(props.row)"
+                  class="strategy-info-tooltip"
+                />
               </div>
             </q-td>
           </template>
@@ -144,6 +165,28 @@
                   {{ getNumeralAmount(props.row.valid_count) }}
                 </span>
               </div>
+            </q-td>
+          </template>
+
+          <!-- Already Existing Column -->
+          <template v-slot:body-cell-already_existing_records="props">
+            <q-td :props="props">
+              <template v-if="props.row.already_existing_count > 0">
+                <div class="flex no-wrap items-center count-cell-content">
+                  <LocalSvgIcon
+                    image="seq-bounced"
+                    class="metric-icon already-existing-icon"
+                  />
+
+                  <span class="count-value">
+                    {{ getNumeralAmount(props.row.already_existing_count) }}
+                  </span>
+                </div>
+              </template>
+
+              <span v-else class="count-value muted-text">
+                -
+              </span>
             </q-td>
           </template>
 
@@ -278,6 +321,8 @@ import InfoTooltip from 'components/General/InfoTooltip.vue';
 import AppSearchInput from 'src/components/Input/AppSearchInput.vue';
 
 // constants
+import { CONTACT_IMPORT_CONFLICT_ACTION } from 'src/boot/campaign-constants';
+
 const DEFAULT_TABLE_PAGINATION = {
   page: 1,
   sortBy: null,
@@ -333,12 +378,50 @@ export default defineComponent({
       return state.loaders.isFetchApi;
     });
 
+    const getImportSettings = (row = {}) => {
+      if (!row?.import_settings) return {};
+      if (typeof row.import_settings === 'string') {
+        try {
+          return JSON.parse(row.import_settings);
+        } catch {
+          return {};
+        }
+      }
+      return row.import_settings;
+    };
+
+    const getImportStrategy = (row = {}) => {
+      const settings = getImportSettings(row);
+      const strategyKey = settings?.mergeStrategy || settings?.merge_strategy;
+      if (!strategyKey) return null;
+      return CONTACT_IMPORT_CONFLICT_ACTION[strategyKey] || null;
+    };
+
+    const getImportStrategyLabel = (row = {}) => {
+      const strategy = getImportStrategy(row);
+      if (strategy) return strategy.label;
+      const settings = getImportSettings(row);
+      const raw = settings?.mergeStrategy || settings?.merge_strategy;
+      return raw || '-';
+    };
+
+    const getImportStrategyDescription = (row = {}) => {
+      const strategy = getImportStrategy(row);
+      return strategy?.description || '';
+    };
+
     const tableColumns = [
       {
         name: 'csv_file',
         label: 'CSV File',
         align: 'left',
         field: 'source_file_name',
+      },
+      {
+        name: 'import_strategy',
+        label: 'Import Strategy',
+        align: 'left',
+        field: (row) => getImportStrategyLabel(row),
       },
       {
         name: 'status',
@@ -357,6 +440,12 @@ export default defineComponent({
         label: 'Imported',
         align: 'left',
         field: 'valid_count',
+      },
+      {
+        name: 'already_existing_records',
+        label: 'Already Exists',
+        align: 'left',
+        field: 'already_existing_count',
       },
       {
         name: 'failed_records',
@@ -439,8 +528,7 @@ export default defineComponent({
       + (row.bounced_count || 0)
       + (row.blocked_count || 0)
       + (row.duplicate_count || 0)
-      + (row.unsubscribed_count || 0)
-      + (row.already_existing_count || 0);
+      + (row.unsubscribed_count || 0);
 
     const getFailedTooltipContent = (row = {}) => {
       const items = [];
@@ -458,9 +546,6 @@ export default defineComponent({
       }
       if (row.unsubscribed_count) {
         items.push(`<div>Unsubscribed: <b>${getNumeralAmount(row.unsubscribed_count)}</b></div>`);
-      }
-      if (row.already_existing_count) {
-        items.push(`<div>Already Existing: <b>${getNumeralAmount(row.already_existing_count)}</b></div>`);
       }
 
       if (!items.length) return 'No failure details available';
@@ -517,6 +602,8 @@ export default defineComponent({
       getStatusLabel,
       getFailedCount,
       getFailedTooltipContent,
+      getImportStrategyLabel,
+      getImportStrategyDescription,
       onSyncJobStatus,
       getFileSubtitle,
       getNumeralAmount,
@@ -528,14 +615,14 @@ export default defineComponent({
 <style lang="scss" scoped>
 .import-history-card {
   position: relative;
-  max-width: 740px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   flex: 1;
 
   // sm min
   @media (min-width: $breakpoint-sm-min) {
-    width: 740px;
+    width: 900px;
     min-height: 100%;
 
     display: flex;
@@ -546,7 +633,7 @@ export default defineComponent({
     border-radius: 8px 0px 0px 8px !important;
   }
 
-  @media (min-width: 601px) and (max-width: 745px) {
+  @media (min-width: 601px) and (max-width: 905px) {
     width: calc(100vw - 32px);
   }
 
@@ -579,6 +666,10 @@ export default defineComponent({
         min-width: 180px;
       }
 
+      .col-import_strategy {
+        width: 130px;
+      }
+
       .col-status {
         width: 130px;
       }
@@ -593,6 +684,28 @@ export default defineComponent({
 
       .col-failed_records {
         width: 120px;
+      }
+
+      .strategy-cell-content {
+        gap: 6px;
+
+        .strategy-value {
+          color: $black;
+          font-size: 13px;
+          font-weight: 500;
+
+          &.muted-text {
+            color: $grey-400;
+          }
+        }
+
+        .strategy-info-tooltip {
+          cursor: pointer;
+
+          :deep(.info-tooltip-icon) {
+            @include svg-icon-stroke('path, circle', $grey-400);
+          }
+        }
       }
 
       .file-cell-content {
