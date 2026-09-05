@@ -11,6 +11,8 @@
       <!-- 1. Top Status Banner & Timestamp -->
       <MessageCardBanner
         :is-received="isReceived"
+        :is-forwarded="isForwarded"
+        :isThreadReply="isThreadReply"
         :formatted-timestamp="formattedTimestamp"
         :channel-type="UNIBOX_CHANNEL_TYPE.EMAIL"
         @toggle-collapse="toggleExpand"
@@ -22,8 +24,8 @@
           <!-- Subject, Avatar, Sender Info & Quick Actions -->
           <MessageCardHeader
             :subject="subjectLine"
-            :sender-display-name="senderDisplayName"
             :sender-email="senderEmail"
+            :sender-display-name="senderDisplayName"
             :recipient-display-name="recipientDisplayName"
             :recipient-email="recipientEmail"
             :avatar-initial="senderInitial"
@@ -132,13 +134,23 @@ export default defineComponent({
     });
 
     // Direction flags
-    const isReceived = computed(() => (
-      props.messageJson?.type === UNIBOX_EMAIL_TYPE.RECEIVED
+    const isThreadReply = computed(() => (
+      props.messageJson?.type === UNIBOX_EMAIL_TYPE.THREAD_REPLY
     ));
 
-    const isSent = computed(() => (
-      props.messageJson?.type === UNIBOX_EMAIL_TYPE.SENT
+    const isReceived = computed(() => {
+      if (isThreadReply.value) return true;
+      return props.messageJson?.type === UNIBOX_EMAIL_TYPE.RECEIVED;
+    });
+
+    const isForwarded = computed(() => (
+      props.messageJson?.type === UNIBOX_EMAIL_TYPE.FORWARD
     ));
+
+    const isSent = computed(() => {
+      if (isForwarded.value) return true;
+      return props.messageJson?.type === UNIBOX_EMAIL_TYPE.SENT;
+    });
 
     // Email addresses
     const senderEmail = computed(() => props.messageJson?.sender || '');
@@ -315,6 +327,8 @@ export default defineComponent({
 
       // computed
       isSent,
+      isForwarded,
+      isThreadReply,
       isReceived,
       senderEmail,
       recipientEmail,

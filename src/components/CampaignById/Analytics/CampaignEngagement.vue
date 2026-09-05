@@ -34,10 +34,6 @@
           <!-- description -->
           <p v-if="metric.desc" class="metric-desc-text">{{ metric.desc }}</p>
         </div>
-
-        <q-inner-loading :showing="loading">
-          <q-spinner size="24px" color="primary" />
-        </q-inner-loading>
       </q-card>
     </div>
   </div>
@@ -46,11 +42,10 @@
 <script>
 // vue
 import {
-  computed, defineComponent, getCurrentInstance, onMounted, reactive, toRefs,
+  computed, defineComponent,
 } from 'vue';
 
 // utils
-import { getSequenceOverallStats } from 'src/utils/campaignApi';
 import { findPercentage, getNumeralAmount } from 'src/utils/numbers';
 
 export default defineComponent({
@@ -68,45 +63,7 @@ export default defineComponent({
   },
 
   setup(props) {
-    // app context
-    const { appContext } = getCurrentInstance();
-
-    // state
-    const state = reactive({
-      loading: false,
-      overallStats: {},
-    });
-
-    const fetchOverallStats = async () => {
-      if (!props.campaignByIdJson?.id) return;
-
-      try {
-        state.loading = true;
-
-        const response = await getSequenceOverallStats(props.campaignByIdJson.id);
-
-        state.overallStats = response || {};
-      } catch (error) {
-        const status = error?.status || error?.response?.status;
-        // ignore 404 error if stats not found
-        if (status !== 404) {
-          appContext?.config?.globalProperties?.$toast?.({
-            warning: true,
-            message: error.message,
-          });
-        }
-      } finally {
-        state.loading = false;
-      }
-    };
-
-    // lifecycle hooks
-    onMounted(() => {
-      fetchOverallStats();
-    });
-
     // --- Metric helpers ---
-
     const getOverviewMetrics = (stats) => {
       const outreachActions = (stats.email_sent || 0)
         + (stats.li_view_profile || 0)
@@ -267,7 +224,7 @@ export default defineComponent({
     });
 
     const engagementMetrics = computed(() => {
-      const stats = state.overallStats || {};
+      const stats = props.campaignByIdJson?.stats || {};
 
       if (props.view === 'email') return getEmailMetrics(stats);
       if (props.view === 'linkedin') return getLinkedInMetrics(stats);
@@ -276,9 +233,6 @@ export default defineComponent({
     });
 
     return {
-      // state
-      ...toRefs(state),
-
       // computed
       headerText,
       engagementMetrics,

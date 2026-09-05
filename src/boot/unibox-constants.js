@@ -22,6 +22,8 @@ export const UNIBOX_EMAIL_TYPE = {
   SENT: 'SENT',
   RECEIVED: 'RECEIVED',
   REPLY: 'RECEIVED',
+  FORWARD: 'FORWARD',
+  THREAD_REPLY: 'THREAD_REPLY',
 };
 
 // Outreach channel filter types

@@ -52,6 +52,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    isThreadReply: {
+      type: Boolean,
+      default: false,
+    },
+    isForwarded: {
+      type: Boolean,
+      default: false,
+    },
     formattedTimestamp: {
       type: String,
       default: '',
@@ -59,14 +67,6 @@ export default defineComponent({
     channelType: {
       type: String,
       default: UNIBOX_CHANNEL_TYPE.EMAIL,
-    },
-    receivedLabel: {
-      type: String,
-      default: '',
-    },
-    sentLabel: {
-      type: String,
-      default: '',
     },
   },
 
@@ -82,13 +82,13 @@ export default defineComponent({
     ));
 
     const receivedLabelText = computed(() => {
-      if (props.receivedLabel) return props.receivedLabel;
-      return isLinkedIn.value ? 'LinkedIn Message Received' : 'Email Reply Received';
+      if (props.isThreadReply) return 'Email Reply Sent';
+      return 'Email Received';
     });
 
     const sentLabelText = computed(() => {
-      if (props.sentLabel) return props.sentLabel;
-      return isLinkedIn.value ? 'LinkedIn Message Sent' : 'Email Sent - Delivered';
+      if (props.isForwarded) return 'Email Forward - Delivered';
+      return 'Email Sent - Delivered';
     });
 
     return {

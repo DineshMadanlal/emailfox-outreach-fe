@@ -183,13 +183,6 @@ export const getSequenceListStats = async () => getApiCall({
   endpoint: '/stats/sequences/list-stats',
 });
 
-// 2. Get overall sequence stats
-// GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/overall-stats
-export const getSequenceOverallStats = async (campaignId) => getApiCall({
-  includeWorkspace: true,
-  endpoint: `/stats/sequences/${campaignId}/overall-stats`,
-});
-
 // 3. Get date-wise sequence stats
 // GET /api/workspace/{workspace_id}/stats/sequences/{seq_id}/date-stats
 export const getSequenceDateStats = async (campaignId, params) => getApiCall({
