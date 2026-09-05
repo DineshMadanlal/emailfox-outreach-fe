@@ -15,6 +15,8 @@ export const isMainApp = () => {
   try {
     const { hostname } = window.parent.location;
 
+    console.log('Hostname:', hostname);
+
     return hostname === 'icemail.ai'
       || hostname.endsWith('.icemail.ai')
       || hostname === 'outreachfox.ai'

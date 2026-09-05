@@ -23,6 +23,7 @@ const getWorkspaceSlugFromRoute = () => getWorkspaceSlugFromUrl();
 const getWorkspaceAppPath = ({
   path, activeWorkspaceData,
 }) => {
+  console.log('activeWorkspaceData', activeWorkspaceData);
   const workspaceSlug = activeWorkspaceData?.slug || getWorkspaceSlugFromRoute();
 
   if (!workspaceSlug) {
