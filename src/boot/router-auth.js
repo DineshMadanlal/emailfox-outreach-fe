@@ -45,6 +45,7 @@ export default boot(({ router }) => {
     // Access the authentication store
     const authStorePinia = useAuthStore();
     const isPrimaryPlatform = isMainApp();
+    console.log('isPrimaryPlatform', isPrimaryPlatform);
     // for primary platform
     const isDevMode = !!process.env.DEV_MODE;
 
