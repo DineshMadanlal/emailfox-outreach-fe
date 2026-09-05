@@ -28,7 +28,7 @@ const getWorkspaceAppPath = ({
 
   if (!workspaceSlug) {
     // request the user to create a workspace
-    return '/workspace/choose';
+    return '/login';
   }
 
   return `/outreach${path}`;
