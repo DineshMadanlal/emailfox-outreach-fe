@@ -20,7 +20,9 @@ export const isMainApp = () => {
     return hostname === 'icemail.ai'
       || hostname.endsWith('.icemail.ai')
       || hostname === 'outreachfox.ai'
-      || hostname.endsWith('.outreachfox.ai');
+      || hostname.endsWith('.outreachfox.ai')
+      || hostname === 'emailfox.ai'
+      || hostname.endsWith('.emailfox.ai');
   } catch (error) {
     return false;
   }
