@@ -301,7 +301,7 @@ import SelectMailbox from 'components/Dropdown/SelectMailbox.vue';
 
 // utils
 import { postApiCall } from 'src/utils/apiRequests.js';
-import { stripHtmlTags, generateEmailHTML } from 'src/utils/helperFunctions';
+import { stripHtmlTags } from 'src/utils/helperFunctions';
 
 // Constants
 import { EMAIL_REGEX } from 'boot/constants';
@@ -595,9 +595,7 @@ export default defineComponent({
     };
 
     const onClickSend = () => {
-      const cleanedHtml = generateEmailHTML(state.subject, state.htmlContent);
-
-      sendReplyEmail(cleanedHtml);
+      sendReplyEmail(state.htmlContent);
     };
 
     const onClickEventListener = (e) => {

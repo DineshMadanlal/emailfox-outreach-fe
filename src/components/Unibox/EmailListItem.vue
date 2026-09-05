@@ -583,6 +583,9 @@ export default defineComponent({
         color: $grey;
 
         max-width: 140px;
+        &.text-unread {
+          color: $primary;
+        }
       }
 
       .subject-snippet-line {
@@ -604,6 +607,11 @@ export default defineComponent({
           font-size: 12px;
           line-height: 16px;
           width: 270px;
+
+          &.text-unread {
+            color: $black;
+            font-weight: 500;
+          }
         }
       }
 

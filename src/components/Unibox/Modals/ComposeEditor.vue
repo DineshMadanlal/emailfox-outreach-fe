@@ -269,6 +269,23 @@
 
     <!-- Footer -->
     <div class="app-modal-footer">
+      <!--  -->
+      <div>
+        <!-- Send Plain Text Checkbox -->
+        <q-checkbox
+          dense
+
+          color="primary"
+          class="app-checkbox"
+          label="Send Plain Text"
+
+          v-model="sendPlainText"
+        />
+      </div>
+
+      <q-space />
+
+      <!--  -->
       <q-btn
         no-caps
         unelevated
@@ -302,7 +319,7 @@ import SelectMailbox from 'components/Dropdown/Unibox/SelectMailbox.vue';
 
 // utils
 import { postApiCall } from 'src/utils/apiRequests.js';
-import { stripHtmlTags, generateEmailHTML } from 'src/utils/helperFunctions';
+import { stripHtmlTags } from 'src/utils/helperFunctions';
 
 // Constants
 import { EMAIL_REGEX } from 'boot/constants';
@@ -604,9 +621,7 @@ export default defineComponent({
     };
 
     const onClickSend = () => {
-      const cleanedHtml = generateEmailHTML(state.subject, state.htmlContent);
-
-      sendReplyEmail(cleanedHtml);
+      sendReplyEmail(state.htmlContent);
     };
 
     const onClickEventListener = (e) => {
@@ -869,6 +884,8 @@ export default defineComponent({
     border-color: $grey-50;
     height: $replyFooterHeight;
     border-radius: 0px 0px 8px 8px !important;
+
+    gap: 12px;
   }
 }
 </style>

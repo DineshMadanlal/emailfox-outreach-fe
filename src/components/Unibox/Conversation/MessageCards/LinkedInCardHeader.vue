@@ -36,7 +36,9 @@
             class="recipient-line"
           >
             <span class="prefix-label">To: </span>
-            <span class="recipient-name">{{ recipientDisplayName }}</span>
+            <span class="recipient-name">
+              {{ recipientDisplayName }}
+            </span>
           </div>
         </div>
       </div>
@@ -178,6 +180,10 @@ export default defineComponent({
         .recipient-line {
           font-size: 13px;
           line-height: 18px;
+
+          display: flex;
+          align-items: center;
+          gap: 6px;
 
           .prefix-label {
             color: $grey;

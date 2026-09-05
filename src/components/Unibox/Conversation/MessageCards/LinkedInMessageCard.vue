@@ -19,11 +19,12 @@
         <div class="card-body-section">
           <!-- Header: Avatar with [in] badge, From, and To -->
           <LinkedInCardHeader
+            :is-received="isReceived"
+            :avatar-initial="senderInitial"
             :sender-display-name="senderDisplayName"
             :recipient-display-name="recipientDisplayName"
-            :avatar-initial="senderInitial"
             :avatar-palette-style="avatarPaletteStyle"
-            :is-received="isReceived"
+
             @reply="$emit('reply', messageJson)"
           />
 

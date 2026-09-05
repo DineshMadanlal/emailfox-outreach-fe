@@ -189,32 +189,6 @@ export const trimMessageId = (messageId) => {
     .replace(/[\s\r\n\t]+$/, ''); // trim from end
 };
 
-export const generateEmailHTML = (subject, bodyContent) => `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${subject}</title>
-  </head>
-  <body style="margin: 0; padding: 0; background-color: #ffffff; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
-      <tr>
-        <td align="left" style="padding: 20px;">
-          <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; max-width: 600px;">
-            <tr>
-              <td style="color: #111111; font-family: 'Inter', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; text-align: left;">
-                ${bodyContent}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-`;
-
 // Normalize any header (CSV column)
 export const normalizeString = (str = '') => (str || '')
   .toString()

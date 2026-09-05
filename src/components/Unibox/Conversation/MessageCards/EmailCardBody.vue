@@ -41,7 +41,7 @@
         size="xs"
         color="primary"
         class="quoted-toggle-btn"
-        :title="showQuotedText ? 'Hide quoted text' : 'Show quoted text'"
+        :title="showQuotedText ? 'Hide expanded content' : 'Show trimmed content'"
         @click.stop="$emit('toggle-quoted')"
       >
         <div class="toggle-text">
