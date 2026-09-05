@@ -7,13 +7,15 @@ h4,
 h5,
 h6,
 input,
+button,
+select,
 label,
 textarea,
 span,
 li,
 body {
   font-weight: 400;
-  font-family: Satoshi, sans-serif;
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   /** ensure that every element in your app has a line-height that is 1.414 times its font size. */
   line-height: 1.414;
