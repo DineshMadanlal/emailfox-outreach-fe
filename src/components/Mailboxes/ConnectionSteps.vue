@@ -124,11 +124,11 @@ import { copyToClipboard } from 'quasar';
 
 // utils
 import { isMainApp } from 'src/utils/applyBranding.js';
-import { connectGoogleAccount, connectOutlookAccount } from 'src/utils/domainMailboxesApi.js';
+import { connectGoogleAccount, connectOutlookAccount, connectAzureAccount } from 'src/utils/domainMailboxesApi.js';
 
 // constants
 import { GOOGLE_API } from 'boot/partner-constants';
-import { ESP_PROVIDERS } from 'boot/mailbox-constants';
+import { MAILBOX_PROVIDERS } from 'boot/mailbox-constants';
 
 export default defineComponent({
   name: 'ConnectionSteps',
@@ -155,19 +155,25 @@ export default defineComponent({
     });
 
     // computed
-    const isOAuthProvider = computed(() => (
-      props.mailboxDataJson.value === ESP_PROVIDERS.GMAIL
-      || props.mailboxDataJson.value === ESP_PROVIDERS.OUTLOOK
-    ));
+    // computed
+    const isGoogleOauth = computed(() => props.mailboxDataJson.value
+      === MAILBOX_PROVIDERS.GMAIL.value);
+    const isOutlookOauth = computed(() => props.mailboxDataJson.value
+      === MAILBOX_PROVIDERS.OUTLOOK.value);
+    const isAzureOauth = computed(() => props.mailboxDataJson.value
+      === MAILBOX_PROVIDERS.AZURE.value);
 
-    const isGoogleOauth = computed(() => props.mailboxDataJson.value === ESP_PROVIDERS.GMAIL);
-    const isOutlookOauth = computed(() => props.mailboxDataJson.value === ESP_PROVIDERS.OUTLOOK);
+    const isOAuthProvider = computed(() => (
+      isGoogleOauth.value || isOutlookOauth.value || isAzureOauth.value
+    ));
 
     const providerHeader = computed(() => {
       if (isGoogleOauth.value) {
         return 'Connect your Gsuite account';
       } if (isOutlookOauth.value) {
         return 'Connect your Outlook account';
+      } if (isAzureOauth.value) {
+        return 'Connect your Azure account';
       }
 
       return 'Connect your Mailbox';
@@ -178,6 +184,8 @@ export default defineComponent({
         return 'gmail';
       } if (isOutlookOauth.value) {
         return 'outlook';
+      } if (isAzureOauth.value) {
+        return 'azure';
       }
 
       return 'other-smtp';
@@ -188,6 +196,8 @@ export default defineComponent({
         return 'Connect with Google';
       } if (isOutlookOauth.value) {
         return 'Connect with Outlook';
+      } if (isAzureOauth.value) {
+        return 'Connect with Azure';
       }
 
       return 'Connect';
@@ -260,6 +270,8 @@ export default defineComponent({
         return googleConnectionSteps.value;
       } if (isOutlookOauth.value) {
         return outlookConnectionSteps.value;
+      } if (isAzureOauth.value) {
+        return outlookConnectionSteps.value;
       }
 
       return [];
@@ -290,6 +302,8 @@ export default defineComponent({
           response = await connectGoogleAccount(redirectUrl);
         } else if (isOutlookOauth.value) {
           response = await connectOutlookAccount(redirectUrl);
+        } else if (isAzureOauth.value) {
+          response = await connectAzureAccount(redirectUrl);
         }
 
         // move to the mailbox by ID page

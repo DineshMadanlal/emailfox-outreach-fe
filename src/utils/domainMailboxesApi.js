@@ -165,6 +165,19 @@ export const connectOutlookAccount = async (redirectUrl) => {
   }
 };
 
+export const connectAzureAccount = async (redirectUrl) => {
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: `/mailboxes/connect/azure?redirect_uri=${redirectUrl}&return_auth_url=${true}`,
+    });
+
+    return await handleOAuthFlow(response.auth_url);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const connectNewLinkedInAccount = async (redirectUrl) => {
   try {
     const response = await getApiCall({

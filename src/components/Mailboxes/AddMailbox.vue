@@ -113,7 +113,7 @@ import { scrollToTheTop } from 'src/utils/htmlScrollApi.js';
 
 // constants
 import {
-  ESP_PROVIDERS,
+  MAILBOX_PROVIDERS,
   MAILBOX_IMPORT_STEPS,
   BULK_MAILBOX_IMPORT_STEPS,
 } from 'boot/mailbox-constants';
@@ -145,7 +145,8 @@ export default defineComponent({
     });
 
     // computed
-    const isCustomSmtp = computed(() => state.mailboxDataJson?.value === ESP_PROVIDERS.CUSTOM_SMTP);
+    const isCustomSmtp = computed(() => state.mailboxDataJson?.value
+      === MAILBOX_PROVIDERS.SMTP.value);
     const isBulkMode = computed(() => state.mailboxDataJson?.mode === 'bulk');
 
     // Which step config to show in the stepper header

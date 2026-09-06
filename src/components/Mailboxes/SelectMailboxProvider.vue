@@ -131,7 +131,7 @@ import {
 } from 'vue';
 
 // constants
-import { ESP_PROVIDERS } from 'boot/mailbox-constants';
+import { MAILBOX_PROVIDERS } from 'boot/mailbox-constants';
 
 export default defineComponent({
   name: 'SelectMailboxProvider',
@@ -149,20 +149,28 @@ export default defineComponent({
         // gmail
         {
           label: 'Google Workspace',
-          value: ESP_PROVIDERS.GMAIL,
+          value: MAILBOX_PROVIDERS.GMAIL.value,
           description: 'Google auth will open. Quickest way to add mailboxes',
           icon: 'gmail',
         },
         // outlook
         {
           label: 'Office 365 / Outlook',
-          value: ESP_PROVIDERS.OUTLOOK,
+          value: MAILBOX_PROVIDERS.OUTLOOK.value,
           description: 'Microsoft auth will open. Quickest way to add mailboxes',
           icon: 'outlook',
         },
+        // azure
+        {
+          label: 'Microsoft Azure',
+          value: MAILBOX_PROVIDERS.AZURE.value,
+          description: 'Microsoft auth will open. Quickest way to add mailboxes',
+          icon: 'azure',
+        },
+        // smtp
         {
           label: 'IMAP / SMTP',
-          value: ESP_PROVIDERS.CUSTOM_SMTP,
+          value: MAILBOX_PROVIDERS.SMTP.value,
           description: 'Set up your mailbox using IMAP/SMTP settings',
           icon: 'smtp',
           iconClasses: 'smtp-icon',
@@ -305,7 +313,7 @@ export default defineComponent({
         .provider-desc-text {
           color: $grey;
           font-size: 14px;
-          max-width: 307px;
+          max-width: 372px;
           line-height: 20px;
         }
 
