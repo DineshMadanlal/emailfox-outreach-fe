@@ -48,6 +48,20 @@
           <div class="recipient-line">
             to {{ recipientEmail || recipientDisplayName }}
           </div>
+
+          <div
+            v-if="formattedCc"
+            class="recipient-line cc-line"
+          >
+            cc {{ formattedCc }}
+          </div>
+
+          <div
+            v-if="formattedBcc"
+            class="recipient-line bcc-line"
+          >
+            bcc {{ formattedBcc }}
+          </div>
         </div>
       </div>
 
@@ -138,6 +152,14 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    cc: {
+      type: [String, Array],
+      default: '',
+    },
+    bcc: {
+      type: [String, Array],
+      default: '',
+    },
     channelType: {
       type: String,
       default: UNIBOX_CHANNEL_TYPE.EMAIL,
@@ -155,8 +177,26 @@ export default defineComponent({
       isLinkedIn.value ? 'linkedin-1' : 'mail'
     ));
 
+    const formatAddressList = (raw) => {
+      if (!raw) return '';
+      if (Array.isArray(raw)) {
+        return raw.map((item) => {
+          if (typeof item === 'object' && item !== null) {
+            return item.name ? `${item.name} <${item.email}>` : item.email;
+          }
+          return String(item).trim();
+        }).filter(Boolean).join(', ');
+      }
+      return String(raw).trim();
+    };
+
+    const formattedCc = computed(() => formatAddressList(props.cc));
+    const formattedBcc = computed(() => formatAddressList(props.bcc));
+
     return {
       channelBadgeIcon,
+      formattedCc,
+      formattedBcc,
     };
   },
 });

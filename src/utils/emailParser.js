@@ -2,9 +2,10 @@
  * Email Parser Utilities
  * Centralized utility functions for parsing email contents, separating fresh replies
  * from quoted thread history, and handling cross-provider quote formats (Gmail, Outlook, etc.)
+ * using the First Quote Boundary Rule.
  */
 
-// Common CSS selectors used by email clients to wrap quoted history
+// Common CSS selectors used by email clients to identify the start of quoted history
 const QUOTE_SELECTORS = [
   '.gmail_quote',
   '.gmail_quote_container',
@@ -14,7 +15,6 @@ const QUOTE_SELECTORS = [
   '.yahoo_quoted',
   '.zmail_extra',
   'blockquote[type="cite"]',
-  'blockquote',
 ];
 
 /**
@@ -31,7 +31,7 @@ export const splitEmailQuotedHtml = (htmlString = '') => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
 
-    // Search for any quote container element
+    // Search for any primary quote container element
     let quoteElement = null;
 
     for (let i = 0; i < QUOTE_SELECTORS.length; i += 1) {
@@ -50,18 +50,70 @@ export const splitEmailQuotedHtml = (htmlString = '') => {
       }
     }
 
-    if (quoteElement) {
-      // Extract the quoted block
-      const quotedHtml = quoteElement.outerHTML;
+    // Fallback check for genuine quote blockquotes (avoiding body blockquotes)
+    if (!quoteElement) {
+      const blockquotes = doc.body.querySelectorAll('blockquote');
+      for (let b = 0; b < blockquotes.length; b += 1) {
+        const bq = blockquotes[b];
+        const bqText = (bq.textContent || '').trim();
+        const bqType = bq.getAttribute('type');
+        const bqClass = bq.className || '';
+        const bqStyle = bq.getAttribute('style') || '';
 
-      // Remove the quoted element from the document to keep only the fresh reply
-      quoteElement.remove();
+        const hasQuoteHeader = /^(?:On\s+.+?wrote:|From:\s+|-----Original|Le\s+.+?a)/im
+          .test(bqText);
+        const isQuoteBlock = (
+          bqType === 'cite'
+          || /quote/i.test(bqClass)
+          || bq.querySelector('.gmail_attr')
+          || hasQuoteHeader
+          || /border-left/i.test(bqStyle)
+        );
+
+        if (isQuoteBlock) {
+          quoteElement = bq;
+          break;
+        }
+      }
+    }
+
+    if (quoteElement) {
+      // Find top-level container of the quote boundary under body
+      let topQuoteNode = quoteElement;
+      while (
+        topQuoteNode.parentElement
+        && topQuoteNode.parentElement !== doc.body
+        && topQuoteNode.parentElement.children.length === 1
+      ) {
+        topQuoteNode = topQuoteNode.parentElement;
+      }
+
+      // Collect topQuoteNode and all its subsequent sibling elements into the quoted block
+      const quotedNodes = [];
+      let curr = topQuoteNode;
+      while (curr) {
+        quotedNodes.push(curr);
+        curr = curr.nextElementSibling;
+      }
+
+      // Remove preceding <hr> divider if present (e.g. Outlook reply divider)
+      const prev = topQuoteNode.previousElementSibling;
+      if (prev && prev.tagName === 'HR') {
+        prev.remove();
+      }
+
+      // Extract the quoted HTML block
+      const quotedHtml = quotedNodes.map((n) => n.outerHTML).join('').trim();
+
+      // Remove all quoted nodes from the document to keep only the fresh reply
+      quotedNodes.forEach((n) => n.remove());
+
       const mainHtml = doc.body.innerHTML.trim();
 
       return {
         mainHtml,
         quotedHtml,
-        hasQuoted: true,
+        hasQuoted: Boolean(quotedHtml),
       };
     }
 
@@ -90,11 +142,23 @@ export const splitEmailQuotedText = (textString = '') => {
   }
 
   const quotePatterns = [
-    /\n\s*(On\s+.+?wrote:[\s\S]*)/i,
-    /\n\s*(-----Original Message-----[\s\S]*)/i,
-    /\n\s*(_{3,}[\s\S]*)/,
-    /\n\s*(-{3,}[\s\S]*)/,
-    /\n\s*(From:\s+.+[\s\S]*)/i,
+    // 1. Standard: On <date>, <sender> wrote: (English, French, German, Spanish)
+    /(?:^|\n)\s*(On\s+.+?wrote:[\s\S]*)/i,
+    /(?:^|\n)\s*(Le\s+.+?a écrit\s*:[\s\S]*)/i,
+    /(?:^|\n)\s*(Am\s+.+?schrieb\s*:[\s\S]*)/i,
+    /(?:^|\n)\s*(El\s+.+?escribió\s*:[\s\S]*)/i,
+
+    // 2. Outlook / Exchange original message or forward headers
+    /(?:^|\n)\s*(-{3,}\s*(?:Original Message|Forwarded message|Original Email)\s*-{3,}[\s\S]*)/i,
+
+    // 3. Divider line followed immediately by email header fields (From/Sent/Date/To/Subject)
+    /(?:^|\n)\s*([-_]{3,}\s*\n\s*(?:From|Sent|To|Subject|Date):\s*[\s\S]*)/i,
+
+    // 4. Standard header block starting with From: followed by Sent/Date/To/Subject
+    /(?:^|\n)\s*(From:\s*.+\n\s*(?:Sent|Date|To|Subject):\s*[\s\S]*)/i,
+
+    // 5. Outlook Web header block starting with Sent: followed by To: and Subject:
+    /(?:^|\n)\s*(Sent:\s*.+\n\s*To:\s*.+\n\s*Subject:\s*[\s\S]*)/i,
   ];
 
   for (let i = 0; i < quotePatterns.length; i += 1) {
@@ -102,10 +166,11 @@ export const splitEmailQuotedText = (textString = '') => {
     if (match && match.index !== undefined) {
       const mainText = textString.slice(0, match.index).trim();
       const quotedText = textString.slice(match.index).trim();
+
       return {
         mainText,
         quotedText,
-        hasQuoted: true,
+        hasQuoted: Boolean(quotedText),
       };
     }
   }

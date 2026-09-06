@@ -8,7 +8,7 @@
       <!-- Inbound Status -->
       <template v-if="isReceived">
         <LocalSvgIcon
-          :image="receivedIcon"
+          image="email-reply"
           class="banner-icon icon-received"
         />
         <span class="status-label text-received">
@@ -19,7 +19,7 @@
       <!-- Outbound Sent Status -->
       <template v-else>
         <LocalSvgIcon
-          :image="sentIcon"
+          image="mail"
           class="banner-icon icon-sent"
         />
         <span class="status-label text-sent">
@@ -71,18 +71,9 @@ export default defineComponent({
   },
 
   setup(props) {
-    const isLinkedIn = computed(() => props.channelType === UNIBOX_CHANNEL_TYPE.LINKEDIN);
-
-    const receivedIcon = computed(() => (
-      isLinkedIn.value ? 'linkedin-1' : 'email-reply'
-    ));
-
-    const sentIcon = computed(() => (
-      isLinkedIn.value ? 'linkedin-1' : 'mail'
-    ));
-
+    // computed
     const receivedLabelText = computed(() => {
-      if (props.isThreadReply) return 'Email Reply Sent';
+      if (props.isThreadReply) return 'Email Reply Sent - Delivered';
       return 'Email Received';
     });
 
@@ -92,8 +83,6 @@ export default defineComponent({
     });
 
     return {
-      receivedIcon,
-      sentIcon,
       receivedLabelText,
       sentLabelText,
     };

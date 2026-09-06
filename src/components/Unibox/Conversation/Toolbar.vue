@@ -84,6 +84,8 @@
 
           class="activities-btn"
           @click="$emit('view-activities')"
+
+          v-if="false"
         >
           <div class="flex no-wrap items-center">
             <LocalSvgIcon
@@ -97,7 +99,7 @@
           </div>
         </q-btn>
 
-        <span class="toolbar-divider" />
+        <!-- <span class="toolbar-divider" /> -->
 
         <!-- Navigation: Previous Thread -->
         <q-btn

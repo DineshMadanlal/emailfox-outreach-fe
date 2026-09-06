@@ -222,8 +222,13 @@
       <!-- Message WYSIWYG Editor Area -->
       <AppEditor
         autofocusEditor
+        canUploadFile
+        :attachments="attachments"
+        :totalAttachmentSize="totalAttachmentSize"
         v-model="htmlContent"
         placeholderText="Type your reply here..."
+        @addNewAttachment="addNewAttachment"
+        @deleteAttachment="deleteAttachment"
         @update:model-value="onUpdateEditorContent"
         v-if="isHtmlContentEditable"
       />
@@ -273,7 +278,8 @@ import { useQuasar } from 'quasar';
 // utils
 import { postApiCall } from 'src/utils/apiRequests.js';
 import { stripHtmlTags } from 'src/utils/helperFunctions';
-import { getFromAndEmailJson } from 'src/utils/skyboxApi.js';
+import { formatMessageDateTime } from 'src/utils/dates.js';
+import { getFromAndEmailJson, parseEmailFields } from 'src/utils/skyboxApi.js';
 
 // constants
 import { EMAIL_REGEX } from 'boot/constants';
@@ -356,6 +362,10 @@ export default defineComponent({
     });
 
     // Computed visibility helpers
+    const totalAttachmentSize = computed(() => (
+      state.attachments.reduce((total, item) => total + (item.file_size || 0), 0)
+    ));
+
     const handleToEmailVisibility = computed(
       () => state.toEmails.length > 0 || state.showToEmailInput,
     );
@@ -387,11 +397,22 @@ export default defineComponent({
       if (state.toEmails.length > 0
         || state.ccEmails.length > 0
         || state.bccEmails.length > 0
+        || state.attachments.length > 0
         || plainHtmlContent.value) {
         emit('updatePersistentStatus', true);
       } else {
         emit('updatePersistentStatus', false);
       }
+    };
+
+    const addNewAttachment = (attachmentObject) => {
+      state.attachments.push(attachmentObject);
+      onUpdatePersistentStatus();
+    };
+
+    const deleteAttachment = (index) => {
+      state.attachments.splice(index, 1);
+      onUpdatePersistentStatus();
     };
 
     // Remove CC email chip
@@ -551,18 +572,41 @@ export default defineComponent({
         state.recipientDisplayName = thread.contact_name || thread.email;
       }
 
-      // 2. Subject line (ensure Re: prefix without repeating)
+      // 2. Pre-fill CC recipients from message.cc (comma-separated or array)
+      if (msg.cc) {
+        const parsedCc = parseEmailFields(String(msg.cc));
+        parsedCc.forEach((item) => {
+          const email = item.email?.trim().toLowerCase();
+          if (email && !state.ccEmails.includes(email)) {
+            state.ccEmails.push(email);
+          }
+        });
+      }
+
+      // 3. Subject line (ensure Re: prefix without repeating)
       const baseSubject = msg.subject || thread.latest_subject || '';
       if (baseSubject) {
         state.subject = /^re:\s*/i.test(baseSubject) ? baseSubject : `Re: ${baseSubject}`;
       }
 
-      // 3. Threading headers
+      // 4. Threading headers
       state.inReplyTo = parsedData.message_id || msg.provider_message_id || '';
-      state.references = (`${parsedData.message_id || ''} ${parsedData.references || ''}`.trim()) || msg.provider_message_id || '';
+      const refs = `${parsedData.message_id || ''} ${parsedData.references || ''}`.trim();
+      state.references = refs || msg.provider_message_id || '';
 
       // provider thread ID
       state.threadId = msg.provider_thread_id || '';
+    };
+
+    // Helper to safely escape angle brackets and special chars in HTML headers
+    const escapeHtml = (str = '') => {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     };
 
     // Send reply API invocation
@@ -571,29 +615,55 @@ export default defineComponent({
         state.isApiLoading = true;
 
         const contactMappingId = props.threadJson?.contact_mapping_id;
+        const msg = props.messageJson || {};
+        const thread = props.threadJson || {};
+        const parsedData = props.messageJson?.parsedData || {};
+
+        // Build threaded reply content by appending the previous message quote on send
+        const previousBody = parsedData.html
+          || parsedData.text_as_html
+          || parsedData.text
+          || msg.message_preview
+          || '';
+
+        let finalMessage = htmlContent;
+
+        if (previousBody) {
+          const formattedDate = formatMessageDateTime(msg.date);
+          const sender = escapeHtml(msg.sender || thread.email || '');
+
+          if (state.sendPlainText) {
+            const quoteHeader = `On ${formattedDate}, ${sender} wrote:`;
+            finalMessage = `${htmlContent}\n\n${quoteHeader}\n${previousBody}`;
+          } else {
+            finalMessage = `
+              ${htmlContent}
+              <div class="gmail_quote">
+                <div dir="ltr" class="gmail_attr">
+                  On ${formattedDate}, ${sender} wrote:<br />
+                </div>
+                <blockquote
+                  class="gmail_quote"
+                  style="margin: 0px 0px 0px 0.8ex; border-left: 1px solid #ccc; padding-left: 1ex;"
+                >
+                  ${previousBody}
+                </blockquote>
+              </div>
+            `.trim();
+          }
+        }
 
         const payload = {
-          //
           to: state.toEmails.join(', '),
           cc: state.ccEmails.join(', '),
           bcc: state.bccEmails.join(', '),
-
-          //
-          message: htmlContent,
+          message: finalMessage,
           subject: state.subject,
-
-          // attachments
           attachments: state.attachments || [],
           has_attachments: (state.attachments || []).length > 0,
-
-          // plain text
           send_plain_text: state.sendPlainText,
-
-          //
           in_reply_to: state.inReplyTo,
           references: state.references,
-
-          //
           thread_id: state.threadId,
         };
 
@@ -634,12 +704,15 @@ export default defineComponent({
       ...toRefs(state),
 
       // Computed
+      totalAttachmentSize,
       disableSendButton,
       handleToEmailVisibility,
       handleCcEmailVisibility,
       handleBccEmailVisibility,
 
       // Methods
+      addNewAttachment,
+      deleteAttachment,
       removeCcEmail,
       onAddCcEmail,
       removeToEmail,

@@ -222,8 +222,13 @@
 
       <!-- Forward Message WYSIWYG Editor Area -->
       <AppEditor
+        canUploadFile
+        :attachments="attachments"
+        :totalAttachmentSize="totalAttachmentSize"
         v-model="htmlContent"
         placeholderText="Type your message here..."
+        @addNewAttachment="addNewAttachment"
+        @deleteAttachment="deleteAttachment"
         @update:model-value="onUpdateEditorContent"
         v-if="isHtmlContentEditable"
       />
@@ -274,6 +279,7 @@ import { useQuasar } from 'quasar';
 import { postApiCall, getApiCall } from 'src/utils/apiRequests.js';
 import { stripHtmlTags } from 'src/utils/helperFunctions';
 import { formatMessageDateTime } from 'src/utils/dates.js';
+import { parseEmailContentWithQuotes } from 'src/utils/emailParser';
 
 // constants
 import { EMAIL_REGEX } from 'boot/constants';
@@ -358,6 +364,10 @@ export default defineComponent({
     });
 
     // Computed visibility helpers
+    const totalAttachmentSize = computed(() => (
+      state.attachments.reduce((total, item) => total + (item.file_size || 0), 0)
+    ));
+
     const handleToEmailVisibility = computed(
       () => state.toEmails.length > 0 || state.showToEmailInput,
     );
@@ -389,11 +399,22 @@ export default defineComponent({
       if (state.toEmails.length > 0
         || state.ccEmails.length > 0
         || state.bccEmails.length > 0
+        || state.attachments.length > 0
         || plainHtmlContent.value) {
         emit('updatePersistentStatus', true);
       } else {
         emit('updatePersistentStatus', false);
       }
+    };
+
+    const addNewAttachment = (attachmentObject) => {
+      state.attachments.push(attachmentObject);
+      onUpdatePersistentStatus();
+    };
+
+    const deleteAttachment = (index) => {
+      state.attachments.splice(index, 1);
+      onUpdatePersistentStatus();
     };
 
     // Remove CC email chip
@@ -563,6 +584,17 @@ export default defineComponent({
       }
     };
 
+    // Helper to safely escape angle brackets and special chars in HTML headers
+    const escapeHtml = (str = '') => {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
     // Pre-fill forward fields and construct standard forwarded message header
     const populateForwardData = () => {
       const msg = props.messageJson || {};
@@ -594,16 +626,30 @@ export default defineComponent({
         lookupMailboxId(msg.recipient);
       }
 
-      // 4. Construct standard forwarded message body
-      const originalBody = parsedData.html
-        || parsedData.text_as_html
-        || parsedData.text
-        || msg.message_preview
-        || '';
+      // 4. Construct standard forwarded message body with message and signature preserved
+      const parsed = parseEmailContentWithQuotes({
+        html: parsedData.html || parsedData.text_as_html || '',
+        text: parsedData.text || msg.message_preview || '',
+      });
+
+      let forwardContent = '';
+      if (parsed.mainContent) {
+        forwardContent = parsed.mainContent;
+        if (parsed.quotedContent) {
+          forwardContent += `<br /><br />${parsed.quotedContent}`;
+        }
+      } else {
+        forwardContent = parsedData.html
+          || parsedData.text_as_html
+          || parsedData.text
+          || msg.message_preview
+          || '';
+      }
 
       const formattedDate = formatMessageDateTime(msg.date);
-      const sender = msg.sender || thread.email || '';
-      const recipient = msg.recipient || thread.contact_name || '';
+      const sender = escapeHtml(msg.sender || thread.email || '');
+      const recipient = escapeHtml(msg.recipient || thread.contact_name || '');
+      const ccLine = msg.cc ? `<div><b>Cc:</b> ${escapeHtml(msg.cc)}</div>` : '';
 
       const forwardHtml = `
         <p><br /></p>
@@ -611,15 +657,23 @@ export default defineComponent({
           <div>---------- Forwarded message ---------</div>
           <div><b>From:</b> ${sender}</div>
           <div><b>Date:</b> ${formattedDate}</div>
-          <div><b>Subject:</b> ${msg.subject || thread.subject || ''}</div>
+          <div><b>Subject:</b> ${escapeHtml(msg.subject || thread.subject || '')}</div>
           <div><b>To:</b> ${recipient}</div>
+          ${ccLine}
           <br />
-          <div>${originalBody}</div>
+          <div>${forwardContent}</div>
         </div>
       `;
 
       state.htmlContent = forwardHtml;
       state.isHtmlContentEditable = true;
+
+      // 5. Pre-fill attachments from original message if present
+      if (Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+        state.attachments = msg.attachments.map((att) => ({ ...att }));
+      } else {
+        state.attachments = [];
+      }
     };
 
     // Send forward API invocation
@@ -682,12 +736,15 @@ export default defineComponent({
       ...toRefs(state),
 
       // Computed
+      totalAttachmentSize,
       disableSendButton,
       handleToEmailVisibility,
       handleCcEmailVisibility,
       handleBccEmailVisibility,
 
       // Methods
+      addNewAttachment,
+      deleteAttachment,
       removeCcEmail,
       onAddCcEmail,
       removeToEmail,

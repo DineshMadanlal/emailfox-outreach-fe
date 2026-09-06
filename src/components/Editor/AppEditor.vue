@@ -10,9 +10,16 @@
       class="email-editor-content hide-scrollbar"
     />
 
+    <!-- Attachments Display (Above Toolbar) -->
+    <EditorAttachments
+      v-if="attachments && attachments.length"
+      :attachments="attachments"
+      @deleteAttachmentByIndex="(index) => $emit('deleteAttachment', index)"
+    />
+
     <!-- Read-only via iframe -->
     <iframe
-      v-else-if="useIframeToLoadContent"
+      v-else-if="!isEditable && useIframeToLoadContent"
       ref="nonEditableEmailRef"
       :srcdoc="iframeSrcDoc"
       frameborder="0"
@@ -146,7 +153,7 @@ import { useQuasar } from 'quasar';
 import FroalaEditor from 'froala-editor';
 
 // utils
-import { getApiCall } from 'src/utils/apiRequests';
+import { postApiCall } from 'src/utils/apiRequests';
 import { loadFroalaAssets } from 'src/utils/loadFroala';
 import { cleanEditorHtmlForSave } from 'src/utils/helperFunctions';
 
@@ -167,17 +174,27 @@ import {
 
 // Components
 import EditorMenuOptions from 'components/Menu/EditorMenuOptions.vue';
+import EditorAttachments from 'components/Editor/EditorAttachments.vue';
 
 // constants
-import { MAX_FILE_SIZE_IN_MB } from 'src/boot/constants';
+import {
+  MAX_FILE_SIZE_IN_MB,
+  TOTAL_ATTACHMENTS_SIZE_RESTRICTION,
+} from 'src/boot/constants';
 
 export default defineComponent({
   name: 'EmailBodyEditor',
 
-  emits: ['update:modelValue', 'addNewAttachment', 'previewEmail'],
+  emits: [
+    'update:modelValue',
+    'addNewAttachment',
+    'deleteAttachment',
+    'previewEmail',
+  ],
 
   components: {
     EditorMenuOptions,
+    EditorAttachments,
   },
 
   props: {
@@ -211,9 +228,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    attachments: {
+      /** Array of attachment objects { file_name, file_url, file_size, content_type } */
+      type: Array,
+      default: () => [],
+    },
     totalAttachmentSize: {
       type: Number,
-      default: null,
+      default: 0,
     },
     useIframeToLoadContent: {
       type: Boolean,
@@ -230,6 +252,11 @@ export default defineComponent({
     },
     sequenceEditor: {
       /** special config for sequence editor */
+      type: Boolean,
+      default: false,
+    },
+    isSequenceEditor: {
+      /** flag indicating sequence editor context */
       type: Boolean,
       default: false,
     },
@@ -251,7 +278,7 @@ export default defineComponent({
 
   setup(props, { emit }) {
     // app context
-    const { appContext } = getCurrentInstance();
+    const { appContext, uid } = getCurrentInstance();
 
     // quasar
     const $q = useQuasar();
@@ -277,7 +304,7 @@ export default defineComponent({
       },
     });
 
-    const componentUid = computed(() => getCurrentInstance().uid);
+    const componentUid = computed(() => uid);
 
     const personalisationIssues = computed(() => {
       const issues = findTemplateIssues(
@@ -443,56 +470,118 @@ export default defineComponent({
       }
     };
 
-    // S3 Image Upload
+    // S3 Image Upload (Sequences)
     const getS3ObjectForImageUpload = async (file) => {
       $q.loading.show({ message: 'Uploading image...' });
 
-      const res = await getApiCall({
-        endpoint: `/api/aws-s3/get-campaign-sequence-image-signed-url?fileType=${file.type}&fileName=${file.name}`,
-      });
+      try {
+        const res = await postApiCall({
+          includeWorkspace: true,
+          endpoint: '/sequences/get-image-signed-url',
+          payload: {
+            filename: file.name,
+            content_type: file.type,
+          },
+        });
 
-      const { requestUrl, fileUrl } = res.data;
+        const requestUrl = res.request_url;
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', requestUrl, true);
+        const fileUrl = res.file_url;
 
-      xhr.onload = () => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', requestUrl, true);
+        xhr.setRequestHeader('Content-Type', file.type);
+
+        xhr.onload = () => {
+          $q.loading.hide();
+          state.editorInstance.image.insert(fileUrl);
+        };
+
+        xhr.onerror = () => {
+          $q.loading.hide();
+          appContext.config.globalProperties.$toast({
+            warning: true,
+            message: 'Failed to upload image.',
+          });
+        };
+
+        xhr.send(file);
+      } catch (err) {
         $q.loading.hide();
-        state.editorInstance.image.insert(fileUrl);
-      };
-
-      xhr.send(file);
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: err.message || 'Failed to get image upload URL.',
+        });
+      }
     };
 
-    // S3 File Upload
+    // S3 File / Attachment Upload (Unibox)
     const getS3ObjectForFileUpload = async (file) => {
-      $q.loading.show({ message: 'Uploading file...' });
+      $q.loading.show({ message: 'Uploading attachment...' });
 
-      const res = await getApiCall({
-        endpoint: `/api/aws-s3/get-upload-attachments-signed-url?fileType=${file.type}&fileName=${file.name}&emailStatsId=${props.emailStatsId}`,
-      });
+      try {
+        const endpoint = (props.sequenceEditor || props.isSequenceEditor)
+          ? '/sequences/get-image-signed-url'
+          : '/unibox/get-attachment-signed-url';
 
-      const { requestUrl, fileUrl } = res.data;
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', requestUrl, true);
-
-      xhr.onload = () => {
-        $q.loading.hide();
-
-        emit('addNewAttachment', {
-          file_url: fileUrl,
-          file_type: file.type,
-          file_name: file.name,
-          file_size: file.size,
+        const res = await postApiCall({
+          includeWorkspace: true,
+          endpoint,
+          payload: {
+            filename: file.name,
+            content_type: file.type,
+          },
         });
-      };
 
-      xhr.send(file);
+        const requestUrl = res.request_url;
+
+        const fileUrl = res.file_url;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', requestUrl, true);
+        xhr.setRequestHeader('Content-Type', file.type);
+
+        xhr.onload = () => {
+          $q.loading.hide();
+
+          emit('addNewAttachment', {
+            file_name: file.name,
+            file_url: fileUrl,
+            file_size: file.size,
+            content_type: file.type,
+          });
+        };
+
+        xhr.onerror = () => {
+          $q.loading.hide();
+          appContext.config.globalProperties.$toast({
+            warning: true,
+            message: 'Failed to upload attachment.',
+          });
+        };
+
+        xhr.send(file);
+      } catch (err) {
+        $q.loading.hide();
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: err.message || 'Failed to get attachment upload URL.',
+        });
+      }
     };
 
     const initFroala = () => {
-      state.editorConfig = {
+      // Dynamic toolbar buttons based on upload props
+      const miscButtons = ['insertLink'];
+      if (props.canUploadImage) {
+        miscButtons.push('insertImage');
+      }
+      if (props.canUploadFile) {
+        miscButtons.push('insertFile');
+      }
+      miscButtons.push('undo', 'redo', 'html');
+
+      const config = {
         direction: 'ltr',
         entities: '',
 
@@ -532,8 +621,8 @@ export default defineComponent({
             buttonsVisible: 3,
           },
           moreMisc: {
-            buttons: ['insertLink', 'undo', 'redo', 'html'],
-            buttonsVisible: 5,
+            buttons: miscButtons,
+            buttonsVisible: miscButtons.length,
           },
         },
 
@@ -548,7 +637,12 @@ export default defineComponent({
         imageDefaultAlign: 'left',
         imageUploadRemoteUrls: false,
         imageInsertButtons: ['imageBack', '|', 'imageUpload', 'imageByURL'],
-        imageEditButtons: ['imageReplace', 'imageAlign', 'imageCaption', 'imageRemove', '|', 'imageLink', 'linkOpen', 'linkEdit', 'linkRemove', '-', 'imageDisplay', 'imageStyle', 'imageAlt', 'imageSize'],
+        imageEditButtons: [
+          'imageReplace', 'imageAlign', 'imageCaption',
+          'imageRemove', '|', 'imageLink', 'linkOpen',
+          'linkEdit', 'linkRemove', '-', 'imageDisplay',
+          'imageStyle', 'imageAlt', 'imageSize',
+        ],
 
         /** advanced image editor */
         imageTUIOptions: {
@@ -556,14 +650,20 @@ export default defineComponent({
             initMenu: 'filter',
             menuBarPosition: 'left',
             theme: {
-              'menu.activeIcon.path': 'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-b.svg',
-              'menu.disabledIcon.path': 'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-a.svg',
-              'menu.hoverIcon.path': 'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-c.svg',
-              'menu.normalIcon.path': 'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-d.svg',
+              'menu.activeIcon.path':
+                'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-b.svg',
+              'menu.disabledIcon.path':
+                'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-a.svg',
+              'menu.hoverIcon.path':
+                'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-c.svg',
+              'menu.normalIcon.path':
+                'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-d.svg',
               'submenu.activeIcon.name': 'icon-c',
-              'submenu.activeIcon.path': 'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-c.svg',
+              'submenu.activeIcon.path':
+                'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-c.svg',
               'submenu.normalIcon.name': 'icon-d',
-              'submenu.normalIcon.path': 'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-d.svg',
+              'submenu.normalIcon.path':
+                'https://cdn.jsdelivr.net/npm/tui-image-editor@3.2.2/dist/svg/icon-d.svg',
             },
           },
         },
@@ -633,6 +733,7 @@ export default defineComponent({
               }, 0);
             }
           },
+
           'image.beforeUpload': function (images) {
             getS3ObjectForImageUpload(images[0]);
             return false;
@@ -641,12 +742,23 @@ export default defineComponent({
           'file.beforeUpload': function (files) {
             const file = files[0];
 
+            // Check single file size
             if (file.size > MAX_FILE_SIZE_IN_MB * 1e6) {
               appContext.config.globalProperties.$toast({
                 warning: true,
-                message: 'Max 15MB file',
+                message: `Max ${MAX_FILE_SIZE_IN_MB}MB file size allowed.`,
               });
+              return false;
+            }
 
+            // Check total cumulative attachments size
+            const updatedTotal = (props.totalAttachmentSize || 0) + file.size;
+            if (updatedTotal > TOTAL_ATTACHMENTS_SIZE_RESTRICTION * 1e6) {
+              appContext.config.globalProperties.$toast({
+                warning: true,
+                message:
+                  `Max ${TOTAL_ATTACHMENTS_SIZE_RESTRICTION}MB total attachments allowed.`,
+              });
               return false;
             }
 
@@ -656,6 +768,16 @@ export default defineComponent({
         },
       };
 
+      if (props.canUploadImage) {
+        config.imageUpload = true;
+        config.imageMaxSize = 10 * 1024 * 1024;
+      }
+
+      if (props.canUploadFile) {
+        config.fileUpload = true;
+      }
+
+      state.editorConfig = config;
       state.isEditorConfigSet = true;
     };
 

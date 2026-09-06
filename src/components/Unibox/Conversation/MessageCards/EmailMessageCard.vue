@@ -28,6 +28,8 @@
             :sender-display-name="senderDisplayName"
             :recipient-display-name="recipientDisplayName"
             :recipient-email="recipientEmail"
+            :cc="ccAddresses"
+            :bcc="bccAddresses"
             :avatar-initial="senderInitial"
             :avatar-palette-style="avatarPaletteStyle"
             :channel-type="UNIBOX_CHANNEL_TYPE.EMAIL"
@@ -155,9 +157,15 @@ export default defineComponent({
     // Email addresses
     const senderEmail = computed(() => props.messageJson?.sender || '');
     const recipientEmail = computed(() => props.messageJson?.recipient || '');
+    const ccAddresses = computed(() => props.messageJson?.cc || '');
+    const bccAddresses = computed(() => props.messageJson?.bcc || '');
 
     // Display names
     const senderDisplayName = computed(() => {
+      if (isThreadReply.value) {
+        return 'You';
+      }
+
       if (isReceived.value) {
         const first = props.contactData?.first_name?.trim() || '';
         const last = props.contactData?.last_name?.trim() || '';
@@ -332,6 +340,8 @@ export default defineComponent({
       isReceived,
       senderEmail,
       recipientEmail,
+      ccAddresses,
+      bccAddresses,
       senderDisplayName,
       recipientDisplayName,
       senderInitial,

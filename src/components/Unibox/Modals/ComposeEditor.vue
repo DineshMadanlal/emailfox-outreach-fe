@@ -258,9 +258,14 @@
 
       <AppEditor
         autofocusEditor
+        canUploadFile
+        :attachments="attachments"
+        :totalAttachmentSize="totalAttachmentSize"
         v-model="htmlContent"
         placeholderText="Type your email content here..."
 
+        @addNewAttachment="addNewAttachment"
+        @deleteAttachment="deleteAttachment"
         @update:model-value="onUpdateEditorContent"
 
         v-if="isHtmlContentEditable"
@@ -377,12 +382,19 @@ export default defineComponent({
       bccEmailInputRef: null,
       showBccEmailInput: false,
 
+      // attachments
+      attachments: [],
+
       isApiLoading: false,
 
       isHtmlContentEditable: false,
     });
 
     // computed
+    const totalAttachmentSize = computed(() => (
+      state.attachments.reduce((total, item) => total + (item.file_size || 0), 0)
+    ));
+
     const handleToEmailVisibility = computed(
       () => state.toEmails.length > 0 || state.showToEmailInput,
     );
@@ -419,11 +431,23 @@ export default defineComponent({
         emit('updatePersistentStatus', true);
       } else if (state.bccEmails.length > 0) {
         emit('updatePersistentStatus', true);
+      } else if (state.attachments.length > 0) {
+        emit('updatePersistentStatus', true);
       } else if (plainHtmlContent.value) {
         emit('updatePersistentStatus', true);
       } else {
         emit('updatePersistentStatus', false);
       }
+    };
+
+    const addNewAttachment = (attachmentObject) => {
+      state.attachments.push(attachmentObject);
+      onUpdatePersistentStatus();
+    };
+
+    const deleteAttachment = (index) => {
+      state.attachments.splice(index, 1);
+      onUpdatePersistentStatus();
     };
 
     const removeCcEmail = (index) => {
@@ -456,7 +480,7 @@ export default defineComponent({
         /** Show an alert message that the input is not an valid email */
         $q.dialog({
           title: 'Error',
-          message: `The address "${state.ccEmailInput}" in the "Cc" field was not recognized. Please make sure that all addresses are properly formed.`,
+          message: `The address "${state.ccEmailInput}" in the "Cc" field was not recognized.`,
         });
       }
     };
@@ -474,7 +498,10 @@ export default defineComponent({
       // write a brief comment on what the function does
       if (!state.toEmailInput) return;
 
-      const emails = state.toEmailInput.split(/[,; ]+/).map((e) => e.trim().toLowerCase()).filter(Boolean);
+      const emails = state.toEmailInput
+        .split(/[,; ]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
 
       const invalid = [];
 
@@ -541,7 +568,7 @@ export default defineComponent({
         /** Show an alert message that the input is not an valid email */
         $q.dialog({
           title: 'Error',
-          message: `The address "${state.bccEmailInput}" in the "Bcc" field was not recognized. Please make sure that all addresses are properly formed.`,
+          message: `The address "${state.bccEmailInput}" in the "Bcc" field was not recognized.`,
         });
       }
     };
@@ -593,6 +620,8 @@ export default defineComponent({
           bcc: state.bccEmails.join(', '),
 
           sender_mailbox_id: state.senderMailboxId,
+          attachments: state.attachments || [],
+          has_attachments: (state.attachments || []).length > 0,
           send_plain_text: state.sendPlainText,
         };
 
@@ -654,12 +683,16 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      totalAttachmentSize,
       disableSendButton,
       handleToEmailVisibility,
       handleCcEmailVisibility,
       handleBccEmailVisibility,
 
       // methods
+      addNewAttachment,
+      deleteAttachment,
+
       removeCcEmail,
       onAddCcEmail,
 
