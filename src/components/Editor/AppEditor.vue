@@ -124,14 +124,7 @@
     </div>
 
     <!-- Loader -->
-    <div
-      v-if="isS3ApiLoading"
-      class="email-editor-loader"
-    >
-      <q-inner-loading showing>
-        <q-spinner size="25px" color="primary" />
-      </q-inner-loading>
-    </div>
+    <ApiLoader :show="isS3ApiLoading" />
   </div>
 </template>
 
@@ -145,9 +138,6 @@ import {
   defineComponent, reactive, onMounted, computed, getCurrentInstance, toRefs, onUnmounted, watch,
   nextTick,
 } from 'vue';
-
-// quasar
-import { useQuasar } from 'quasar';
 
 // npm modules
 import FroalaEditor from 'froala-editor';
@@ -173,6 +163,7 @@ import {
 } from 'src/utils/froalaHelper';
 
 // Components
+import ApiLoader from 'components/General/ApiLoader.vue';
 import EditorMenuOptions from 'components/Menu/EditorMenuOptions.vue';
 import EditorAttachments from 'components/Editor/EditorAttachments.vue';
 
@@ -193,6 +184,7 @@ export default defineComponent({
   ],
 
   components: {
+    ApiLoader,
     EditorMenuOptions,
     EditorAttachments,
   },
@@ -279,9 +271,6 @@ export default defineComponent({
   setup(props, { emit }) {
     // app context
     const { appContext, uid } = getCurrentInstance();
-
-    // quasar
-    const $q = useQuasar();
 
     // state
     const state = reactive({
@@ -472,7 +461,7 @@ export default defineComponent({
 
     // S3 Image Upload (Sequences)
     const getS3ObjectForImageUpload = async (file) => {
-      $q.loading.show({ message: 'Uploading image...' });
+      state.isS3ApiLoading = true;
 
       try {
         const res = await postApiCall({
@@ -493,12 +482,12 @@ export default defineComponent({
         xhr.setRequestHeader('Content-Type', file.type);
 
         xhr.onload = () => {
-          $q.loading.hide();
+          state.isS3ApiLoading = false;
           state.editorInstance.image.insert(fileUrl);
         };
 
         xhr.onerror = () => {
-          $q.loading.hide();
+          state.isS3ApiLoading = false;
           appContext.config.globalProperties.$toast({
             warning: true,
             message: 'Failed to upload image.',
@@ -507,7 +496,7 @@ export default defineComponent({
 
         xhr.send(file);
       } catch (err) {
-        $q.loading.hide();
+        state.isS3ApiLoading = false;
         appContext.config.globalProperties.$toast({
           warning: true,
           message: err.message || 'Failed to get image upload URL.',
@@ -517,7 +506,7 @@ export default defineComponent({
 
     // S3 File / Attachment Upload (Unibox)
     const getS3ObjectForFileUpload = async (file) => {
-      $q.loading.show({ message: 'Uploading attachment...' });
+      state.isS3ApiLoading = true;
 
       try {
         const endpoint = (props.sequenceEditor || props.isSequenceEditor)
@@ -542,7 +531,7 @@ export default defineComponent({
         xhr.setRequestHeader('Content-Type', file.type);
 
         xhr.onload = () => {
-          $q.loading.hide();
+          state.isS3ApiLoading = false;
 
           emit('addNewAttachment', {
             file_name: file.name,
@@ -550,10 +539,15 @@ export default defineComponent({
             file_size: file.size,
             content_type: file.type,
           });
+
+          // success toast
+          appContext.config.globalProperties.$toast({
+            message: 'Attachment uploaded successfully.',
+          });
         };
 
         xhr.onerror = () => {
-          $q.loading.hide();
+          state.isS3ApiLoading = false;
           appContext.config.globalProperties.$toast({
             warning: true,
             message: 'Failed to upload attachment.',
@@ -562,7 +556,7 @@ export default defineComponent({
 
         xhr.send(file);
       } catch (err) {
-        $q.loading.hide();
+        state.isS3ApiLoading = false;
         appContext.config.globalProperties.$toast({
           warning: true,
           message: err.message || 'Failed to get attachment upload URL.',
@@ -884,6 +878,8 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .app-editor-container {
+  position: relative;
+
   .personalisation-error-toolbar, .sequence-editor-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -965,12 +961,6 @@ export default defineComponent({
     overflow: hidden;
     min-height: unset;
     display: block;
-  }
-
-  /* loader */
-  .email-editor-loader {
-    position: relative;
-    min-height: 100px;
   }
 }
 </style>
