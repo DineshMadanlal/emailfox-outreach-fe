@@ -363,13 +363,6 @@ const routes = [
         ],
       },
 
-      // unibox
-      {
-        path: 'unibox/raw',
-        component: () => import('pages/SkyBox/ShowOriginalMessage.vue'),
-        meta: { requiresAuth: true },
-      },
-
       {
         path: 'unibox',
         component: () => import('pages/Unibox/MainIndex.vue'),
@@ -398,30 +391,6 @@ const routes = [
             path: 'bounced/:threadId?',
             name: 'UniboxBounced',
             component: () => import('pages/Unibox/Bounced.vue'),
-            meta: { requiresAuth: true },
-          },
-        ],
-      },
-
-      {
-        path: 'unibox/preferences',
-        component: () => import('pages/SkyBox/Preferences.vue'),
-        redirect: '/unibox/preferences/folders',
-        meta: { requiresAuth: true },
-        children: [
-          {
-            path: 'folders',
-            component: () => import('pages/SkyBox/AllFolders.vue'),
-            meta: { requiresAuth: true },
-          },
-          {
-            path: 'folder/add',
-            component: () => import('src/pages/SkyBox/SaveFolder.vue'),
-            meta: { requiresAuth: true },
-          },
-          {
-            path: 'folder/:id/edit',
-            component: () => import('src/pages/SkyBox/SaveFolder.vue'),
             meta: { requiresAuth: true },
           },
         ],

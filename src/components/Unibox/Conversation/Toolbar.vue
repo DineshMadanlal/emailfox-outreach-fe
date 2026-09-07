@@ -414,7 +414,7 @@ export default defineComponent({
 
     .campaign-reply-grid {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
 
       flex-wrap: wrap;
