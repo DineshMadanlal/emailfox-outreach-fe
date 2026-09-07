@@ -46,8 +46,18 @@ jobs:
         run: |
           aws s3 sync dist/spa s3://emailfox-frontend \
             --exclude "index.html" \
+            --exclude "icons/*" \
+            --exclude "*.ico" \
             --cache-control "public, max-age=31536000, immutable" \
             --delete
+
+      # Optional: Upload Icons (Uncomment when you need to sync updated icons/favicons)
+      # - name: Upload Icons
+      #   run: |
+      #     aws s3 sync dist/spa/icons s3://emailfox-frontend/icons \
+      #       --cache-control "public, max-age=31536000, immutable"
+      #     aws s3 cp dist/spa/custom-favicon.ico s3://emailfox-frontend/custom-favicon.ico \
+      #       --cache-control "public, max-age=86400"
 
       # 2. Upload index.html separately with zero browser cache
       - name: Upload index.html
