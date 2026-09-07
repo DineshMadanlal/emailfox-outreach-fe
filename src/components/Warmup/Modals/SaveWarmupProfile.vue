@@ -482,7 +482,6 @@ export default defineComponent({
   }
 
   .app-modal-header {
-    background: $grey-50;
     height: $modalHeaderHeight;
   }
 

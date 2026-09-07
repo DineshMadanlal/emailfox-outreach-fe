@@ -279,7 +279,8 @@ import { useQuasar } from 'quasar';
 import { postApiCall } from 'src/utils/apiRequests.js';
 import { stripHtmlTags } from 'src/utils/helperFunctions';
 import { formatMessageDateTime } from 'src/utils/dates.js';
-import { getFromAndEmailJson, parseEmailFields } from 'src/utils/skyboxApi.js';
+import { parseEmailFields } from 'src/utils/emailParser.js';
+import { getFromAndEmailJson } from 'src/utils/skyboxApi.js';
 
 // constants
 import { EMAIL_REGEX } from 'boot/constants';
@@ -763,7 +764,6 @@ export default defineComponent({
     background: unset;
     border-bottom: 0px;
     padding-right: 8px;
-    background: rgba($color: var(--grey-50-rgb), $alpha: 0.1);
 
     .modal-header-text {
       white-space: nowrap;

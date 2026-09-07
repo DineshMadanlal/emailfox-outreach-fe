@@ -1,12 +1,12 @@
 <template>
   <!-- email preview modal card wrapper -->
-  <q-card flat class="app-modal-card email-preview-card">
+  <q-card flat class="app-modal-card email-preview-card custom-scrollbar">
     <q-form
       ref="formRef"
       @submit.prevent.stop="onSendTestEmail"
     >
       <!-- modal main content -->
-      <div class="app-modal-content custom-scrollbar">
+      <div class="app-modal-content hide-scrollbar">
         <div class="email-preview-wrapper">
 
           <!-- left section: configuration controls -->
@@ -478,6 +478,7 @@ export default defineComponent({
     display: flex;
     overflow: hidden;
     padding: 0;
+    overflow-y: auto;
 
     .email-preview-wrapper {
       width: 100%;

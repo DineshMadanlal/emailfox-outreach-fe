@@ -268,7 +268,7 @@ import { useQuasar } from 'quasar';
 // utils
 import { formatUTCDate } from 'src/utils/dates.js';
 import { postApiCall } from 'src/utils/apiRequests.js';
-import { parseEmailFields } from 'src/utils/skyboxApi.js';
+import { parseEmailFields } from 'src/utils/emailParser.js';
 import { stripHtmlTags, trimMessageId } from 'src/utils/helperFunctions';
 
 // Constants

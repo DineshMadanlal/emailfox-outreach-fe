@@ -1,7 +1,7 @@
 <template>
   <q-card
     flat
-    class="email-step-card app-modal-card"
+    class="email-step-card app-modal-card custom-scrollbar"
   >
     <!-- Content Performance -->
     <q-dialog
@@ -423,6 +423,7 @@ export default defineComponent({
     padding: 0px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 
     // subject
     .subject-container {

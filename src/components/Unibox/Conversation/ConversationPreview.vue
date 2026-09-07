@@ -66,6 +66,7 @@
               :messageJson="message"
               :contactData="fetchedData"
               :defaultExpanded="index === conversationMessages.length - 1"
+              @reply="handleLinkedInReply"
             />
           </template>
         </template>
@@ -108,6 +109,25 @@
         @updatePersistentStatus="handleForwardEditorPersistentStatus"
       />
     </q-dialog>
+
+    <!-- LinkedIn Reply Editor Modal Dialog -->
+    <q-dialog
+      v-model="modals.showLinkedInReplyEditor"
+      :maximized="modals.linkedInReplyEditorType.maximized"
+      :persistent="modals.linkedInReplyEditorType.persistent"
+      :position="modals.linkedInReplyEditorType.maximized ? 'standard' : 'bottom'"
+      :class="{ 'app-bottom-dialog': !modals.linkedInReplyEditorType.maximized }"
+    >
+      <LinkedInReplyEditor
+        :maximized="modals.linkedInReplyEditorType.maximized"
+        :messageJson="activeLinkedInReplyMessage"
+        :threadJson="threadJson"
+        :contactData="fetchedData"
+        @onMaximize="handleLinkedInReplyEditorResize"
+        @onSuccessReply="onSuccessLinkedInReply"
+        @updatePersistentStatus="handleLinkedInReplyEditorPersistentStatus"
+      />
+    </q-dialog>
   </div>
 </template>
 
@@ -147,6 +167,9 @@ export default defineComponent({
     ),
     ForwardEditor: defineAsyncComponent(
       () => import('components/Unibox/Modals/ForwardEditor.vue'),
+    ),
+    LinkedInReplyEditor: defineAsyncComponent(
+      () => import('components/Unibox/Modals/LinkedInReplyEditor.vue'),
     ),
   },
 
@@ -204,9 +227,15 @@ export default defineComponent({
           maximized: false,
           persistent: false,
         },
+        showLinkedInReplyEditor: false,
+        linkedInReplyEditorType: {
+          maximized: false,
+          persistent: false,
+        },
       },
       activeReplyMessage: null,
       activeForwardMessage: null,
+      activeLinkedInReplyMessage: null,
     });
 
     // methods
@@ -338,6 +367,30 @@ export default defineComponent({
       state.modals.forwardEditorType.persistent = status;
     };
 
+    // LinkedIn Reply trigger: open LinkedInReplyEditor with active message context
+    const handleLinkedInReply = (messageJson) => {
+      state.activeLinkedInReplyMessage = messageJson;
+      state.modals.showLinkedInReplyEditor = true;
+    };
+
+    // Callback on successful LinkedIn reply: close modal and reload conversation
+    const onSuccessLinkedInReply = () => {
+      state.modals.showLinkedInReplyEditor = false;
+      loadMessages();
+      emit('onSuccessReply');
+    };
+
+    // Toggle full-screen / maximized modal view for LinkedIn reply editor
+    const handleLinkedInReplyEditorResize = () => {
+      const isMax = state.modals.linkedInReplyEditorType.maximized;
+      state.modals.linkedInReplyEditorType.maximized = !isMax;
+    };
+
+    // Keep LinkedIn modal open if user has draft content
+    const handleLinkedInReplyEditorPersistentStatus = (status) => {
+      state.modals.linkedInReplyEditorType.persistent = status;
+    };
+
     // lifecycle hooks
     watch(() => props.threadJson?.contact_mapping_id || props.threadJson?.id, () => {
       loadMessages();
@@ -372,6 +425,11 @@ export default defineComponent({
       onSuccessForward,
       handleForwardEditorResize,
       handleForwardEditorPersistentStatus,
+
+      handleLinkedInReply,
+      onSuccessLinkedInReply,
+      handleLinkedInReplyEditorResize,
+      handleLinkedInReplyEditorPersistentStatus,
     };
   },
 });

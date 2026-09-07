@@ -179,7 +179,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { formateDateInAgo } from 'src/utils/dates';
-import { parseEmailFields } from 'src/utils/skyboxApi.js';
+import { parseEmailFields } from 'src/utils/emailParser.js';
 
 // hardcoded constant
 const MAX_TO_FIELDS = 3;

@@ -290,7 +290,7 @@
     width: 100%;
     display: flex;
     align-items: center;
-    background: rgba($color: var(--grey-50-rgb), $alpha: 0.5);
+    background: $white;
     border-bottom: 1px solid rgba($color: var(--grey-50-rgb), $alpha: 0.5);
 
     position: sticky;

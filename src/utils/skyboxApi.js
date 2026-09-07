@@ -50,29 +50,6 @@ export const getFromAndEmailJson = (inputString) => {
   };
 };
 
-export const parseEmailFields = (input) => {
-  // Remove escape sequences like \n, \t, \r, \xA0, etc.
-  const cleaned = input.replace(/\\[a-zA-Z0-9]+/g, '');
-
-  // Split by comma and trim each entry
-  const entries = cleaned.split(',').map((s) => s.trim()).filter(Boolean);
-
-  // Extract name and email from each entry
-  return entries.map((entry) => {
-    const emailMatch = entry.match(/<([^>]+)>/);
-    if (emailMatch) {
-      return {
-        name: entry.replace(emailMatch[0], '').trim(),
-        email: emailMatch[1],
-      };
-    }
-    return {
-      name: '',
-      email: entry,
-    };
-  });
-};
-
 export const getGravatarUrl = (email, size = 40) => {
   const hash = md5(email.trim().toLowerCase());
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404&r=pg`;

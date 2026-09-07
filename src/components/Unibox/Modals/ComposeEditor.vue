@@ -750,7 +750,6 @@ export default defineComponent({
     background: unset;
     border-bottom: 0px;
     padding-right: 8px;
-    background: rgba($color: var(--grey-50-rgb), $alpha: 0.1);
 
     .modal-header-text {
       white-space: nowrap;

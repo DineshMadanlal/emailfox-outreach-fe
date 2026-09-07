@@ -802,10 +802,6 @@ export default defineComponent({
     }
   }
 
-  .app-modal-header {
-    background: $grey-50 !important;
-  }
-
   .app-modal-content {
     display: flex;
     padding: 0px;

@@ -585,7 +585,7 @@ export default defineComponent({
 
         // toolbar settings
         toolbarBottom: true,
-        toolbarSticky: true,
+        toolbarSticky: props.sequenceEditor,
 
         attribution: false,
         htmlUntouched: true,
