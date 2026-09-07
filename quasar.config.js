@@ -152,6 +152,7 @@ module.exports = configure((ctx) => ({
       STRIPE_PAY_PUBLISHABLE_KEY: process.env.STRIPE_PAY_KEY,
       GRAPHQL_ENDPOINT: process.env.GRAPHQL_ENDPOINT,
       EDITOR_KEY: process.env.EDITOR_KEY,
+      POSTHOG_PROJECT_TOKEN: process.env.POSTHOG_PROJECT_TOKEN,
     },
 
     // analyze: true,

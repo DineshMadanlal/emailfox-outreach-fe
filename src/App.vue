@@ -21,7 +21,7 @@ import { useRoute } from 'vue-router';
 
 // vue
 import {
-  computed, defineComponent, onBeforeUnmount, onMounted, provide, reactive, toRefs,
+  computed, defineComponent, onBeforeUnmount, onMounted, provide, reactive, toRefs, watch,
 } from 'vue';
 
 // quasar
@@ -48,6 +48,7 @@ import { client1 } from 'src/graphql/apollo';
 import { updatePrimaryAndSecondaryColor } from 'src/utils/quasarHelpers.js';
 import { applyBranding } from 'src/utils/applyBranding';
 import { getWorkspaceSlugFromUrl } from 'src/utils/helperFunctions';
+import { initPartnerAnalytics, identifyPartnerUser, resetPartnerUser } from 'src/utils/partnerAnalytics';
 
 // boot
 import { setApiBaseURL } from 'src/boot/axios';
@@ -94,6 +95,21 @@ export default defineComponent({
     };
 
     setupApollo();
+
+    // partner analytics
+    initPartnerAnalytics();
+
+    watch(
+      () => authStorePinia.getUser,
+      (currentUser) => {
+        if (currentUser && !isEmpty(currentUser) && (currentUser.id)) {
+          identifyPartnerUser(currentUser);
+        } else if (!currentUser || isEmpty(currentUser)) {
+          resetPartnerUser();
+        }
+      },
+      { immediate: true, deep: true },
+    );
 
     const setupWorkspaceBranding = (workspaceData) => {
       if (workspaceData?.theme_color) {
