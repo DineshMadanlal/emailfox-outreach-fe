@@ -255,3 +255,37 @@ export const formatMessageDateTime = (rawDate) => {
 
   return `${datePart}, ${timePart}`;
 };
+
+/**
+ * Formats a date string into an uppercase date header for timelines
+ * Example output: "27 JULY 2026"
+ * @param {string|Date} rawDate
+ * @returns {string}
+ */
+export const formatTimelineDateHeader = (rawDate) => {
+  if (!rawDate) return '';
+  const dateObj = new Date(rawDate);
+  if (Number.isNaN(dateObj.getTime())) return '';
+  return dateObj.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).toUpperCase();
+};
+
+/**
+ * Formats a date string into a 12-hour time string
+ * Example output: "5:29 PM"
+ * @param {string|Date} rawDate
+ * @returns {string}
+ */
+export const formatMessageTime = (rawDate) => {
+  if (!rawDate) return '';
+  const dateObj = new Date(rawDate);
+  if (Number.isNaN(dateObj.getTime())) return '';
+  return dateObj.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};

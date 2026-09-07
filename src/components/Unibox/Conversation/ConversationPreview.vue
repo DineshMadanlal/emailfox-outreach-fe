@@ -113,17 +113,19 @@
     <!-- LinkedIn Reply Editor Modal Dialog -->
     <q-dialog
       v-model="modals.showLinkedInReplyEditor"
-      :maximized="modals.linkedInReplyEditorType.maximized"
+
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
       :persistent="modals.linkedInReplyEditorType.persistent"
-      :position="modals.linkedInReplyEditorType.maximized ? 'standard' : 'bottom'"
-      :class="{ 'app-bottom-dialog': !modals.linkedInReplyEditorType.maximized }"
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
     >
       <LinkedInReplyEditor
-        :maximized="modals.linkedInReplyEditorType.maximized"
-        :messageJson="activeLinkedInReplyMessage"
         :threadJson="threadJson"
         :contactData="fetchedData"
-        @onMaximize="handleLinkedInReplyEditorResize"
+        :messageJson="activeLinkedInReplyMessage"
+
         @onSuccessReply="onSuccessLinkedInReply"
         @updatePersistentStatus="handleLinkedInReplyEditorPersistentStatus"
       />
@@ -150,6 +152,9 @@ import {
   fetchUniboxConversationMessages,
   fetchUniboxUntrackedParsedMessage,
 } from 'src/utils/unibox';
+
+// Composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // constants
 import { UNIBOX_CHANNEL_TYPE } from 'boot/unibox-constants';
@@ -181,8 +186,6 @@ export default defineComponent({
     'toggle-star',
     'toggle-read',
     'update:replyCategory',
-    'onSuccessReply',
-    'onSuccessForward',
   ],
 
   props: {
@@ -209,6 +212,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    //
+    const { isMobileDevice } = useAppHelpersApi();
+
     // state
     const state = reactive({
       fetchedData: null,
@@ -329,7 +335,6 @@ export default defineComponent({
     const onSuccessReply = () => {
       state.modals.showReplyEditor = false;
       loadMessages();
-      emit('onSuccessReply');
     };
 
     // Toggle full-screen / maximized modal view
@@ -353,7 +358,6 @@ export default defineComponent({
     const onSuccessForward = () => {
       state.modals.showForwardEditor = false;
       loadMessages();
-      emit('onSuccessForward');
     };
 
     // Toggle full-screen / maximized modal view for forward editor
@@ -375,15 +379,7 @@ export default defineComponent({
 
     // Callback on successful LinkedIn reply: close modal and reload conversation
     const onSuccessLinkedInReply = () => {
-      state.modals.showLinkedInReplyEditor = false;
       loadMessages();
-      emit('onSuccessReply');
-    };
-
-    // Toggle full-screen / maximized modal view for LinkedIn reply editor
-    const handleLinkedInReplyEditorResize = () => {
-      const isMax = state.modals.linkedInReplyEditorType.maximized;
-      state.modals.linkedInReplyEditorType.maximized = !isMax;
     };
 
     // Keep LinkedIn modal open if user has draft content
@@ -405,6 +401,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isMobileDevice,
       conversationMessages,
 
       // methods
@@ -428,7 +425,6 @@ export default defineComponent({
 
       handleLinkedInReply,
       onSuccessLinkedInReply,
-      handleLinkedInReplyEditorResize,
       handleLinkedInReplyEditorPersistentStatus,
     };
   },

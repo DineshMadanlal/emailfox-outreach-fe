@@ -37,6 +37,12 @@
               {{ messageText }}
             </div>
           </div>
+
+          <!-- Attachments Section -->
+          <MessageCardAttachments
+            v-if="cardAttachments?.length"
+            :attachments="cardAttachments"
+          />
         </div>
 
         <!-- 3. Bottom Footer Action (Reply) -->
@@ -59,6 +65,8 @@ import {
 import LinkedInCardBanner from 'components/Unibox/Conversation/MessageCards/LinkedInCardBanner.vue';
 import LinkedInCardHeader from 'components/Unibox/Conversation/MessageCards/LinkedInCardHeader.vue';
 import LinkedInCardFooter from 'components/Unibox/Conversation/MessageCards/LinkedInCardFooter.vue';
+import MessageCardAttachments from
+  'components/Unibox/Conversation/MessageCards/MessageCardAttachments.vue';
 
 // utils
 import { formatMessageDateTime } from 'src/utils/dates';
@@ -77,6 +85,7 @@ export default defineComponent({
     LinkedInCardBanner,
     LinkedInCardHeader,
     LinkedInCardFooter,
+    MessageCardAttachments,
   },
 
   emits: ['reply'],
@@ -94,9 +103,14 @@ export default defineComponent({
   },
 
   setup(props) {
-    const isReceived = computed(() => (
-      props.messageJson?.type === UNIBOX_EMAIL_TYPE.RECEIVED
+    const isThreadReply = computed(() => (
+      props.messageJson?.type === UNIBOX_EMAIL_TYPE.THREAD_REPLY
     ));
+
+    const isReceived = computed(() => {
+      if (isThreadReply.value) return false;
+      return props.messageJson?.type === UNIBOX_EMAIL_TYPE.RECEIVED;
+    });
 
     const isSent = computed(() => !isReceived.value);
 
@@ -117,8 +131,15 @@ export default defineComponent({
 
     const hasBodyContent = computed(() => !!messageText.value.trim());
 
+    const cardAttachments = computed(() => (
+      props.messageJson?.attachments || []
+    ));
+
     // Display names
     const senderDisplayName = computed(() => {
+      if (isThreadReply.value) {
+        return 'You';
+      }
       if (isReceived.value) {
         const first = props.contactData?.first_name?.trim() || '';
         const last = props.contactData?.last_name?.trim() || '';
@@ -168,6 +189,7 @@ export default defineComponent({
       formattedTimestamp,
       messageText,
       hasBodyContent,
+      cardAttachments,
       senderDisplayName,
       recipientDisplayName,
       senderInitial,

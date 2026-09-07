@@ -4,7 +4,7 @@
  */
 
 // utils
-import { getApiCall, patchApiCall } from 'src/utils/apiRequests';
+import { getApiCall, patchApiCall, postApiCall } from 'src/utils/apiRequests';
 
 // constants
 import { UNIBOX_THREAD_TYPE } from 'boot/unibox-constants';
@@ -280,6 +280,33 @@ export const updateUniboxThreadReplyCategory = async ({
     payload: {
       reply_category_id: replyCategoryId,
       clear_reply_category: clearReplyCategory,
+    },
+    includeWorkspace: true,
+  });
+};
+
+/**
+ * Sends a LinkedIn reply message to an inbox conversation
+ * @param {Object} options
+ * @param {string} options.contactMappingId - UUID of the contact mapping
+ * @param {string} options.message - The text message body to send
+ * @param {Array} [options.attachments] - Optional attachments array
+ * @returns {Promise<Object>} API response
+ */
+export const sendUniboxLinkedInReply = async ({
+  contactMappingId,
+  message,
+  attachments = [],
+}) => {
+  if (!contactMappingId) {
+    throw new Error('Contact mapping ID is required to send LinkedIn reply');
+  }
+
+  return postApiCall({
+    endpoint: `/unibox/inbox/${contactMappingId}/linkedin/reply`,
+    payload: {
+      message,
+      attachments,
     },
     includeWorkspace: true,
   });
