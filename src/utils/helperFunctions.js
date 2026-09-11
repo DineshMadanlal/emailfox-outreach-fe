@@ -257,9 +257,15 @@ export const getWorkspaceSlugFromUrl = () => {
 
   const rootDomain = getRootDomain();
 
-  const primaryDomain = process.env.DEV_MODE
-    ? 'skysenders.local'
-    : rootDomain;
+  let primaryDomain = rootDomain;
+
+  if (process.env.DEV_MODE) {
+    primaryDomain = 'skysenders.local';
+
+    if (window.location.hostname.includes('emailfox')) {
+      primaryDomain = 'emailfox.skysenders.local';
+    }
+  }
 
   // Remove port if present
   const cleanHost = hostname.split(':')[0];

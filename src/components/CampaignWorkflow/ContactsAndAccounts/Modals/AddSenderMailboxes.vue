@@ -165,7 +165,7 @@
                 behavior="menu"
                 dropdown-icon="keyboard_arrow_down"
 
-                :options="[5, 10, 20, 30, 50]"
+                :options="[5, 10, 25, 50, 75, 100]"
                 v-model="pagination.rowsPerPage"
 
                 @update:model-value="onFetchMailboxRecords"

@@ -135,6 +135,8 @@ export default defineComponent({
         failed_records: 0,
         status: BULK_IMPORT_JOB_STATUS.PENDING,
       },
+
+      jobResponseJson: {},
     });
 
     // computed
@@ -161,6 +163,8 @@ export default defineComponent({
     const fetchJobStatus = async () => {
       try {
         const response = await getSmtpBulkImportJob(props.jobId);
+
+        state.jobResponseJson = response;
 
         const logs = response?.logs || [];
         const successfulFromLogs = logs.filter(

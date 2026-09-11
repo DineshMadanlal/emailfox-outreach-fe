@@ -1,5 +1,18 @@
 <template>
   <q-card flat class="app-modal-card import-history-card">
+    <!-- Dialog -->
+    <q-dialog
+      v-model="modals.showBulkImportFilePreviewModal"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <BulkImportFilePreview
+        :jobData="modals.jobLogsResponseJson"
+      />
+    </q-dialog>
+
     <!-- header -->
     <div class="app-modal-header">
       <!-- header text -->
@@ -47,10 +60,9 @@
 
         <q-table
           v-else
-          virtual-scroll
           v-model:pagination="tableState.pagination"
           separator="cell"
-          class="app-table import-history-table app-paginated-table app-table-rows-fixed"
+          class="app-table app-table-rows-fixed import-history-table app-paginated-table"
           :rows="tableState.data"
           :columns="tableColumns"
           :loading="loaders.isFetchApi"
@@ -82,7 +94,10 @@
                 />
 
                 <div class="file-text-details">
-                  <div class="file-name-text ellipsis">
+                  <div
+                    class="file-name-text ellipsis"
+                    :title="props.row.csv_filename"
+                  >
                     {{ props.row.csv_filename || 'mailboxes.csv' }}
                   </div>
 
@@ -129,21 +144,26 @@
           <!-- Failed Column -->
           <template v-slot:body-cell-failed_records="props">
             <q-td :props="props">
-              <div class="flex no-wrap items-center justify-between failed-cell-container">
-                <div class="flex no-wrap items-center count-cell-content">
-                  <LocalSvgIcon
-                    image="seq-bounced"
-                    classes="metric-icon failed-icon"
+              <div class="flex no-wrap items-center count-cell-content">
+                <LocalSvgIcon
+                  image="seq-bounced"
+                  classes="metric-icon failed-icon"
 
-                    v-if="props.row.failed_records"
-                  />
+                  v-if="props.row.failed_records"
+                />
 
-                  <span class="count-value">
-                    {{ props.row.failed_records ?
-                      getNumeralAmount(props.row.failed_records) : '-' }}
-                  </span>
-                </div>
+                <span class="count-value">
+                  {{ props.row.failed_records ?
+                    getNumeralAmount(props.row.failed_records) : '-' }}
+                </span>
+              </div>
+            </q-td>
+          </template>
 
+          <!-- Actions -->
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props">
+              <div class="actions-cell-container">
                 <!-- Download Failed button -->
                 <q-btn
                   v-if="props.row.failed_records > 0"
@@ -151,13 +171,33 @@
                   flat
                   round
                   dense
-                  class="download-failed-btn"
+                  class="action-btn"
+                  :loading="loaders.downloadingJobId === props.row.id"
+                  @click.stop="viewImportRecordById(props.row)"
+                >
+                  <LocalSvgIcon
+                    image="show"
+                    classes="action-icon"
+                  />
+
+                  <AppTooltip
+                    content="View Import Record"
+                  />
+                </q-btn>
+
+                <!--  -->
+                <q-btn
+                  flat
+                  round
+                  dense
+                  class="action-btn"
+
                   :loading="loaders.downloadingJobId === props.row.id"
                   @click.stop="downloadFailedRecords(props.row)"
                 >
                   <LocalSvgIcon
                     image="download"
-                    classes="download-icon"
+                    classes="action-icon"
                   />
 
                   <AppTooltip
@@ -223,7 +263,7 @@
                   hide-bottom-space
                   behavior="menu"
                   dropdown-icon="keyboard_arrow_down"
-                  :options="[5, 10, 20, 30, 50]"
+                  :options="[5, 10, 25, 50, 75, 100]"
                   v-model="tableState.pagination.rowsPerPage"
                   @update:model-value="onFetchData"
                   class="records-per-page-select"
@@ -304,6 +344,7 @@ import {
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppTooltip from 'components/General/AppTooltip.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
+import BulkImportFilePreview from 'src/components/Mailboxes/Modals/BulkImportFilePreview.vue';
 
 // api
 import { getBulkImportJobs, getSmtpBulkImportJob } from 'src/utils/domainMailboxesApi.js';
@@ -312,6 +353,9 @@ import { getBulkImportJobs, getSmtpBulkImportJob } from 'src/utils/domainMailbox
 import { formatDate1 } from 'src/utils/dates';
 import { getNumeralAmount } from 'src/utils/numbers';
 import { exportFailedMailboxesCsv } from 'src/utils/csvHelpers';
+
+// composition api
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // constants
 import { DEFAULT_TABLE_PAGINATION } from 'boot/constants';
@@ -328,24 +372,36 @@ export default defineComponent({
     ApiLoader,
     AppTooltip,
     AppSearchInput,
+    BulkImportFilePreview,
   },
 
   setup() {
+    // app context
     const { appContext } = getCurrentInstance();
+
+    // composition API
+    const { isMobileDevice } = useAppHelpersApi();
 
     // state
     const state = reactive({
+      // loaders
       loaders: {
         isFetchApi: false,
         downloadingJobId: null,
         syncingJobId: null,
       },
 
+      // table state
       tableState: {
         data: [],
         filters: { ...tableFilters },
         pagination: { ...DEFAULT_TABLE_PAGINATION },
         areResultsFetchedOnce: false,
+      },
+
+      modals: {
+        jobLogsResponseJson: {},
+        showBulkImportFilePreviewModal: false,
       },
     });
 
@@ -386,6 +442,12 @@ export default defineComponent({
         label: 'Failed',
         align: 'left',
         field: 'failed_records',
+      },
+      {
+        name: 'actions',
+        label: '',
+        align: 'left',
+        field: '',
       },
     ];
 
@@ -472,11 +534,33 @@ export default defineComponent({
       onFetchData();
     };
 
+    const fetchSmtpBulkImportJobById = async (jobId) => {
+      state.loaders.downloadingJobId = jobId;
+      const response = await getSmtpBulkImportJob(jobId);
+
+      state.modals.jobLogsResponseJson = response;
+
+      return response;
+    };
+
+    const viewImportRecordById = async (row) => {
+      try {
+        await fetchSmtpBulkImportJobById(row.id);
+
+        state.modals.showBulkImportFilePreviewModal = true;
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message || 'Unable to download failed mailboxes.',
+        });
+      } finally {
+        state.loaders.downloadingJobId = null;
+      }
+    };
+
     const downloadFailedRecords = async (row) => {
       try {
-        state.loaders.downloadingJobId = row.id;
-
-        const response = await getSmtpBulkImportJob(row.id);
+        const response = await fetchSmtpBulkImportJobById(row.id);
         const logs = response?.logs || [];
 
         if (!logs.length) {
@@ -549,6 +633,7 @@ export default defineComponent({
       // computed
       showApiLoader,
       tableColumns,
+      isMobileDevice,
       tablePaginationLabel,
 
       // methods
@@ -559,6 +644,7 @@ export default defineComponent({
       onSyncJobStatus,
       getFileSubtitle,
       getNumeralAmount,
+      viewImportRecordById,
       downloadFailedRecords,
     };
   },
@@ -568,14 +654,14 @@ export default defineComponent({
 <style lang="scss" scoped>
 .import-history-card {
   position: relative;
-  max-width: 740px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   flex: 1;
 
   // sm min
   @media (min-width: $breakpoint-sm-min) {
-    width: 740px;
+    width: 900px;
     min-height: 100%;
 
     display: flex;
@@ -586,7 +672,7 @@ export default defineComponent({
     border-radius: 8px 0px 0px 8px !important;
   }
 
-  @media (min-width: 601px) and (max-width: 745px) {
+  @media (min-width: 601px) and (max-width: 920px) {
     width: calc(100vw - 32px);
   }
 
@@ -615,6 +701,8 @@ export default defineComponent({
     }
 
     .import-history-table {
+      overflow: auto;
+
       .file-cell-content {
         gap: 12px;
 
@@ -631,6 +719,8 @@ export default defineComponent({
             color: $black;
             font-size: 13px;
             font-weight: 500;
+
+            max-width: 200px;
           }
 
           .file-subtitle-text {
@@ -681,17 +771,22 @@ export default defineComponent({
         }
       }
 
-      .failed-cell-container {
+      .actions-cell-container {
         width: 100%;
         gap: 12px;
+        display: flex;
+        align-items: center;
 
-        .download-failed-btn {
+        .action-btn {
           width: 28px;
           height: 28px;
+          min-height: unset;
+          min-width: unset;
+
           border: 1px solid $blue-grey;
           border-radius: 6px;
 
-          :deep(.download-icon) {
+          :deep(.action-icon) {
             width: 14px;
             height: 14px;
 

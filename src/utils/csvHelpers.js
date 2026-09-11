@@ -1,5 +1,9 @@
+// npm
+import exportFromJSON from 'export-from-json';
+
 // constants
 import { EMAIL_REGEX, DOMAIN_REGEX } from 'src/boot/constants';
+import { BULK_IMPORT_LOG_STATUS } from 'src/boot/mailbox-constants';
 import { SUPPRESSION_FIELD_ALIASES } from 'src/boot/campaign-constants';
 
 const normalizeString = (value = '') => value.trim().toLowerCase();
@@ -217,42 +221,26 @@ export const downloadSmtpCsvTemplate = () => {
  * Exports failed mailboxes logs as a CSV file and triggers browser download.
  */
 export const exportFailedMailboxesCsv = ({ filename = 'mailboxes.csv', logs = [] }) => {
-  const failedLogs = logs.filter((log) => log.status === 'failed' || log.error_message);
+  const failedLogs = logs.filter((log) => log.status
+    === BULK_IMPORT_LOG_STATUS.FAILED || log.error_message);
+
   const records = failedLogs.length > 0 ? failedLogs : logs;
 
-  const headers = ['row_number', 'email', 'error_message'];
-
-  const escapeCsv = (val) => {
-    if (val === null || val === undefined) return '';
-    const str = String(val);
-    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-  };
-
-  const csvRows = [
-    headers.join(','),
-    ...records.map((log) => [
-      escapeCsv(log.row_number ?? ''),
-      escapeCsv(log.email ?? ''),
-      escapeCsv(log.error_message ?? ''),
-    ].join(',')),
-  ];
-
-  const csvContent = csvRows.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
+  const csvRows = records.map((log) => ({
+    email: log.email ?? '',
+    row_number: log.row_number ?? '',
+    error_message: log.error_message ?? '',
+  }));
 
   const cleanFilename = filename || 'mailboxes.csv';
   const downloadName = cleanFilename.startsWith('failed_') ? cleanFilename : `failed_${cleanFilename}`;
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', downloadName);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // remove .csv at the end of the download name if it exists
+  const finalDownloadName = downloadName.endsWith('.csv') ? downloadName.slice(0, -4) : downloadName;
 
-  URL.revokeObjectURL(url);
+  exportFromJSON({
+    data: csvRows,
+    fileName: finalDownloadName,
+    exportType: exportFromJSON.types.csv,
+  });
 };
