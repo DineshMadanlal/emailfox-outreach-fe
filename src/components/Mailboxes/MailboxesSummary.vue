@@ -11,6 +11,8 @@
         :key="`each-mailbox-summary-${stat.key}`"
 
         class="each-delivery-stat-block"
+
+        @click="onFilterStat(stat.key)"
       >
         <LocalSvgIcon
           :image="stat.icon"
@@ -48,14 +50,23 @@ import { getMailboxesOverallStatus } from 'src/utils/domainMailboxesApi.js';
 // Store
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
+// file constant
+const STAT_KEYS = {
+  CONNECTED: 'connected',
+  WARMUP_ERROR: 'warmupError',
+  DISCONNECTED: 'disconnected',
+};
+
 export default defineComponent({
   name: 'MailboxesSummary',
+
+  emits: ['filter-connected', 'filter-warmup-error', 'filter-disconnected'],
 
   components: {
     ApiLoader,
   },
 
-  setup() {
+  setup(props, { emit }) {
     // appContext
     const { appContext } = getCurrentInstance();
 
@@ -87,14 +98,14 @@ export default defineComponent({
 
       return [
         {
-          key: 'connected',
+          key: STAT_KEYS.CONNECTED,
           label: 'Connected Mailbox',
           value: connected_count,
           icon: 'connected',
           color: 'positive',
         },
         {
-          key: 'warmupError',
+          key: STAT_KEYS.WARMUP_ERROR,
           label: 'Warmup Error',
           value: warmup_error_count,
           icon: 'seq-bounced',
@@ -107,7 +118,7 @@ export default defineComponent({
         //   color: 'negative',
         // },
         {
-          key: 'disconnected',
+          key: STAT_KEYS.DISCONNECTED,
           label: 'Disconnected',
           value: disconnected_count,
           icon: 'disconnected',
@@ -145,6 +156,16 @@ export default defineComponent({
       }
     };
 
+    const onFilterStat = (key) => {
+      if (key === STAT_KEYS.CONNECTED) {
+        emit('filter-connected');
+      } else if (key === STAT_KEYS.WARMUP_ERROR) {
+        emit('filter-warmup-error');
+      } else if (key === STAT_KEYS.DISCONNECTED) {
+        emit('filter-disconnected');
+      }
+    };
+
     // lifecylce
     onMounted(() => {
       if (storedOverallStatus.value?.connected_count) {
@@ -162,6 +183,7 @@ export default defineComponent({
       deliveryStats,
 
       // method
+      onFilterStat,
       getNumeralAmount,
     };
   },
@@ -206,9 +228,10 @@ export default defineComponent({
     }
 
     .each-delivery-stat-block {
-      display: flex;
       gap: 8px;
+      display: flex;
       min-width: 168px;
+      cursor: pointer;
 
       &:not(:first-child) {
         padding-left: 12px;

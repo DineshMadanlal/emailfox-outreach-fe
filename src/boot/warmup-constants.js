@@ -2,6 +2,7 @@ export const WARMUP_STATUS = {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',
   PAUSED: 'PAUSED',
+  BLOCKED: 'BLOCKED',
 };
 
 export const FILTER_WARMUP_STATUS = {
@@ -12,6 +13,10 @@ export const FILTER_WARMUP_STATUS = {
   INACTIVE: {
     label: 'Inactive',
     value: WARMUP_STATUS.INACTIVE,
+  },
+  BLOCKED: {
+    label: 'Blocked',
+    value: WARMUP_STATUS.BLOCKED,
   },
 };
 

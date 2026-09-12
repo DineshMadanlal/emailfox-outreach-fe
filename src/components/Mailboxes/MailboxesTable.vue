@@ -112,6 +112,10 @@
       <MailboxesSummary
         :key="mailboxesSummaryKey"
         v-if="fromAllMailboxesPage && !showAllMailboxesIllustration"
+
+        @filter-connected="onFilterConnectedAccounts"
+        @filter-warmup-error="onFilterWarmupErrorAccounts"
+        @filter-disconnected="onFilterDisconnectedAccounts"
       />
 
       <AllMailboxesIllustration
@@ -578,7 +582,6 @@ import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 import ActionConfig from 'components/Mailboxes/Modals/ActionConfig.vue';
 
 // Import the Pinia store
-import { storeExclusions } from 'src/stores/storeExclusions.js';
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // constants
@@ -586,7 +589,7 @@ import {
   TABLE_MULTI_SELECT_OPTIONS, DEFAULT_TABLE_PAGINATION,
 } from 'boot/constants';
 import { WARMUP_STATUS } from 'src/boot/warmup-constants';
-import { MAILBOX_ACTIONS } from 'src/boot/mailbox-constants';
+import { MAILBOX_ACTIONS, MAILBOX_STATUS } from 'src/boot/mailbox-constants';
 
 export default defineComponent({
   name: 'AllMailboxes',
@@ -658,7 +661,6 @@ export default defineComponent({
 
     // store
     const userStore = useUserPreferencesStore();
-    const storeExclusionsPinia = storeExclusions();
 
     // metadata
     useMeta(generateMetadata('All Mailboxes'));
@@ -849,7 +851,11 @@ export default defineComponent({
 
         // warmup status
         if (warmupStatus) {
-          params.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
+          if (warmupStatus === WARMUP_STATUS.BLOCKED) {
+            params.is_warmup_error = true;
+          } else {
+            params.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
+          }
         }
 
         // status
@@ -1029,13 +1035,6 @@ export default defineComponent({
       });
     };
 
-    const resetDomainByIdStoreValue = () => {
-      storeExclusionsPinia.setMultipleFields({
-        domainByIdJson: {},
-        domainByIdEngagement: {},
-      });
-    };
-
     const clearAllFilters = () => {
       state.filters = { ...mailboxFilters };
 
@@ -1068,6 +1067,34 @@ export default defineComponent({
       onActionConfig(MAILBOX_ACTIONS.ENABLE_WARMUP);
     };
 
+    const resetFilters = () => {
+      state.filters = { ...mailboxFilters };
+    };
+
+    const onFilterConnectedAccounts = () => {
+      resetFilters();
+
+      state.filters.status = MAILBOX_STATUS.ACTIVE;
+
+      onFetchMailboxRecords();
+    };
+
+    const onFilterWarmupErrorAccounts = () => {
+      resetFilters();
+
+      state.filters.warmupStatus = WARMUP_STATUS.BLOCKED;
+
+      onFetchMailboxRecords();
+    };
+
+    const onFilterDisconnectedAccounts = () => {
+      resetFilters();
+
+      state.filters.status = MAILBOX_STATUS.DISCONNECTED;
+
+      onFetchMailboxRecords();
+    };
+
     onMounted(() => {
       const {
         connectionSuccess, mailbox_id, email,
@@ -1090,8 +1117,6 @@ export default defineComponent({
         }, '*');
       } else {
         makeApiCallOnMounted();
-
-        resetDomainByIdStoreValue();
       }
     });
 
@@ -1129,6 +1154,10 @@ export default defineComponent({
       onActionConfig,
       onSuccessfulAction,
       onEnableWarmupByMailboxId,
+
+      onFilterConnectedAccounts,
+      onFilterWarmupErrorAccounts,
+      onFilterDisconnectedAccounts,
 
       // hardcoded
       WARMUP_STATUS,

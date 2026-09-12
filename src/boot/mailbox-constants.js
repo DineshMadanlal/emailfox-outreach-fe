@@ -54,7 +54,7 @@ export const ESP_PROVIDERS = {
   CUSTOM_SMTP: 'CUSTOM_SMTP',
   YAHOO: 'YAHOO',
   ZOHO: 'ZOHO',
-  SKYSENDERS: 'SKYSENDERS',
+  AZURE: 'AZURE',
 };
 
 export const MAILBOX_ACTIONS = {

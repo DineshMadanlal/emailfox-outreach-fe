@@ -1,6 +1,26 @@
 <template>
   <div class="warmup-status">
-    <div class="flex no-wrap items-center">
+    <!-- Blocked -->
+    <div
+      v-if="isWarmupBlocked"
+      class="flex no-wrap items-center"
+    >
+      <!--  -->
+      <LocalSvgIcon
+        image="warmup"
+        classes="warmup-icon blocked"
+      />
+
+      <div class="blocked-text">
+        Blocked
+      </div>
+    </div>
+
+    <!-- Enabled/Disabled -->
+    <div
+      v-else
+      class="flex no-wrap items-center"
+    >
       <!--  -->
       <LocalSvgIcon
         image="warmup"
@@ -35,8 +55,11 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
-// constants
+// utils
 import { getWarmupStatus } from 'src/utils/warmupApi.js';
+
+// constants
+import { WARMUP_STATUS } from 'src/boot/warmup-constants.js';
 
 export default defineComponent({
   name: 'WarmupStatus',
@@ -52,6 +75,9 @@ export default defineComponent({
 
   setup(props) {
     // computed
+    const isWarmupBlocked = computed(() => props.mailboxJson.warmup_status
+      === WARMUP_STATUS.BLOCKED);
+
     const isWarmupEnabled = computed(() => props.mailboxJson.warmup_enabled);
 
     const warmupStatusJson = computed(() => getWarmupStatus(
@@ -62,6 +88,7 @@ export default defineComponent({
       // computed
       isWarmupEnabled,
       warmupStatusJson,
+      isWarmupBlocked,
     };
   },
 });
@@ -80,11 +107,19 @@ export default defineComponent({
     &.enabled {
       @include svg-icon-fill('path', $primary);
     }
+
+    &.blocked {
+      @include svg-icon-fill('path', $negative);
+    }
   }
 
   .start-warmup-text {
     color: $black;
     text-decoration: unset;
+  }
+
+  .blocked-text {
+    color: $negative;
   }
 
   .warmup-duration-text {

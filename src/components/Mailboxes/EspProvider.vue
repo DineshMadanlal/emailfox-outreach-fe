@@ -50,6 +50,11 @@ export default defineComponent({
             image: 'zoho',
             label: 'Zoho',
           };
+        case ESP_PROVIDERS.AZURE:
+          return {
+            image: 'azure',
+            label: 'Azure',
+          };
         default:
           return {
             image: 'other-smtp',
