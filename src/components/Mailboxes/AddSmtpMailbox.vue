@@ -532,7 +532,7 @@ export default defineComponent({
         await nextTick();
         state.verificationMsgRef?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (error) {
-        const logs = error?.data?.verification_logs || null;
+        const logs = error?.response?.data?.verification_logs || null;
 
         const cleanMessage = (error?.message || 'Mailbox verification failed').replace(/^Error:\s*/i, '');
 

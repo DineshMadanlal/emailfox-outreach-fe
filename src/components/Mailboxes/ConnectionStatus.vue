@@ -13,6 +13,11 @@
     <div class="status-text">
       {{ isConnected ? 'Connected' : 'Disconnected' }}
     </div>
+
+    <AppTooltip
+      v-if="!isConnected && !!disconnectedReason"
+      :content="disconnectedReason"
+    />
   </div>
 </template>
 
@@ -20,13 +25,24 @@
 // vue
 import { defineComponent } from 'vue';
 
+// Components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'ConnectionStatus',
+
+  components: {
+    AppTooltip,
+  },
 
   props: {
     isConnected: {
       type: Boolean,
       default: false,
+    },
+    disconnectedReason: {
+      type: String,
+      default: '',
     },
   },
 });

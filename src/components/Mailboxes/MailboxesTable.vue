@@ -458,6 +458,7 @@
               class="mailbox-route-link"
             >
               <ConnectionStatus
+                :disconnectedReason="props.row.disconnect_reason"
                 :isConnected="props.row.status === WARMUP_STATUS.ACTIVE"
               />
             </router-link>
