@@ -81,6 +81,8 @@
         v-if="!showAllDomainsIllustration"
 
         :key="domainsSummaryKey"
+
+        @filterAuthenticationError="onFilterAuthenticationError"
       />
 
       <AllDomainsIllustration
@@ -112,6 +114,12 @@
           class="dead-small dd-filter"
 
           @update:modelValue="onFetchRecords"
+        />
+
+        <!-- Clear Filter -->
+        <ResetFiltersButton
+          v-if="isFilterApplied"
+          @click="clearAllFilters"
         />
 
         <q-space />
@@ -426,6 +434,7 @@ import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
 
 import SelectProvider from 'components/Dropdown/SelectProvider.vue';
 import DomainsSummary from 'components/Domains/DomainsSummary.vue';
+import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 
 // Import the Pinia store
 import { storeExclusions } from 'src/stores/storeExclusions.js';
@@ -460,6 +469,7 @@ export default defineComponent({
 
     SelectProvider,
     DomainsSummary,
+    ResetFiltersButton,
   },
 
   setup() {
@@ -467,6 +477,7 @@ export default defineComponent({
     const domainFilters = {
       provider: null,
       searchText: null,
+      is_authentication_error: false,
     };
 
     // instance
@@ -528,7 +539,7 @@ export default defineComponent({
     const isFilterApplied = computed(() => {
       // take the keys of filters and check if all are values are empty
       const filterKeys = Object.keys(state.filters);
-      const areAllFiltersEmpty = filterKeys.every((key) => isEmpty(state.filters[key]));
+      const areAllFiltersEmpty = filterKeys.every((key) => !state.filters[key]);
 
       return !areAllFiltersEmpty;
     });
@@ -636,6 +647,10 @@ export default defineComponent({
         // provider
         if (state.filters.provider) {
           params.provider = state.filters.provider;
+        }
+
+        if (state.filters.is_authentication_error) {
+          params.is_authentication_error = state.filters.is_authentication_error;
         }
 
         // api call
@@ -794,6 +809,25 @@ export default defineComponent({
       });
     };
 
+    const resetFilters = () => {
+      state.filters = { ...domainFilters };
+    };
+
+    const clearAllFilters = () => {
+      resetFilters();
+
+      onFetchRecords();
+    };
+
+    const onFilterAuthenticationError = () => {
+      resetFilters();
+
+      // handle the filter authentication error event
+      state.filters.is_authentication_error = true;
+
+      onFetchRecords();
+    };
+
     onMounted(() => {
       makeApiCallOnMounted();
 
@@ -813,6 +847,7 @@ export default defineComponent({
       showAllDomainsIllustration,
 
       baseColumns,
+      isFilterApplied,
       dynamicColumns,
 
       // methods
@@ -826,6 +861,9 @@ export default defineComponent({
       onFetchRecords,
       onSuccessfulDeleteDomains,
       onUpdateVisibleColumns,
+      onFilterAuthenticationError,
+
+      clearAllFilters,
     };
   },
 });

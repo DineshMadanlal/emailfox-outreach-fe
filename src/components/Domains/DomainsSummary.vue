@@ -11,6 +11,10 @@
         :key="`each-domain-summary-${stat.key}`"
 
         class="each-delivery-stat-block"
+
+        :class="{ 'cursor-pointer': !!stat.emitValue }"
+
+        @click="handleFilter(stat.emitValue)"
       >
         <LocalSvgIcon
           :image="stat.icon"
@@ -50,11 +54,13 @@ import { useUserPreferencesStore } from 'src/stores/userPreferences';
 export default defineComponent({
   name: 'DomainsSummary',
 
+  emits: ['filterAuthenticationError'],
+
   components: {
     ApiLoader,
   },
 
-  setup() {
+  setup(props, { emit }) {
     // appContext
     const { appContext } = getCurrentInstance();
 
@@ -96,11 +102,18 @@ export default defineComponent({
           value: authentication_error_count,
           icon: 'seq-bounced',
           color: 'negative',
+          emitValue: 'filterAuthenticationError',
         },
       ];
     });
 
     // methods
+    const handleFilter = (value) => {
+      if (value) {
+        emit(value);
+      }
+    };
+
     const makeApiCallOnMounted = async () => {
       try {
         state.isApiLoading = true;
@@ -147,6 +160,7 @@ export default defineComponent({
       deliveryStats,
 
       // method
+      handleFilter,
       getNumeralAmount,
     };
   },

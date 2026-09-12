@@ -138,7 +138,7 @@ export default defineComponent({
     const onUpdateAuthReports = (responseJson) => {
       emit('updateDomainByIdJson', {
         ...props.domainByJson,
-        ...responseJson,
+        ...(responseJson?.domain || responseJson || {}),
       });
 
       // toaster
