@@ -31,12 +31,18 @@
           unelevated
 
           :loading="loading"
+          :disable="isReadOnly"
 
           color="primary"
           label="Connect LinkedIn"
 
           @click="$emit('connectAccount')"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
   </div>
@@ -46,16 +52,34 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// Components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'LinkedInAccountsIllustration',
 
   emits: ['connectAccount'],
+
+  components: {
+    AppTooltip,
+  },
 
   props: {
     loading: {
       type: Boolean,
       default: false,
     },
+  },
+
+  setup() {
+    const { isReadOnly } = usePermissions();
+
+    return {
+      isReadOnly,
+    };
   },
 });
 </script>

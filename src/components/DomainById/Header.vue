@@ -127,10 +127,10 @@ import {
 import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import DomainMoreOptions from 'components/Menu/DomainMoreOptions.vue';
 import DropdownOptionsButton from 'components/Buttons/DropdownOptionsButton.vue';
-import AppTooltip from 'components/General/AppTooltip.vue';
 
 export default defineComponent({
   name: 'DomainByIdHeader',

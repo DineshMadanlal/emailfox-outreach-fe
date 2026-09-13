@@ -230,9 +230,9 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
       mailboxByIdPages,
       mailboxProvider,
-      isReadOnly,
 
       // methods
       closePage,

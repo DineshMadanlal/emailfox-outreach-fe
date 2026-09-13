@@ -97,7 +97,9 @@
       <div
         class="linkedin-id-right-section"
       >
-        <DropdownOptionsButton>
+        <DropdownOptionsButton
+          :disable="isReadOnly"
+        >
           <template #menu>
             <LinkedInMoreOptions
               :tableRow="accountByJson"
@@ -107,6 +109,11 @@
               @updateProxySettings="$emit('updateProxySettings')"
             />
           </template>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </DropdownOptionsButton>
       </div>
     </div>
@@ -144,8 +151,12 @@ import {
 } from 'vue';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import LinkedInMoreOptions from 'components/Menu/LinkedInMoreOptions.vue';
 import DropdownOptionsButton from 'components/Buttons/DropdownOptionsButton.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 export default defineComponent({
   name: 'LinkedInByIdHeader',
@@ -153,6 +164,7 @@ export default defineComponent({
   emits: ['deleteAccount', 'editSendingLimits', 'updateProxySettings', 'reconnectAccount'],
 
   components: {
+    AppTooltip,
     LinkedInMoreOptions,
     DropdownOptionsButton,
   },
@@ -169,6 +181,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // computed
     const returnRouteLink = computed(() => '/outreach/linkedin/accounts');
 
@@ -193,6 +208,7 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
       userInitial,
       currentTabLabel,
       returnRouteLink,

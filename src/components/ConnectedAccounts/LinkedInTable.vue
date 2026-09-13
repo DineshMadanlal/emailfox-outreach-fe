@@ -86,11 +86,17 @@
           label="Connect LinkedIn"
 
           :loading="loaders.isConnectApi"
+          :disable="isReadOnly"
 
           @click="onConnectLinkedInAccount"
 
           v-if="!showLinkedInIllustration"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </template>
     </AppHeader>
 
@@ -281,6 +287,7 @@
                   unelevated
 
                   class="more-action-btn"
+                  :disable="isReadOnly"
 
                   @click.stop.prevent
                 >
@@ -292,6 +299,7 @@
 
                   <!-- menu -->
                   <q-menu
+                    v-if="!isReadOnly"
                     auto-close
                     transition-show="jump-down"
                     transition-hide="jump-up"
@@ -305,6 +313,11 @@
                       @deleteAccount="deleteLinkedInAccount"
                     />
                   </q-menu>
+
+                  <AppTooltip
+                    v-if="isReadOnly"
+                    content="You have read-only access in this workspace"
+                  />
                 </q-btn>
               </div>
             </router-link>
@@ -484,8 +497,10 @@ import { useMeta } from 'quasar';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppHeader from 'components/Headers/AppHeader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
@@ -514,6 +529,7 @@ export default defineComponent({
   name: 'LinkedInTable',
 
   components: {
+    AppTooltip,
     ApiLoader,
     AppHeader,
     ConnectionStatus,
@@ -552,6 +568,7 @@ export default defineComponent({
 
     // composition API
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('LinkedIn Accounts'));
@@ -963,6 +980,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       baseColumns,
       dynamicColumns,
       isMobileDevice,
