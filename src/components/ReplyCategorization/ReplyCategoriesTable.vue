@@ -182,6 +182,7 @@
                 unelevated
 
                 class="more-action-btn"
+                :disable="isReadOnly"
 
                 v-if="props.row.workspace_id"
               >
@@ -192,11 +193,17 @@
                 />
 
                 <ReplyCategoryMoreOptions
+                  v-if="!isReadOnly"
                   :tableRow="props.row"
 
                   @editReplyCategory="onEditReplyCategory"
                   @deleteReplyCategory="onDeleteReplyCategory"
                   @updateReplyCategoryStatus="onUpdateReplyCategoryStatus"
+                />
+
+                <AppTooltip
+                  v-if="isReadOnly"
+                  content="You have read-only access in this workspace"
                 />
               </q-btn>
             </div>
@@ -252,6 +259,7 @@ import {
 } from 'vue';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ReplyCategoryMoreOptions from 'components/Menu/ReplyCategoryMoreOptions.vue';
@@ -263,6 +271,7 @@ import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Utils
 import { getNumeralAmount } from 'src/utils/numbers';
@@ -281,6 +290,7 @@ export default defineComponent({
   name: 'ReplyCategoriesTable',
 
   components: {
+    AppTooltip,
     ApiLoader,
     AppSearchInput,
     SaveReplyCategory,
@@ -291,6 +301,7 @@ export default defineComponent({
   setup() {
     // Composables
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // store
     const userStore = useUserPreferencesStore();
@@ -546,6 +557,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isMobileDevice,
       tableColumns,
       showApiLoader,

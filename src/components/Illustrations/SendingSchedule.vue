@@ -27,9 +27,15 @@
 
         color="primary"
         label="Create Sending Schedule"
+        :disable="isReadOnly"
 
         @click="$emit('create')"
-      ></q-btn>
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </div>
 </template>
@@ -38,10 +44,28 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// Components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'SendingScheduleIllustration',
 
   emits: ['create'],
+
+  components: {
+    AppTooltip,
+  },
+
+  setup() {
+    const { isReadOnly } = usePermissions();
+
+    return {
+      isReadOnly,
+    };
+  },
 });
 </script>
 

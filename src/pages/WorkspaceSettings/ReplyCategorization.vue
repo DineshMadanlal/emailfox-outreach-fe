@@ -38,9 +38,15 @@
 
           color="primary"
           label="Create New Category"
+          :disable="isReadOnly"
 
           @click="onAddNewCategory"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
 
@@ -64,8 +70,10 @@ import { useMeta } from 'quasar';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import SaveReplyCategory from 'components/ReplyCategorization/Modals/SaveReplyCategory.vue';
 import ReplyCategoriesTable from 'components/ReplyCategorization/ReplyCategoriesTable.vue';
 
@@ -73,6 +81,7 @@ export default defineComponent({
   name: 'ReplyCategorizationSettings',
 
   components: {
+    AppTooltip,
     SaveReplyCategory,
     ReplyCategoriesTable,
   },
@@ -80,6 +89,7 @@ export default defineComponent({
   setup() {
     // composables
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('Reply Categorization'));
@@ -115,6 +125,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isMobileDevice,
 
       // methods

@@ -58,9 +58,15 @@
           class="h-fit"
           color="primary"
           label="Create New Schedule"
+          :disable="isReadOnly"
 
           @click="onCreateNewSchedule"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
 
@@ -219,6 +225,7 @@
                 unelevated
 
                 class="more-action-btn"
+                :disable="isReadOnly"
               >
                 <!-- more -->
                 <LocalSvgIcon
@@ -227,10 +234,16 @@
                 />
 
                 <ScheduleMoreOptions
+                  v-if="!isReadOnly"
                   :tableRow="props.row"
 
                   @editSchedule="onEditSchedule"
                   @deleteSchedule="onRequestDeleteSchedule"
+                />
+
+                <AppTooltip
+                  v-if="isReadOnly"
+                  content="You have read-only access in this workspace"
                 />
               </q-btn>
             </div>
@@ -292,8 +305,10 @@ import { useMeta } from 'quasar';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ScheduleMoreOptions from 'components/Menu/ScheduleMoreOptions.vue';
 import SaveSchedule from 'components/SendingSchedule/Modals/SaveSchedule.vue';
@@ -313,6 +328,7 @@ export default defineComponent({
   name: 'SendingScheduleSettings',
 
   components: {
+    AppTooltip,
     AppSearchInput,
     SaveSchedule,
     DeleteSchedule,
@@ -326,6 +342,7 @@ export default defineComponent({
 
     // composables
     const { isMobileDevice, generateMetadata } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('Sending Schedule Settings'));
@@ -516,6 +533,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isTableEmpty,
       isMobileDevice,
       tableColumns,

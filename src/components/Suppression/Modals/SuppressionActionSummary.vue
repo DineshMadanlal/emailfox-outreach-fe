@@ -37,6 +37,7 @@
 
         color="blue-grey"
         class="suppress-action-btn"
+        :disable="isReadOnly"
 
         v-for="action in suppressionActions"
         :key="`each-action-${action.emitValue}`"
@@ -46,6 +47,11 @@
         <div class="text-black action-text">
           {{ action.label }}
         </div>
+
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
       </q-btn>
     </div>
 
@@ -55,6 +61,12 @@
 <script>
 // vue
 import { defineComponent, computed } from 'vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // Utils
 import { getNumeralAmount } from 'src/utils/numbers.js';
@@ -66,6 +78,10 @@ export default defineComponent({
   name: 'SuppressionActionSummary',
 
   emits: ['onCancel', 'onDelete'],
+
+  components: {
+    AppTooltip,
+  },
 
   props: {
     numberOfSelectedData: {
@@ -87,6 +103,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // permissions
+    const { isReadOnly } = usePermissions();
+
     // actions
     const suppressionActions = computed(() => {
       const actions = [
@@ -111,6 +130,9 @@ export default defineComponent({
     });
 
     return {
+      // permissions
+      isReadOnly,
+
       // computed
       suppressionActions,
       selectionCountLabel,

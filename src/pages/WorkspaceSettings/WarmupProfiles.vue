@@ -58,9 +58,15 @@
           class="h-fit"
           color="primary"
           label="Create New Profile"
+          :disable="isReadOnly"
 
           @click="onCreateNewProfile"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
 
@@ -103,6 +109,8 @@
               </div>
 
               <InfoTooltip
+                v-if="props.row.is_public"
+
                 iconName="info-circle"
                 tooltipText="This profile is managed by the system and cannot be modified.
                 Create a custom warmup profile to configure
@@ -118,6 +126,7 @@
                 unelevated
 
                 class="more-action-btn"
+                :disable="isReadOnly"
 
                 v-if="!props.row.is_public"
               >
@@ -128,10 +137,16 @@
                 />
 
                 <WarmupMoreOptions
+                  v-if="!isReadOnly"
                   :tableRow="props.row"
 
                   @editProfile="onEditWarmupProfile"
                   @deleteProfile="onRequestDeleteProfile"
+                />
+
+                <AppTooltip
+                  v-if="isReadOnly"
+                  content="You have read-only access in this workspace"
                 />
               </q-btn>
             </div>
@@ -174,6 +189,7 @@ import {
 } from 'vue';
 
 // components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import InfoTooltip from 'components/General/InfoTooltip.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import WarmupMoreOptions from 'components/Menu/WarmupMoreOptions.vue';
@@ -185,6 +201,7 @@ import { fetchWarmupProfiles } from 'src/utils/warmupApi';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { TABLE_PAGINATION } from 'boot/constants';
@@ -194,6 +211,7 @@ export default defineComponent({
   name: 'WarmupProfilesSettings',
 
   components: {
+    AppTooltip,
     InfoTooltip,
     AppSearchInput,
     SaveWarmupProfile,
@@ -207,6 +225,7 @@ export default defineComponent({
 
     // composables
     const { isMobileDevice, generateMetadata } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('Warmup Profile Settings'));
@@ -368,6 +387,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isMobileDevice,
       tableColumns,
 

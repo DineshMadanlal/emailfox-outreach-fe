@@ -30,9 +30,15 @@
           color="primary"
           label="Add Entry"
           :style="{ minWidth: '120px' }"
+          :disable="isReadOnly"
 
           @click="$emit('addEntry')"
-        ></q-btn>
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
 
         <!-- Import CSV -->
         <q-btn
@@ -43,9 +49,15 @@
           color="primary"
           label="Import CSV"
           class="light-primary-btn"
+          :disable="isReadOnly"
 
           @click="$emit('importCsv')"
-        ></q-btn>
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
   </div>
@@ -55,10 +67,28 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// Components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'SuppressionListIllustration',
 
   emits: ['addEntry', 'importCsv'],
+
+  components: {
+    AppTooltip,
+  },
+
+  setup() {
+    const { isReadOnly } = usePermissions();
+
+    return {
+      isReadOnly,
+    };
+  },
 });
 </script>
 

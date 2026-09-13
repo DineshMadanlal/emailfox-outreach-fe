@@ -69,7 +69,7 @@
       <div class="settings-header-left-side">
         <!-- header text -->
         <p class="settings-header-text">
-          Blocklist
+          Suppression List
         </p>
 
         <!-- label text -->
@@ -89,15 +89,22 @@
             color="primary"
             label="Add Entry"
             :style="{ minWidth: '120px' }"
+            :disable="isReadOnly"
 
             @click="showAddSuppressListModal = true"
-          />
+          >
+            <AppTooltip
+              v-if="isReadOnly"
+              content="You have read-only access in this workspace"
+            />
+          </q-btn>
           <!-- Button Menu -->
           <q-btn
             no-caps
             unelevated
 
             :style="{ backgroundColor: primaryDarkenColor }"
+            :disable="isReadOnly"
           >
             <LocalSvgIcon
               image="plain-down-arrow"
@@ -107,9 +114,15 @@
 
             <!-- menu -->
             <SuppressionListOptions
+              v-if="!isReadOnly"
               v-model="importCsvMenuOpen"
 
               @importCsv="showUploadSuppressCsvModal = true"
+            />
+
+            <AppTooltip
+              v-if="isReadOnly"
+              content="You have read-only access in this workspace"
             />
           </q-btn>
         </q-btn-group>
@@ -395,6 +408,7 @@ import {
 import { useMeta } from 'quasar';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import SuppressionListOptions from 'components/Menu/SuppressionListOptions.vue';
@@ -413,6 +427,7 @@ import { darkenColor, getBrandColorByName } from 'src/utils/quasarHelpers';
 
 // composition API
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { SUPPRESSION_TYPE } from 'boot/campaign-constants';
@@ -422,6 +437,7 @@ export default defineComponent({
   name: 'SuppressionListSettings',
 
   components: {
+    AppTooltip,
     AddEntry,
     UploadCsv,
     AppSearchInput,
@@ -438,6 +454,7 @@ export default defineComponent({
 
     // composition API
     const { isMobileDevice, generateMetadata } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('Suppression List'));
@@ -657,6 +674,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isMobileDevice,
       isTableEmpty,
       tableColumns,
