@@ -7,9 +7,14 @@
 
       color="primary"
       label="+ Create Campaign"
+      :disable="isReadOnly"
 
-      @click="$emit('createNewCampaign')"
+      @click="!isReadOnly && $emit('createNewCampaign')"
     >
+      <AppTooltip
+        v-if="isReadOnly"
+        content="You have read-only access in this workspace"
+      />
     </q-btn>
   </div>
 </template>
@@ -20,8 +25,18 @@ import {
   defineComponent, computed,
 } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'CampaignFilters',
+
+  components: {
+    AppTooltip,
+  },
 
   emits: ['createNewCampaign', 'update:searchCampaignInput'],
 
@@ -37,6 +52,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // computed
     const computedSearchInput = computed({
       get: () => props.searchSequenceInput,
@@ -47,6 +65,7 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
       computedSearchInput,
     };
   },

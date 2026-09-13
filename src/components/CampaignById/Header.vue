@@ -125,6 +125,7 @@
           outlined
           unelevated
           @click.stop.prevent
+          :disable="isReadOnly"
 
           class="sequence-more-btn"
         >
@@ -135,6 +136,7 @@
           />
 
           <CampaignMoreOptions
+            v-if="!isReadOnly"
             :campaignStatus="campaignByIdJson.status"
 
             @cloneCampaign="onCloneCampaign"
@@ -142,6 +144,11 @@
             @pauseCampaign="onPauseCampaign"
             @resumeCampaign="handleResumeCampaign"
             @archiveCampaign="showArchiveCampaignModal = true"
+          />
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
           />
         </q-btn>
 
@@ -173,8 +180,9 @@
 
           color="primary"
           class="add-contacts-btn"
+          :disable="isReadOnly"
 
-          :to="`/outreach/campaigns/${campaignByIdJson.id}/edit/contacts`"
+          :to="isReadOnly ? undefined : `/outreach/campaigns/${campaignByIdJson.id}/edit/contacts`"
         >
           <div class="flex no-wrap items-center">
             <LocalSvgIcon
@@ -185,6 +193,11 @@
               Add Contacts
             </p>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
       </div>
     </div>
@@ -231,12 +244,14 @@ import { useRouter } from 'vue-router';
 // components
 import CampaignProgress from 'components/Campaigns/CampaignProgress.vue';
 import CampaignMoreOptions from 'components/Menu/CampaignMoreOptions.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 import ArchiveCampaign from 'components/Campaigns/Modals/ArchiveCampaign.vue';
 import SaveCampaignDetails from 'components/Campaigns/Modals/SaveCampaignDetails.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { getNumeralAmount } from 'src/utils/numbers.js';
@@ -253,6 +268,7 @@ export default defineComponent({
   components: {
     CampaignProgress,
     CampaignMoreOptions,
+    AppTooltip,
 
     ArchiveCampaign,
     SaveCampaignDetails,
@@ -272,6 +288,9 @@ export default defineComponent({
   setup(props, { emit }) {
     // inject
     const editCampaignContext = inject('editCampaignContext');
+
+    // permissions
+    const { isReadOnly } = usePermissions();
 
     // router
     const $router = useRouter();
@@ -441,6 +460,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       numberOfContacts,
       sequenceByIdRoutes,
 

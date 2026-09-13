@@ -42,12 +42,17 @@
               dense
               color="primary"
               class="app-checkbox"
+              :disable="isReadOnly"
 
               :model-value="isAllSelected ? true : null"
-              @update:model-value="resetTableMultiSelect"
+              @update:model-value="!isReadOnly && resetTableMultiSelect"
             >
               <!-- empty div is required here -->
               <div></div>
+              <AppTooltip
+                v-if="isReadOnly"
+                content="You have read-only access in this workspace"
+              />
             </q-checkbox>
 
             <!-- When nothing is selected: Click opens TableMultiSelect menu -->
@@ -56,9 +61,11 @@
               dense
               color="primary"
               class="app-checkbox"
+              :disable="isReadOnly"
               :model-value="false"
             >
               <q-menu
+                v-if="!isReadOnly"
                 transition-show="jump-down"
                 transition-hide="jump-up"
               >
@@ -70,6 +77,10 @@
                   @updateMultiSelect="onUpdateMultiSelect"
                 />
               </q-menu>
+              <AppTooltip
+                v-if="isReadOnly"
+                content="You have read-only access in this workspace"
+              />
             </q-checkbox>
           </template>
         </UniboxHeader>
@@ -112,6 +123,7 @@
                 v-for="email in groupedEmails"
                 :key="`unibox-email-thread-${email.id || email.contact_mapping_id}`"
                 :emailJson="email"
+                :isReadOnly="isReadOnly"
                 :compactView="isMobileDevice || !!activeThreadId"
                 :isActive="email.contact_mapping_id === activeThreadId
                   || String(email.id) === activeThreadId"
@@ -231,6 +243,10 @@ import UniboxEmptyState from 'components/Unibox/EmptyState.vue';
 import UniboxEmailListItem from 'components/Unibox/EmailListItem.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import UniboxConversationPreview from 'components/Unibox/Conversation/ConversationPreview.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { getDateGroupLabel } from 'src/utils/dates';
@@ -259,6 +275,7 @@ export default defineComponent({
     UniboxEmailListItem,
     TableMultiSelect,
     UniboxConversationPreview,
+    AppTooltip,
   },
 
   props: {
@@ -271,6 +288,9 @@ export default defineComponent({
 
   setup(props) {
     const { appContext } = getCurrentInstance();
+
+    // permissions
+    const { isReadOnly } = usePermissions();
 
     // router
     const $route = useRoute();
@@ -678,6 +698,7 @@ export default defineComponent({
 
     // Toggle single thread selection
     const onToggleSelect = (email) => {
+      if (isReadOnly.value) return;
       const id = email.id || email.contact_mapping_id;
 
       if (isSelectAllTotalActive.value) {
@@ -705,6 +726,7 @@ export default defineComponent({
 
     // Apply bulk selection from TableMultiSelect
     const onUpdateMultiSelect = (selectionData) => {
+      if (isReadOnly.value) return;
       state.multiSelectOptionJson = selectionData;
 
       if (selectionData.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_CURRENT_LIST) {
@@ -720,12 +742,14 @@ export default defineComponent({
 
     // Reset all table multi selections
     const resetTableMultiSelect = () => {
+      if (isReadOnly.value) return;
       state.selectedThreadIds = [];
       state.multiSelectOptionJson = {};
     };
 
     // Toggle all currently loaded threads
     const onToggleSelectAllCurrent = () => {
+      if (isReadOnly.value) return;
       if (isSelectionActive.value) {
         resetTableMultiSelect();
       } else {
@@ -737,7 +761,7 @@ export default defineComponent({
 
     // Toggle star / important status for thread
     const onToggleStar = async (email) => {
-      if (!email) return;
+      if (!email || isReadOnly.value) return;
 
       const mappingId = email.contact_mapping_id;
       const newStatus = !email.is_important;
@@ -767,6 +791,7 @@ export default defineComponent({
 
     // Mark active conversation as unread
     const onToggleReadStatus = (email) => {
+      if (isReadOnly.value) return;
       const target = email || activeThread.value;
 
       if (target) {
@@ -776,6 +801,7 @@ export default defineComponent({
 
     // Update reply category for the active conversation thread
     const handleReplyCategoryUpdate = async (newCategoryId) => {
+      if (isReadOnly.value) return;
       const activeItem = activeThread.value;
       if (!activeItem) return;
 
@@ -966,6 +992,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       activeThreadId,
       activeThread,
       hasPrevThread,

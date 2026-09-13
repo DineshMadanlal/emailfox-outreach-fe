@@ -149,6 +149,7 @@
       <!-- HTML -->
       <AppEditor
         sequenceEditor
+        :hideToolbar="isReadOnly"
         class="sequence-app-editor"
         placeholderText="Enter your emai here..."
 
@@ -164,12 +165,18 @@
         no-caps
         unelevated
         :loading="isApiLoading"
+        :disable="isReadOnly"
 
         color="primary"
         label="Save"
 
         @click="onSaveEmailStep"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </q-card>
 </template>
@@ -184,11 +191,13 @@ import {
 // Components
 import EmailPreview from 'components/CampaignWorkflow/SequenceCanvas/Modals/EmailPreview.vue';
 import ContentPerformance from 'components/CampaignWorkflow/Workflows/Modals/ContentPerformance.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 import useSpamAnalytics from 'src/composables/spamAnalytics';
 import { useWorkspace } from 'src/composables/useWorkspace';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { SEQUENCE_VARIANT_NAME } from 'boot/campaign-constants';
@@ -201,6 +210,7 @@ export default defineComponent({
   components: {
     EmailPreview,
     ContentPerformance,
+    AppTooltip,
     AppEditor: defineAsyncComponent(() => import('components/Editor/AppEditor.vue')),
   },
 
@@ -222,6 +232,7 @@ export default defineComponent({
   setup(props, { emit }) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     const { getWorkspaceCustomFields } = useWorkspace();
 
@@ -249,6 +260,8 @@ export default defineComponent({
 
     // methods
     const onSaveEmailStep = () => {
+      if (isReadOnly.value) return;
+
       const updatedVariantJson = {
         subject: state.subject,
         message: state.message,
@@ -303,6 +316,7 @@ export default defineComponent({
       spamResultJson,
       spamAnalysis,
       isMobileDevice,
+      isReadOnly,
 
       // methods
       onSaveEmailStep,

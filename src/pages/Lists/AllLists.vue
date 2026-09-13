@@ -93,10 +93,15 @@
             label="+ New List"
             class="new-list-btn"
 
+            :disable="isReadOnly"
             @click="onCreateNewList"
 
             v-if="!showAllListsIllustration"
           >
+            <AppTooltip
+              v-if="isReadOnly"
+              content="You have read-only access in this workspace"
+            />
           </q-btn>
         </div>
       </template>
@@ -115,6 +120,7 @@
     >
       <AllListsIllustration
         v-if="showAllListsIllustration"
+        :disableCreate="isReadOnly"
 
         @createList="onCreateNewList"
       >
@@ -332,6 +338,7 @@ import { useMeta } from 'quasar';
 // Components
 import AppHeader from 'components/Headers/AppHeader.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import AllListsIllustration from 'components/Illustrations/AllLists.vue';
 import ListByIdMoreOptions from 'components/Menu/ListByIdMoreOptions.vue';
@@ -352,6 +359,7 @@ import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
@@ -367,6 +375,7 @@ export default defineComponent({
   components: {
     AppHeader,
     ApiLoader,
+    AppTooltip,
     AppSearchInput,
     AllListsIllustration,
     DeleteList,
@@ -388,6 +397,7 @@ export default defineComponent({
 
     // composables
     const { isMobileDevice, generateMetadata } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('All Lists'));
@@ -724,6 +734,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       tableColumns,
       showApiLoader,
       isFilterApplied,

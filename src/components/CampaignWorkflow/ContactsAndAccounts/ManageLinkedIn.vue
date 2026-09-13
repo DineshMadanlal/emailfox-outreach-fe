@@ -64,8 +64,8 @@
           dense
           no-caps
           unelevated
-
           color="grey"
+          :disable="isReadOnly"
 
           @click="modals.showRemoveSenderLinkedInModal = true"
         >
@@ -78,6 +78,11 @@
               Remove
             </div>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
 
         <!-- Add -->
@@ -87,6 +92,7 @@
           no-caps
           unelevated
           color="primary"
+          :disable="isReadOnly"
 
           @click="modals.showAddSenderLinkedInModal = true"
         >
@@ -100,6 +106,11 @@
               Add
             </div>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
       </div>
     </div>
@@ -160,8 +171,9 @@
       <q-card
         flat
         class="select-linkedin-card"
+        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
 
-        @click="modals.showAddSenderLinkedInModal = true"
+        @click="!isReadOnly && (modals.showAddSenderLinkedInModal = true)"
       >
         <!-- Icon -->
         <div class="mail-circle-icon-container">
@@ -191,6 +203,7 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import ConnectedLinkedInAccounts from 'components/CampaignWorkflow/ContactsAndAccounts/ConnectedLinkedInAccounts.vue';
 import AddSenderLinkedIn from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/AddSenderLinkedIn.vue';
 import RemoveSenderLinkedIn from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/RemoveSenderLinkedIn.vue';
@@ -200,6 +213,7 @@ import { getApiCall } from 'src/utils/apiRequests';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { INFINITE_SCROLL_MAX_LIMIT } from 'boot/constants';
@@ -209,6 +223,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    AppTooltip,
     ConnectedLinkedInAccounts,
     AddSenderLinkedIn,
     RemoveSenderLinkedIn,
@@ -224,6 +239,7 @@ export default defineComponent({
   setup(props) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // app context
     const { appContext } = getCurrentInstance();
@@ -336,6 +352,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       showApiLoader,
       hasConnectedAccounts,
 

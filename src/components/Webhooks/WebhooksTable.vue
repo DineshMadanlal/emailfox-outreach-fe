@@ -194,6 +194,7 @@
                 unelevated
 
                 class="more-action-btn"
+                :disable="isReadOnly"
               >
                 <!-- more -->
                 <LocalSvgIcon
@@ -201,7 +202,15 @@
                   classes="more-menu-icon"
                 />
 
+                <AppTooltip
+                  v-if="isReadOnly"
+                  anchor="top middle"
+                  self="bottom middle"
+                  content="You have read-only access in this workspace"
+                />
+
                 <WebhookMoreOptions
+                  v-if="!isReadOnly"
                   :tableRow="props.row"
                   @editWebhook="onEditWebhook"
                   @deleteWebhook="onDeleteWebhook"
@@ -263,6 +272,7 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import SaveWebhook from 'components/Webhooks/Modals/SaveWebhook.vue';
 import WebhookMoreOptions from 'components/Menu/WebhookMoreOptions.vue';
 import DeleteWebhook from 'components/Webhooks/Modals/DeleteWebhook.vue';
@@ -275,6 +285,7 @@ import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Utils
 import { getNumeralAmount } from 'src/utils/numbers';
@@ -296,6 +307,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    AppTooltip,
     SaveWebhook,
     DeleteWebhook,
     AppSearchInput,
@@ -306,6 +318,7 @@ export default defineComponent({
   setup() {
     // Composables
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // store
     const userStore = useUserPreferencesStore();
@@ -615,6 +628,7 @@ export default defineComponent({
       onSuccessfulWebhookDelete,
 
       formatDateWithTime,
+      isReadOnly,
     };
   },
 });

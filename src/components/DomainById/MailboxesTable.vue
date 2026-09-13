@@ -162,6 +162,7 @@
 
                 color="negative"
                 class="app-negative-button"
+                :disable="isReadOnly"
 
                 @click.prevent.stop="onDeleteMailbox(props.row)"
               >
@@ -169,18 +170,14 @@
                   image="delete"
                   classes="app-negative-icon"
                 />
+                <AppTooltip
+                  v-if="isReadOnly"
+                  content="You have read-only access in this workspace"
+                />
               </q-btn>
             </div>
           </router-link>
         </q-td>
-      </template>
-
-      <template v-slot:item="props">
-        <MailboxItemMobileView
-          :mailboxTableProps="props"
-
-          @deleteMailbox="onDeleteMailbox(props.row)"
-        />
       </template>
     </q-table>
   </q-card>
@@ -199,10 +196,11 @@ import { getNumeralAmount } from 'src/utils/numbers';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
 import DeleteMailbox from 'components/Domains/Modals/DeleteMailbox.vue';
-import MailboxItemMobileView from 'components/DomainById/MailboxItemMobileView.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // constants
 import { TABLE_PAGINATION } from 'boot/constants';
@@ -214,7 +212,7 @@ export default defineComponent({
 
   components: {
     DeleteMailbox,
-    MailboxItemMobileView,
+    AppTooltip,
   },
 
   props: {
@@ -231,6 +229,7 @@ export default defineComponent({
   setup(props, { emit }) {
     // composables
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // state
     const state = reactive({
@@ -299,6 +298,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isMobileDevice,
       mailboxesCount,
 

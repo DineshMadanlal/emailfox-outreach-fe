@@ -65,6 +65,7 @@
           no-caps
           unelevated
           color="grey"
+          :disable="isReadOnly"
 
           @click="modals.showRemoveSenderMailboxesModal = true"
         >
@@ -77,6 +78,11 @@
               Remove
             </div>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
 
         <!-- Add -->
@@ -87,6 +93,7 @@
           unelevated
 
           color="primary"
+          :disable="isReadOnly"
 
           @click="modals.showAddSenderMailboxesModal = true"
         >
@@ -100,6 +107,11 @@
               Add
             </div>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
       </div>
     </div>
@@ -159,8 +171,9 @@
       <q-card
         flat
         class="select-mailbox-card"
+        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
 
-        @click="modals.showAddSenderMailboxesModal = true"
+        @click="!isReadOnly && (modals.showAddSenderMailboxesModal = true)"
       >
         <!-- Icon -->
         <div class="mail-circle-icon-container">
@@ -190,6 +203,7 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import ConnectedMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/ConnectedMailboxes.vue';
 import AddSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/AddSenderMailboxes.vue';
 import RemoveSenderMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/RemoveSenderMailboxes.vue';
@@ -199,6 +213,7 @@ import { getApiCall } from 'src/utils/apiRequests';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { INFINITE_SCROLL_MAX_LIMIT } from 'boot/constants';
@@ -208,6 +223,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    AppTooltip,
     ConnectedMailboxes,
     AddSenderMailboxes,
     RemoveSenderMailboxes,
@@ -223,6 +239,7 @@ export default defineComponent({
   setup(props) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // app context
     const { appContext } = getCurrentInstance();
@@ -335,6 +352,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       showApiLoader,
       hasConnectedAccounts,
 

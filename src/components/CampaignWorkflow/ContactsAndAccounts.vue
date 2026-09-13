@@ -32,7 +32,10 @@
       />
     </div>
 
-    <div class="edit-sequence-footer">
+    <div
+      v-if="!isReadOnly"
+      class="edit-sequence-footer"
+    >
       <!-- Back -->
       <q-btn
         flat
@@ -72,6 +75,9 @@ import ManageContacts from 'components/CampaignWorkflow/ContactsAndAccounts/Mana
 import ManageMailboxes from 'components/CampaignWorkflow/ContactsAndAccounts/ManageMailboxes.vue';
 import ManageLinkedIn from 'components/CampaignWorkflow/ContactsAndAccounts/ManageLinkedIn.vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 export default defineComponent({
   name: 'ContactsAndAccounts',
 
@@ -91,6 +97,9 @@ export default defineComponent({
   setup(props) {
     // inject
     const editCampaignContext = inject('editCampaignContext');
+
+    // composables
+    const { isReadOnly } = usePermissions();
 
     // router
     const $router = useRouter();
@@ -134,6 +143,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       canManageMailboxes,
       canManageLinkedInAccounts,
 

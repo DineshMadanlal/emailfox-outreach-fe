@@ -27,11 +27,17 @@
           dense
           color="primary"
           class="app-checkbox"
+          :disable="isReadOnly"
           :model-value="isSelected"
-          @update:model-value="$emit('toggle-select', emailJson)"
+          @update:model-value="!isReadOnly && $emit('toggle-select', emailJson)"
 
           @click.stop.prevent
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-checkbox>
       </div>
 
       <!-- Star / Important Button (Full-width mode only) -->
@@ -47,14 +53,19 @@
           size="sm"
           class="star-action-btn"
           :class="{ 'is-starred': isStarred }"
+          :disable="isReadOnly"
 
-          @click.stop.prevent="$emit('toggle-star', emailJson)"
+          @click.stop.prevent="!isReadOnly && $emit('toggle-star', emailJson)"
         >
           <LocalSvgIcon
             image="star"
             class="star-icon"
           />
-          <AppTooltip :content="isStarred ? 'Unstar' : 'Star as important'" />
+          <AppTooltip
+            :content="isReadOnly
+              ? 'You have read-only access in this workspace'
+              : (isStarred ? 'Unstar' : 'Star as important')"
+          />
         </q-btn>
       </div>
 
@@ -291,6 +302,9 @@ import { getGravatarUrl } from 'src/utils/skyboxApi';
 // stores
 import { useUniboxStore } from 'src/stores/unibox';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // Brand Colors
 import { getBrandColorByName } from 'src/utils/quasarHelpers';
 
@@ -333,6 +347,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // store
     const uniboxPinia = useUniboxStore();
 
@@ -471,6 +488,7 @@ export default defineComponent({
       canStar,
       isUnread,
       isStarred,
+      isReadOnly,
       contactEmail,
       contactInitial,
       profilePicUrl,

@@ -233,6 +233,9 @@ import { postApiCall } from 'src/utils/apiRequests';
 import { sendUniboxLinkedInReply } from 'src/utils/unibox';
 import { formatTimelineDateHeader, formatMessageTime } from 'src/utils/dates';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // constants
 import { WORKFLOW_STEP_TYPES } from 'boot/campaign-constants';
 import { MAX_FILE_SIZE_IN_MB, TOTAL_ATTACHMENTS_SIZE_RESTRICTION } from 'boot/constants';
@@ -265,6 +268,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // app context
     const { appContext } = getCurrentInstance();
 
@@ -318,6 +324,8 @@ export default defineComponent({
 
     // Disable send button condition
     const disableSendButton = computed(() => {
+      if (isReadOnly.value) return true;
+
       // reply text check
       const hasText = Boolean(state.replyText.trim());
 

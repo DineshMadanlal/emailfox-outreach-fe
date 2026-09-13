@@ -99,7 +99,8 @@
           color="primary"
           class="upload-contact-button"
 
-          :to="`/outreach/contacts/${listByJson.id}/upload`"
+          :disable="isReadOnly"
+          :to="isReadOnly ? undefined : `/outreach/contacts/${listByJson.id}/upload`"
         >
           <div class="flex no-wrap items-center">
             <LocalSvgIcon image="download" classes="download-icon" />
@@ -108,6 +109,11 @@
               Upload
             </p>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
       </div>
       <div>
@@ -152,8 +158,10 @@ import { useMeta } from 'quasar';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import ListByIdMoreOptions from 'components/Menu/ListByIdMoreOptions.vue';
 
 // utils
@@ -166,6 +174,7 @@ export default defineComponent({
   emits: ['importHistory', 'deleteList', 'deleteContacts', 'updateListName'],
 
   components: {
+    AppTooltip,
     ListByIdMoreOptions,
   },
 
@@ -179,6 +188,7 @@ export default defineComponent({
   setup(props) {
     // composition API
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // computed
     const listName = computed(() => props.listByJson.name);
@@ -206,6 +216,7 @@ export default defineComponent({
     return {
       // computed
       listName,
+      isReadOnly,
       listByIdPages,
       isMobileDevice,
       listContactsLength,

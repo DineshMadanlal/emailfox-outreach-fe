@@ -137,7 +137,10 @@
     </div>
 
     <!-- Footer -->
-    <div class="edit-sequence-footer">
+    <div
+      v-if="!isReadOnly"
+      class="edit-sequence-footer"
+    >
       <!-- Back -->
       <q-btn
         flat
@@ -154,11 +157,16 @@
         unelevated
         color="primary"
         :label="campaignCtaJson.label"
-        :disable="campaignCtaJson.disable"
+        :disable="campaignCtaJson.disable || isReadOnly"
         :loading="loaders.isSaving"
 
-        @click="campaignCtaJson.click()"
-      />
+        @click="!isReadOnly && campaignCtaJson.click && campaignCtaJson.click()"
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </div>
 </template>
@@ -177,6 +185,7 @@ import { useRouter } from 'vue-router';
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 import RiskControlCard from 'components/CampaignWorkflow/Settings/RiskControlCard.vue';
 import SendingScheduleCard from 'components/CampaignWorkflow/Settings/SendingScheduleCard.vue';
@@ -196,6 +205,7 @@ import { saveCampaignSettingsById, startCampaignById, pauseCampaignById } from '
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { CAMPAIGN_STATUS, DEFAULT_CAMPAIGN_SETTINGS } from 'boot/campaign-constants';
@@ -207,6 +217,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    AppTooltip,
 
     RiskControlCard,
     SendingScheduleCard,
@@ -238,6 +249,7 @@ export default defineComponent({
 
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // router
     const $router = useRouter();
@@ -304,6 +316,8 @@ export default defineComponent({
 
     // --- Centralized Settings Updater ---
     const updateCampaignSettings = (inputJson, options = {}) => {
+      if (isReadOnly.value) return;
+
       // 1. Instantly update local state so UI fields respond immediately
       state.campaignSettings = {
         ...state.campaignSettings,
@@ -495,6 +509,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       campaignCtaJson,
       canShowLinkedInSettings,
 

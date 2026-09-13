@@ -14,7 +14,7 @@
     <q-space />
 
     <div
-      v-if="isEmailStep"
+      v-if="isEmailStep && !isReadOnly"
       class="email-step-actions"
     >
       <!-- Delete Step -->
@@ -52,7 +52,7 @@
 
     <!-- Delete Step -->
     <q-btn
-      v-else
+      v-else-if="!isReadOnly"
 
       flat
       dense
@@ -74,6 +74,9 @@
 <script>
 // vue
 import { defineComponent } from 'vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
 import MoreButton from 'components/Buttons/MoreButton.vue';
@@ -104,6 +107,16 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+  },
+
+  setup() {
+    // composables
+    const { isReadOnly } = usePermissions();
+
+    return {
+      // computed
+      isReadOnly,
+    };
   },
 });
 </script>

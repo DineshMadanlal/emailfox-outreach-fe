@@ -27,12 +27,18 @@
         flat
         dense
         color="primary"
+        :disable="isReadOnly"
 
         @click="showSaveCampaignDetailsModal = true"
       >
         <LocalSvgIcon
           image="edit"
           classes="edit-icon"
+        />
+
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
         />
       </q-btn>
     </div>
@@ -72,9 +78,11 @@ import {
 // Components
 import CampaignSteps from 'components/CampaignForm/CampaignSteps.vue';
 import SaveCampaignDetails from 'components/Campaigns/Modals/SaveCampaignDetails.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 export default defineComponent({
   name: 'CampaignFormHeader',
@@ -84,6 +92,7 @@ export default defineComponent({
   components: {
     CampaignSteps,
     SaveCampaignDetails,
+    AppTooltip,
   },
 
   props: {
@@ -96,6 +105,7 @@ export default defineComponent({
   setup(props, { emit }) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // state
     const state = reactive({
@@ -119,6 +129,7 @@ export default defineComponent({
       // computed
       campaignName,
       isMobileDevice,
+      isReadOnly,
 
       // methods
       onUpdateCampaignName,

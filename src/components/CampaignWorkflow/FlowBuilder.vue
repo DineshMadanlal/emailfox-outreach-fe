@@ -55,7 +55,7 @@
     <!-- Edit Campaign Footer -->
     <div
       class="edit-sequence-footer"
-      v-if="isEditCampaign"
+      v-if="isEditCampaign && !isReadOnly"
     >
       <!-- Save Button -->
       <q-btn
@@ -65,14 +65,20 @@
         color="primary"
         :loading="ui.isSaving"
         :label="footerButtonLabel"
+        :disable="isReadOnly && ui.hasChanges"
 
         @click="onSubmitForm"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly && ui.hasChanges"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
 
     <!-- Campaign By ID footer -->
     <div
-      v-else-if="ui.hasChanges"
+      v-else-if="ui.hasChanges && !isReadOnly"
       class="campaign-by-id-footer"
     >
       <!-- Save Button -->
@@ -83,9 +89,15 @@
         color="primary"
         label="Save Changes"
         :loading="ui.isSaving"
+        :disable="isReadOnly"
 
         @click="onSaveSequenceSteps"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </div>
 </template>
@@ -116,6 +128,7 @@ import { Controls } from '@vue-flow/controls';
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import WorkflowAddNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowAddNode.vue';
 import WorkflowEmptyState from 'components/CampaignWorkflow/SequenceCanvas/WorkflowEmptyState.vue';
 import WorkflowActionNode from 'components/CampaignWorkflow/VueFlowNodes/WorkflowActionNode.vue';
@@ -125,6 +138,7 @@ import ArchiveStepOrVariant from 'components/CampaignWorkflow/SequenceCanvas/Mod
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Utils
 import { getApiCall, postApiCall } from 'src/utils/apiRequests';
@@ -167,6 +181,7 @@ export default defineComponent({
     Controls,
     VueFlow,
     ApiLoader,
+    AppTooltip,
     WorkflowEmptyState,
     ArchiveStepOrVariant,
   },
@@ -192,6 +207,7 @@ export default defineComponent({
 
     // Composables
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // app cntext
     const { appContext } = getCurrentInstance();
@@ -1039,6 +1055,11 @@ export default defineComponent({
     const flowEdges = computed(() => flowGraph.value.edges);
 
     const onSubmitForm = () => {
+      if (isReadOnly.value) {
+        $router.push(`/outreach/campaigns/${props.campaignByIdJson.id}/edit/contacts`);
+        return;
+      }
+
       if (state.ui.hasChanges) {
         // API call to save steps
         onSaveSteps();
@@ -1049,6 +1070,7 @@ export default defineComponent({
     };
 
     const onSaveSequenceSteps = () => {
+      if (isReadOnly.value) return;
       onSaveSteps();
     };
 
@@ -1085,6 +1107,7 @@ export default defineComponent({
     const workflowContext = {
       // computed
       isCampaignDrafted,
+      isReadOnly,
 
       // methods
       onAddNewStep,
@@ -1104,6 +1127,7 @@ export default defineComponent({
       flowNodes,
       nodeTypes,
       isMobileDevice,
+      isReadOnly,
       isWorkflowEmpty,
       footerButtonLabel,
 

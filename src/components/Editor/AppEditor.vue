@@ -50,7 +50,7 @@
 
     <!-- Sequence Editor Toolbar -->
     <div
-      v-if="sequenceEditor"
+      v-if="sequenceEditor && !hideToolbar"
       class="sequence-editor-toolbar"
     >
       <!-- Add Variable -->

@@ -31,6 +31,9 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 export default defineComponent({
   name: 'ListByIdMoreOptions',
 
@@ -49,27 +52,37 @@ export default defineComponent({
   },
 
   setup() {
+    const { isReadOnly } = usePermissions();
+
     const moreActions = computed(() => {
-      const actions = [
-        {
+      const actions = [];
+
+      if (!isReadOnly.value) {
+        actions.push({
           label: 'Update List Name',
           emitValue: 'updateListName',
-        },
-        {
-          label: 'Contact Import History',
-          emitValue: 'importHistory',
-        },
-        {
-          label: 'Delete Contacts',
-          emitValue: 'deleteContacts',
-          class: 'negative-action',
-        },
-        {
-          label: 'Delete List',
-          emitValue: 'deleteList',
-          class: 'negative-action',
-        },
-      ];
+        });
+      }
+
+      actions.push({
+        label: 'Contact Import History',
+        emitValue: 'importHistory',
+      });
+
+      if (!isReadOnly.value) {
+        actions.push(
+          {
+            label: 'Delete Contacts',
+            emitValue: 'deleteContacts',
+            class: 'negative-action',
+          },
+          {
+            label: 'Delete List',
+            emitValue: 'deleteList',
+            class: 'negative-action',
+          },
+        );
+      }
 
       return actions;
     });

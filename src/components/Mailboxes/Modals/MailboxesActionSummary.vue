@@ -40,20 +40,36 @@
 
         v-for="action in mailboxActions"
         :key="`each-action-${action.emitValue}`"
+        :disable="isReadOnly"
 
         @click="$emit('onAction', action.emitValue)"
       >
         <div class="text-black action-text">
           {{ action.label }}
         </div>
+
+        <AppTooltip
+          v-if="isReadOnly"
+          anchor="top middle"
+          self="bottom middle"
+          content="You have read-only access in this workspace"
+        />
       </q-btn>
     </div>
 
     <!-- More Button -->
     <MoreButton
       class="more-button"
+      :disable="isReadOnly"
     >
+      <AppTooltip
+        v-if="isReadOnly"
+        anchor="top middle"
+        self="bottom middle"
+        content="You have read-only access in this workspace"
+      />
       <q-menu
+        v-if="!isReadOnly"
         auto-close
         transition-show="jump-down"
         transition-hide="jump-up"
@@ -72,7 +88,11 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import MoreButton from 'components/Buttons/MoreButton.vue';
 import MailboxesMoreActions from 'components/Mailboxes/MailboxesMoreActions.vue';
 
@@ -89,6 +109,7 @@ export default defineComponent({
   emits: ['onCancel', 'onAction'],
 
   components: {
+    AppTooltip,
     MoreButton,
     MailboxesMoreActions,
   },
@@ -113,6 +134,8 @@ export default defineComponent({
   },
 
   setup(props) {
+    // composables
+    const { isReadOnly } = usePermissions();
     // actions
     const mailboxActions = computed(() => {
       const actions = [
@@ -148,6 +171,7 @@ export default defineComponent({
       // computed
       mailboxActions,
       selectionCountLabel,
+      isReadOnly,
     };
   },
 });

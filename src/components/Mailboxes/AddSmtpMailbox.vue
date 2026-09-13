@@ -302,7 +302,10 @@
       </div>
 
       <!-- Footer Buttons -->
-      <div class="smtp-footer-actions">
+      <div
+        v-if="!isReadOnly"
+        class="smtp-footer-actions"
+      >
         <!-- Back button (only in add mode) -->
         <q-btn
           v-if="!isEditMode"
@@ -354,6 +357,9 @@ import {
   onMounted, watch, nextTick, getCurrentInstance,
 } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // vue router
 import { useRouter } from 'vue-router';
 
@@ -385,6 +391,9 @@ export default defineComponent({
   emits: ['goBack', 'updateMailbox'],
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // router
     const $router = useRouter();
 
@@ -631,6 +640,7 @@ export default defineComponent({
 
       // computed
       isEditMode,
+      isReadOnly,
 
       // constants
       emailRules,

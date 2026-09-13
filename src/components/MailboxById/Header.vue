@@ -7,7 +7,7 @@
     <div class="mailbox-id-top-header">
       <!-- Domains route -->
       <router-link
-        :to="returnRouteLink"
+        to="/outreach/mailboxes"
         class="mailbox-route-link-text"
       >
         Mailboxes
@@ -33,7 +33,7 @@
         color="negative"
         class="app-negative-button"
 
-        :to="returnRouteLink"
+        @click="closePage"
       >
         <LocalSvgIcon
           image="close"
@@ -77,12 +77,19 @@
         class="mailbox-id-right-section"
       >
         <!-- More Options -->
-        <DropdownOptionsButton>
+        <DropdownOptionsButton
+          :disable="isReadOnly"
+        >
           <template #menu>
             <MailboxMoreOptions
               @deleteMailbox="$emit('deleteMailbox')"
             />
           </template>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </DropdownOptionsButton>
       </div>
     </div>
@@ -98,19 +105,18 @@
       active-color="primary"
       indicator-color="primary"
     >
+      <!--  -->
       <q-route-tab
         no-caps
+        exact
 
-        v-for="(page, index) in mailboxByIdPages"
+        v-for="page in mailboxByIdPages"
+        :key="`mailbox-by-id-page-option-${page.label}`"
 
-        :key="`mailbox-id-${index}-${page.label}`"
         :to="page.route"
-      >
-        <!-- page label -->
-        <p class="route-label-text">
-          {{ page.label }}
-        </p>
-      </q-route-tab>
+        :label="page.label"
+        class="app-route-tab"
+      />
     </q-tabs>
   </div>
 </template>
@@ -121,20 +127,30 @@ import {
   defineComponent, computed,
 } from 'vue';
 
+// vue router
+import { useRouter } from 'vue-router';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import MailboxMoreOptions from 'components/Menu/MailboxMoreOptions.vue';
 import DropdownOptionsButton from 'components/Buttons/DropdownOptionsButton.vue';
 
 // constants
-import { MAILBOX_PROVIDERS } from 'boot/mailbox-constants';
+import { MAILBOX_PROVIDERS } from 'src/boot/mailbox-constants';
 
 export default defineComponent({
   name: 'MailboxByIdHeader',
 
-  emits: ['deleteMailbox'],
+  emits: [
+    'deleteMailbox',
+  ],
 
   components: {
+    AppTooltip,
     EspProvider,
     MailboxMoreOptions,
     DropdownOptionsButton,
@@ -143,11 +159,11 @@ export default defineComponent({
   props: {
     domainName: {
       type: String,
-      required: true,
+      default: '',
     },
     mailboxByJson: {
       type: Object,
-      required: true,
+      default: () => ({}),
     },
     isPageScrolled: {
       type: Boolean,
@@ -156,13 +172,23 @@ export default defineComponent({
   },
 
   setup(props) {
-    // computed
-    const returnRouteLink = computed(() => '/outreach/mailboxes');
+    // composables
+    const { isReadOnly } = usePermissions();
 
-    const mailboxProvider = computed(() => props.mailboxByJson.provider || '');
+    // router
+    const $router = useRouter();
+
+    // computed
+    const mailboxProvider = computed(() => (props.mailboxByJson.is_custom_provider
+      ? props.mailboxByJson.domain_mailbox_provider
+      : props.mailboxByJson.provider));
 
     const mailboxByIdPages = computed(() => {
       const mailboxId = props.mailboxByJson.id;
+
+      if (!mailboxId) {
+        return [];
+      }
 
       const pages = [
         {
@@ -173,10 +199,10 @@ export default defineComponent({
           label: 'Warmup',
           route: `/outreach/mailbox/${mailboxId}/warmup`,
         },
-        {
-          label: 'Campaigns',
-          route: `/outreach/mailbox/${mailboxId}/campaigns`,
-        },
+        // {
+        //   label: 'Campaigns',
+        //   route: `/outreach/mailbox/${mailboxId}/campaigns`,
+        // },
         {
           label: 'Settings',
           route: `/outreach/mailbox/${mailboxId}/settings`,
@@ -194,11 +220,22 @@ export default defineComponent({
       return pages;
     });
 
+    const closePage = () => {
+      try {
+        $router.go(-1);
+      } catch (error) {
+        $router.push('/outreach/mailboxes');
+      }
+    };
+
     return {
       // computed
       mailboxByIdPages,
-      returnRouteLink,
       mailboxProvider,
+      isReadOnly,
+
+      // methods
+      closePage,
     };
   },
 });

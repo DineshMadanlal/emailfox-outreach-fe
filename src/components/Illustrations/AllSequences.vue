@@ -24,12 +24,21 @@
 
         color="primary"
         label="Create Campaign"
+        :disable="isReadOnly"
 
-        @click="$emit('createNewCampaign')"
-      />
+        @click="!isReadOnly && $emit('createNewCampaign')"
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
 
       <!-- Ability for the user to either add contact or add mailbox -->
-      <div class="contacts-mailboxes-redirect-wrapper">
+      <div
+        v-if="!isReadOnly"
+        class="contacts-mailboxes-redirect-wrapper"
+      >
         <!-- Add/buy mailboxes -->
         <q-item
           clickable
@@ -91,16 +100,25 @@ import { defineComponent } from 'vue';
 // quasar
 import { useMeta } from 'quasar';
 
-// composition api
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 export default defineComponent({
   name: 'AllSequencesIllustration',
 
+  components: {
+    AppTooltip,
+  },
+
   emits: ['createNewCampaign'],
 
   setup() {
-    // composition API
+    // composables
+    const { isReadOnly } = usePermissions();
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
 
     // metadata
@@ -108,6 +126,7 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
       isMobileDevice,
     };
   },

@@ -234,14 +234,19 @@
         unelevated
 
         :loading="isApiLoading"
-        :disable="!selectedLinkedInStep"
+        :disable="!selectedLinkedInStep || isReadOnly"
 
         type="submit"
         color="primary"
         label="Save"
 
         @click="onSaveWorkflowStep"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </q-card>
 </template>
@@ -258,6 +263,10 @@ import {
 // Components
 import EditorMenuOptions from 'components/Menu/EditorMenuOptions.vue';
 import WorkflowStepIcon from 'components/CampaignWorkflow/SequenceCanvas/WorkflowStepIcon.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import {
@@ -273,6 +282,7 @@ export default defineComponent({
   components: {
     EditorMenuOptions,
     WorkflowStepIcon,
+    AppTooltip,
   },
 
   props: {
@@ -295,6 +305,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // permissions
+    const { isReadOnly } = usePermissions();
+
     // inject
     const workflowContext = inject('workflowContext');
 
@@ -473,6 +486,8 @@ export default defineComponent({
     };
 
     const onSaveWorkflowStep = () => {
+      if (isReadOnly.value) return;
+
       const isEditWorkflow = size(props.editWorkflowJson) > 0;
 
       const newStepJson = LINKEDIN_WORKFLOW_STEP_CATALOG[state.selectedLinkedInStep];
@@ -542,6 +557,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       variableMenuOptions,
       linkedInWorkflowSteps,
       selectedLinkedInActionDetails,

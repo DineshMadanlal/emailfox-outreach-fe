@@ -69,7 +69,8 @@
           color="primary"
           class="upload-contact-button"
 
-          to="/outreach/contacts/upload"
+          :disable="isReadOnly"
+          :to="isReadOnly ? undefined : '/outreach/contacts/upload'"
 
           v-if="!showAllContactsIllustration"
         >
@@ -80,6 +81,11 @@
               Upload
             </p>
           </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </q-btn>
       </div>
     </Teleport>
@@ -212,6 +218,7 @@
                 dense
                 color="primary"
                 class="app-checkbox"
+                :disable="isReadOnly"
 
                 v-model="props.selected"
 
@@ -226,10 +233,12 @@
                 dense
                 color="primary"
                 class="header-selection-checkbox app-checkbox"
+                :disable="isReadOnly"
 
                 :model-value="props.selected"
               >
                 <q-menu
+                  v-if="!isReadOnly"
                   transition-show="jump-down"
                   transition-hide="jump-up"
 
@@ -270,6 +279,7 @@
             dense
             color="primary"
             class="app-checkbox"
+            :disable="isReadOnly"
 
             v-model="scope.selected"
 
@@ -458,6 +468,7 @@ import {
 
 // components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import MailboxEsp from 'components/Contacts/MailboxEsp.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ContactCellCard from 'components/Contacts/ContactCellCard.vue';
@@ -482,6 +493,7 @@ import { getNumeralAmount } from 'src/utils/numbers';
 // composables
 import { useWorkspace } from 'src/composables/useWorkspace';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // store
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
@@ -497,6 +509,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    AppTooltip,
     MailboxEsp,
 
     AppSearchInput,
@@ -510,21 +523,20 @@ export default defineComponent({
     ColumnsVisibilityButton,
 
     SelectList,
-    SelectProvider,
-    SelectContactStatus,
-
     MoreFilters,
+    SelectProvider,
     ContactsMoreFilters,
+    SelectContactStatus,
     ContactsActionSummary,
   },
 
   props: {
     listId: {
-      type: Number,
+      type: [String, Number],
       default: null,
     },
     campaignId: {
-      type: Number,
+      type: [String, Number],
       default: null,
     },
     hideHeader: {
@@ -551,6 +563,7 @@ export default defineComponent({
     // composables
     const { isMobileDevice } = useAppHelpersApi();
     const { getWorkspaceCustomFields } = useWorkspace();
+    const { isReadOnly } = usePermissions();
 
     // state
     const state = reactive({
@@ -935,6 +948,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       tableColumns,
       showApiLoader,
       baseColumns,

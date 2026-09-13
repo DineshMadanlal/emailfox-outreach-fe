@@ -5,13 +5,18 @@
       dense
       no-caps
       class="footer-action-btn"
-      @click="$emit('reply')"
+      :disable="isReadOnly"
+      @click="!isReadOnly && $emit('reply')"
     >
       <LocalSvgIcon
         image="email-reply"
         class="footer-btn-icon q-mr-xs"
       />
       <span class="btn-text">Reply</span>
+      <AppTooltip
+        v-if="isReadOnly"
+        content="You have read-only access in this workspace"
+      />
     </q-btn>
   </div>
 </template>
@@ -20,10 +25,30 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'LinkedInCardFooter',
 
+  components: {
+    AppTooltip,
+  },
+
   emits: ['reply'],
+
+  setup() {
+    // composables
+    const { isReadOnly } = usePermissions();
+
+    return {
+      // computed
+      isReadOnly,
+    };
+  },
 });
 </script>
 

@@ -38,10 +38,18 @@
           color="primary"
           label="Add Webhook"
 
+          :disable="isReadOnly"
           @click="onAddNewWebhook"
 
           v-if="canCreateNewWebhook"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            anchor="top middle"
+            self="bottom middle"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
 
@@ -69,8 +77,10 @@ import { useMeta } from 'quasar';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import SaveWebhook from 'components/Webhooks/Modals/SaveWebhook.vue';
 import WebhooksTable from 'components/Webhooks/WebhooksTable.vue';
 
@@ -78,6 +88,7 @@ export default defineComponent({
   name: 'WebhooksSettings',
 
   components: {
+    AppTooltip,
     SaveWebhook,
     WebhooksTable,
   },
@@ -85,6 +96,7 @@ export default defineComponent({
   setup() {
     // composables
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // metadata
     useMeta(generateMetadata('Webhooks'));
@@ -130,6 +142,7 @@ export default defineComponent({
       // computed
       isMobileDevice,
       canCreateNewWebhook,
+      isReadOnly,
 
       // methods
       onAddNewWebhook,

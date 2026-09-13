@@ -30,8 +30,9 @@
         :key="`empty-state-step-${index}`"
 
         class="each-workflow-step"
+        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
 
-        @click="onAddNewStep(step)"
+        @click="!isReadOnly && onAddNewStep(step)"
       >
         <!-- Image / Icon -->
         <div
@@ -66,6 +67,7 @@ import {
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
 import LinkedInStep from 'components/CampaignWorkflow/SequenceCanvas/Modals/LinkedInStep.vue';
@@ -91,15 +93,16 @@ export default defineComponent({
     const workflowContext = inject('workflowContext');
     const editCampaignContext = inject('editCampaignContext');
 
+    // composition API
+    const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
+
     // state
     const state = reactive({
       showLinkedInStepModal: false,
 
       selectedLinkedInStep: WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE,
     });
-
-    // composition API
-    const { isMobileDevice } = useAppHelpersApi();
 
     // computed
     const workflowSteps = computed(() => {
@@ -144,6 +147,8 @@ export default defineComponent({
 
     // methods
     const onAddNewStep = (step) => {
+      if (isReadOnly.value) return;
+
       if (step.category === WORKFLOW_STEP_CATEGORIES.LINKEDIN) {
         state.selectedLinkedInStep = WORKFLOW_STEP_TYPES.LINKEDIN_VISIT_PROFILE;
         state.showLinkedInStepModal = true;
@@ -164,6 +169,7 @@ export default defineComponent({
       // computed
       workflowSteps,
       isMobileDevice,
+      isReadOnly,
 
       // methods
       onAddNewStep,

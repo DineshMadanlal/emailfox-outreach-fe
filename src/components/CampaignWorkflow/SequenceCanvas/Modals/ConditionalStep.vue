@@ -106,13 +106,19 @@
         no-caps
         unelevated
         :loading="isApiLoading"
+        :disable="isReadOnly"
 
         type="submit"
         color="primary"
         label="Save"
 
         @click="onSaveCondition"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </q-card>
 </template>
@@ -132,6 +138,10 @@ import { useQuasar } from 'quasar';
 // components
 import InputLabel from 'components/Form/InputLabel.vue';
 import SelectDelay from 'components/Dropdown/SelectDelay.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import {
@@ -148,6 +158,7 @@ export default defineComponent({
   components: {
     InputLabel,
     SelectDelay,
+    AppTooltip,
   },
 
   props: {
@@ -162,6 +173,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // permissions
+    const { isReadOnly } = usePermissions();
+
     // inject
     const workflowContext = inject('workflowContext');
 
@@ -203,6 +217,8 @@ export default defineComponent({
     };
 
     const onSaveCondition = () => {
+      if (isReadOnly.value) return;
+
       let errorMessage = '';
 
       // validate
@@ -304,6 +320,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       noBranchLabel,
       linkedInConditionOptions,
 

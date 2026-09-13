@@ -5,6 +5,7 @@
     unelevated
     color="black"
     class="dropdown-options-btn"
+    :disable="disable"
   >
     <div class="flex no-wrap items-center">
       <p class="more-text">
@@ -18,6 +19,7 @@
     </div>
 
     <q-menu
+      v-if="!disable"
       auto-close
       v-model="showMoreMenu"
       transition-hide="jump-up"
@@ -27,6 +29,9 @@
       <!-- Menu content slot -->
       <slot name="menu" />
     </q-menu>
+
+    <!-- Default slot -->
+    <slot />
   </q-btn>
 </template>
 
@@ -41,6 +46,10 @@ export default defineComponent({
     dropdownLabel: {
       type: String,
       default: 'More',
+    },
+    disable: {
+      type: Boolean,
+      default: false,
     },
   },
 

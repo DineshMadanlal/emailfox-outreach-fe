@@ -150,9 +150,9 @@ export const LOCAL_STORAGE_KEY = 'aipruntimeoutreach';
 
 export const DEFAULT_TABLE_PAGINATION = {
   page: 1,
-  perPage: 20,
+  perPage: 25,
   rowsNumber: 0,
-  rowsPerPage: 20,
+  rowsPerPage: 25,
 };
 
 export const DROPDOWN_MAX_FETCH_LIMIT = 40;

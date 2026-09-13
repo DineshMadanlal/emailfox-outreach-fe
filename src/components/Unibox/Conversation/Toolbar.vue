@@ -13,8 +13,9 @@
           size="sm"
           class="toolbar-action-btn"
           :class="{ 'is-starred': isStarred }"
+          :disable="isReadOnly"
 
-          @click="$emit('toggle-star')"
+          @click="!isReadOnly && $emit('toggle-star')"
 
           v-if="canStar"
         >
@@ -24,7 +25,9 @@
           />
 
           <AppTooltip
-            :content="isStarred ? 'Unstar' : 'Star as important'"
+            :content="isReadOnly
+              ? 'You have read-only access in this workspace'
+              : (isStarred ? 'Unstar' : 'Star as important')"
           />
         </q-btn>
 
@@ -41,15 +44,18 @@
 
           size="sm"
           class="toolbar-action-btn"
+          :disable="isReadOnly"
 
-          @click="$emit('toggle-read')"
+          @click="!isReadOnly && $emit('toggle-read')"
         >
           <LocalSvgIcon
             :image="isUnread ? 'mail' : 'unread'"
             class="toolbar-icon"
           />
           <AppTooltip
-            :content="isUnread ? 'Mark as read' : 'Mark as unread'"
+            :content="isReadOnly
+              ? 'You have read-only access in this workspace'
+              : (isUnread ? 'Mark as read' : 'Mark as unread')"
           />
         </q-btn>
 
@@ -182,15 +188,20 @@
         </div>
 
         <!-- Reply Category -->
-        <div>
+        <div class="relative-position">
           <SelectReplyCategory
             :options="replyCategoriesList"
             :modelValue="threadJson.reply_category_id"
+            :disable="isReadOnly"
 
             placeholderText="Select Reply Category"
             class="medium-height reply-category-dd"
 
             @update:modelValue="handleReplyCategoryUpdate"
+          />
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
           />
         </div>
       </div>
@@ -201,6 +212,9 @@
 <script>
 // vue
 import { defineComponent, computed } from 'vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -255,6 +269,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // store
     const uniboxPinia = useUniboxStore();
 
@@ -284,6 +301,7 @@ export default defineComponent({
 
     // methods
     const handleReplyCategoryUpdate = (newValue) => {
+      if (isReadOnly.value) return;
       // Emit the update event to the parent component
       emit('update:replyCategory', newValue);
     };
@@ -294,6 +312,7 @@ export default defineComponent({
       canStar,
       isUnread,
       isStarred,
+      isReadOnly,
       isUntrackedReply,
       contactDisplayName,
       replyCategoriesList,

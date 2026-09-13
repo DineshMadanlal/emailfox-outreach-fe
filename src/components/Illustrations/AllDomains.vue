@@ -35,8 +35,14 @@
           color="primary"
           label="Connect Mailbox"
 
-          to="/outreach/mailboxes/new"
-        />
+          :disable="isReadOnly"
+          :to="isReadOnly ? undefined : '/outreach/mailboxes/new'"
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
 
       <!--  -->
@@ -52,14 +58,27 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // components
 import TipCard from 'components/General/TipCard.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 export default defineComponent({
   name: 'AllDomains',
 
   components: {
     TipCard,
+    AppTooltip,
+  },
+
+  setup() {
+    const { isReadOnly } = usePermissions();
+
+    return {
+      isReadOnly,
+    };
   },
 });
 </script>

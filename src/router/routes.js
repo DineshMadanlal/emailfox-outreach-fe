@@ -1,3 +1,6 @@
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 const routes = [
   {
     path: '/reachme/email/notification',
@@ -92,7 +95,10 @@ const routes = [
     path: '/',
     component: () => import('layouts/AppLayout.vue'),
     meta: { requiresAuth: true },
-    redirect: '/outreach/campaigns-all',
+    redirect: () => {
+      const { defaultRedirectPath } = usePermissions();
+      return defaultRedirectPath.value || '/outreach/campaigns-all';
+    },
 
     children: [
       // outreach routes
@@ -100,7 +106,10 @@ const routes = [
         path: 'outreach',
         component: () => import('pages/Workspaces/Outreach.vue'),
         meta: { requiresAuth: true },
-        redirect: '/outreach/analytics',
+        redirect: () => {
+          const { defaultRedirectPath } = usePermissions();
+          return defaultRedirectPath.value || '/outreach/campaigns-all';
+        },
 
         children: [
           // All contacts

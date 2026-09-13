@@ -7,6 +7,7 @@
     />
   </div>
 </template>
+
 <script>
 // vue
 import { defineComponent } from 'vue';

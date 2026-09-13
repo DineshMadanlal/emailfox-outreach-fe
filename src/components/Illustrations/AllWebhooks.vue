@@ -32,9 +32,17 @@
 
           color="primary"
           label="Add Webhook"
+          :disable="isReadOnly"
 
           @click="$emit('onAddNewWebhook')"
-        />
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            anchor="top middle"
+            self="bottom middle"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
     </div>
   </div>
@@ -44,10 +52,28 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'AllWebhooksIllustration',
 
   emits: ['onAddNewWebhook'],
+
+  components: {
+    AppTooltip,
+  },
+
+  setup() {
+    const { isReadOnly } = usePermissions();
+
+    return {
+      isReadOnly,
+    };
+  },
 });
 </script>
 

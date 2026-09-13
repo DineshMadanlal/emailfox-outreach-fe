@@ -74,6 +74,7 @@
       dense
       outlined
       unelevated
+      :disable="isReadOnly"
       @click.stop.prevent
 
       class="more-action-btn"
@@ -85,6 +86,7 @@
       />
 
       <CampaignMoreOptions
+        v-if="!isReadOnly"
         :campaignStatus="tableRowJson.status"
 
         @cloneCampaign="onCloneCampaign"
@@ -92,6 +94,10 @@
         @pauseCampaign="onPauseCampaign"
         @resumeCampaign="handleResumeCampaign"
         @archiveCampaign="$emit('archiveCampaign')"
+      />
+      <AppTooltip
+        v-if="isReadOnly"
+        content="You have read-only access in this workspace"
       />
     </q-btn>
   </div>
@@ -106,12 +112,14 @@ import {
 // router
 import { useRouter } from 'vue-router';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+import useAppHelpersApi from 'src/composables/app-helpers.js';
+
 // Components
 import CampaignMoreOptions from 'components/Menu/CampaignMoreOptions.vue';
 import SaveCampaignDetails from 'components/Campaigns/Modals/SaveCampaignDetails.vue';
-
-// composables
-import useAppHelpersApi from 'src/composables/app-helpers.js';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // utils
 import { formatDate2 } from 'src/utils/dates';
@@ -128,6 +136,7 @@ export default defineComponent({
   components: {
     CampaignMoreOptions,
     SaveCampaignDetails,
+    AppTooltip,
   },
 
   props: {
@@ -138,6 +147,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // router
     const $router = useRouter();
 
@@ -264,6 +276,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       isMobileDevice,
       campaignCreatedAt,
       campaignChannelJson,

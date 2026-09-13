@@ -32,8 +32,14 @@
           color="primary"
           label="+ New List"
 
+          :disable="disableCreate"
           @click="$emit('createList')"
-        />
+        >
+          <AppTooltip
+            v-if="disableCreate"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
       </div>
 
       <!--  -->
@@ -52,14 +58,23 @@ import { defineComponent } from 'vue';
 
 // components
 import TipCard from 'components/General/TipCard.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 export default defineComponent({
   name: 'AllLists',
 
   emits: ['createList'],
 
+  props: {
+    disableCreate: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
   components: {
     TipCard,
+    AppTooltip,
   },
 });
 </script>

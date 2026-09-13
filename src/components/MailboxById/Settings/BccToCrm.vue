@@ -35,6 +35,7 @@
         no-caps
         color="primary"
         class="edit-btn"
+        :disable="isReadOnly"
         @click="$emit('editBcc')"
       >
         <LocalSvgIcon
@@ -42,6 +43,12 @@
           classes="edit-icon"
         />
         <span>Edit</span>
+        <AppTooltip
+          v-if="isReadOnly"
+          anchor="top middle"
+          self="bottom middle"
+          content="You have read-only access in this workspace"
+        />
       </q-btn>
     </div>
 
@@ -49,11 +56,18 @@
       v-else
       flat
       class="action-box-card"
-      @click="$emit('editBcc')"
+      :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
+      @click="!isReadOnly && $emit('editBcc')"
     >
       <p class="action-box-text">
         + Add Email Address
       </p>
+      <AppTooltip
+        v-if="isReadOnly"
+        anchor="top middle"
+        self="bottom middle"
+        content="You have read-only access in this workspace"
+      />
     </q-card>
   </div>
 </template>
@@ -62,8 +76,18 @@
 // vue
 import { defineComponent } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// Components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'BccToCrm',
+
+  components: {
+    AppTooltip,
+  },
 
   props: {
     mailboxByJson: {
@@ -74,6 +98,14 @@ export default defineComponent({
   },
 
   emits: ['editBcc'],
+
+  setup() {
+    const { isReadOnly } = usePermissions();
+
+    return {
+      isReadOnly,
+    };
+  },
 });
 </script>
 

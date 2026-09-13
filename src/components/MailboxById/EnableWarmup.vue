@@ -66,6 +66,8 @@
               class="warmup-dd-profile"
               ref="selectWarmupProfileRef"
 
+              :disable="isReadOnly"
+
               v-model="selectedWarmupProfileId"
 
               v-if="showSelectWarmupProfileDropdown"
@@ -108,10 +110,17 @@
             label="Enable Warmup"
 
             :loading="isSaveApiLoading"
-            :disable="!selectedWarmupProfileId"
+            :disable="!selectedWarmupProfileId || isReadOnly"
 
             @click="onEnableWarmup"
-          />
+          >
+            <AppTooltip
+              v-if="isReadOnly"
+              anchor="top middle"
+              self="bottom middle"
+              content="You have read-only access in this workspace"
+            />
+          </q-btn>
 
           <!-- Manage Profiles -->
           <q-btn
@@ -121,6 +130,8 @@
             color="primary"
             label="Manage Profiles"
             class="light-primary-btn"
+
+            v-if="!isReadOnly"
 
             @click="showWarmupProfilesModal = true"
           />
@@ -141,9 +152,11 @@ import {
 import WarmupProfiles from 'components/Warmup/Modals/WarmupProfiles.vue';
 import SaveWarmupProfile from 'components/Warmup/Modals/SaveWarmupProfile.vue';
 import SelectWarmupProfile from 'components/Dropdown/SelectWarmupProfile.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { updateSingleMailboxWarmupProfile } from 'src/utils/warmupApi';
@@ -160,6 +173,7 @@ export default defineComponent({
     WarmupProfiles,
     SaveWarmupProfile,
     SelectWarmupProfile,
+    AppTooltip,
   },
 
   props: {
@@ -175,6 +189,7 @@ export default defineComponent({
 
     // composables
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // state
     const state = reactive({
@@ -282,6 +297,7 @@ export default defineComponent({
       onEnableWarmup,
       onNewWarmupProfileCreated,
       onUpdateMailboxWarmupProfile,
+      isReadOnly,
     };
   },
 });

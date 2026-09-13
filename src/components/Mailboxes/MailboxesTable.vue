@@ -1006,6 +1006,9 @@ export default defineComponent({
 
         state.tableData = tableData || [];
         state.filters = filters || mailboxFilters;
+      } else {
+        state.pagination = DEFAULT_TABLE_PAGINATION;
+        state.filters = { ...mailboxFilters };
       }
 
       state.areResultsFetchedOnce = !isEmpty(state.tableData);

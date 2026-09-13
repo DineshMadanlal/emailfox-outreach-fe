@@ -10,6 +10,9 @@ import Cookies from 'js-cookie';
 // Pinia
 import { useAuthStore } from 'src/stores/auth';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // utils
 import { isMainApp } from 'src/utils/applyBranding';
 import { getWorkspaceSlugFromUrl } from 'src/utils/helperFunctions';
@@ -21,13 +24,17 @@ const CHUNK_RELOAD_KEY = 'app_chunk_load_failed';
 const getWorkspaceSlugFromRoute = () => getWorkspaceSlugFromUrl();
 
 const getWorkspaceAppPath = ({
-  path, activeWorkspaceData,
+  path = '/outreach/campaigns-all', activeWorkspaceData,
 }) => {
   const workspaceSlug = activeWorkspaceData?.slug || getWorkspaceSlugFromRoute();
 
   if (!workspaceSlug) {
     // request the user to create a workspace
     return '/workspace/choose';
+  }
+
+  if (path.startsWith('/outreach') || path.startsWith('/unibox') || path.startsWith('/settings')) {
+    return path;
   }
 
   return `/outreach${path}`;
@@ -44,6 +51,13 @@ export default boot(({ router }) => {
     // Access the authentication store
     const authStorePinia = useAuthStore();
     const isPrimaryPlatform = isMainApp();
+
+    // permissions
+    const {
+      isMailboxManager,
+      isInboxManager,
+      defaultRedirectPath,
+    } = usePermissions();
 
     // for primary platform
     const isDevMode = !!process.env.DEV_MODE;
@@ -117,7 +131,7 @@ export default boot(({ router }) => {
         // go back to the previous page
         next({
           path: getWorkspaceAppPath({
-            path: '/campaigns-all',
+            path: defaultRedirectPath.value,
             activeWorkspaceData: activeWorkspaceData.value,
           }),
         });
@@ -131,10 +145,10 @@ export default boot(({ router }) => {
       );
 
       if (isRouteRestricted) {
-        // redirect to the analytics page
+        // redirect to the default landing page
         next({
           path: getWorkspaceAppPath({
-            path: '/campaigns-all',
+            path: defaultRedirectPath.value,
             activeWorkspaceData: activeWorkspaceData.value,
           }),
         });
@@ -148,7 +162,7 @@ export default boot(({ router }) => {
     if (isAuthenticated.value && isSemiPublic) {
       next({
         path: getWorkspaceAppPath({
-          path: '/campaigns-all',
+          path: defaultRedirectPath.value,
           activeWorkspaceData: activeWorkspaceData.value,
         }),
       });
@@ -164,6 +178,50 @@ export default boot(({ router }) => {
       });
 
       return;
+    }
+
+    // ========================================================
+    // 🛡️ ROLE-BASED ACCESS GUARDS
+    // ========================================================
+    // 1. Mailbox Manager Guard
+    if (isAuthenticated.value && isMailboxManager.value && requiresAuth) {
+      const allowedMailboxRoutes = [
+        '/outreach/mailboxes',
+        '/outreach/mailbox',
+        '/outreach/domains',
+        '/outreach/domain',
+        '/user/settings',
+      ];
+
+      const isAllowed = allowedMailboxRoutes.some(
+        (allowedPath) => to.path.startsWith(allowedPath),
+      );
+
+      if (!isAllowed) {
+        next({
+          path: '/outreach/mailboxes',
+        });
+        return;
+      }
+    }
+
+    // 2. Inbox Manager Guard
+    if (isAuthenticated.value && isInboxManager.value && requiresAuth) {
+      const allowedInboxRoutes = [
+        '/unibox',
+        '/user/settings',
+      ];
+
+      const isAllowed = allowedInboxRoutes.some(
+        (allowedPath) => to.path.startsWith(allowedPath),
+      );
+
+      if (!isAllowed) {
+        next({
+          path: '/unibox/inbox',
+        });
+        return;
+      }
     }
 
     // Otherwise, allow access

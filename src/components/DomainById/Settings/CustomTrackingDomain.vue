@@ -31,6 +31,7 @@
         no-caps
         color="primary"
         class="edit-btn"
+        :disable="isReadOnly"
         @click="$emit('editCustomTrackingDomain')"
       >
         <LocalSvgIcon
@@ -38,6 +39,10 @@
           classes="edit-icon"
         />
         <span>Edit</span>
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
       </q-btn>
     </div>
 
@@ -45,11 +50,16 @@
       v-else
       flat
       class="action-box-card"
-      @click="$emit('editCustomTrackingDomain')"
+      :class="{ 'disabled-action-card': isReadOnly }"
+      @click="!isReadOnly && $emit('editCustomTrackingDomain')"
     >
       <p class="action-box-text">
         + Add CNAME Record
       </p>
+      <AppTooltip
+        v-if="isReadOnly"
+        content="You have read-only access in this workspace"
+      />
     </q-card>
   </div>
 </template>
@@ -58,8 +68,18 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'CustomTrackingDomain',
+
+  components: {
+    AppTooltip,
+  },
 
   props: {
     domainByJson: {
@@ -72,11 +92,15 @@ export default defineComponent({
   emits: ['editCustomTrackingDomain'],
 
   setup(props) {
+    const { isReadOnly } = usePermissions();
+
     const customTrackingDomain = computed(() => (
       props.domainByJson.tracking_domain_url || ''
     ));
 
     return {
+      // computed
+      isReadOnly,
       customTrackingDomain,
     };
   },

@@ -159,6 +159,7 @@
                 dense
                 color="primary"
                 class="app-checkbox"
+                :disable="isReadOnly"
 
                 v-model="props.selected"
 
@@ -173,10 +174,12 @@
                 dense
                 color="primary"
                 class="header-selection-checkbox app-checkbox"
+                :disable="isReadOnly"
 
                 :model-value="props.selected"
               >
                 <q-menu
+                  v-if="!isReadOnly"
                   transition-show="jump-down"
                   transition-hide="jump-up"
 
@@ -226,6 +229,7 @@
             dense
             color="primary"
             class="app-checkbox"
+            :disable="isReadOnly"
 
             v-model="scope.selected"
 
@@ -436,6 +440,9 @@ import SelectProvider from 'components/Dropdown/SelectProvider.vue';
 import DomainsSummary from 'components/Domains/DomainsSummary.vue';
 import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // Import the Pinia store
 import { storeExclusions } from 'src/stores/storeExclusions.js';
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
@@ -485,6 +492,7 @@ export default defineComponent({
 
     // composition API
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // store
     const userStore = useUserPreferencesStore();
@@ -841,6 +849,7 @@ export default defineComponent({
       // computed
       tableColumns,
       isMobileDevice,
+      isReadOnly,
       showApiLoader,
       tablePaginationLabel,
       selectedDomainsLength,

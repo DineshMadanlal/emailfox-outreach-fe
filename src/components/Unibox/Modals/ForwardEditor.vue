@@ -281,6 +281,9 @@ import { stripHtmlTags } from 'src/utils/helperFunctions';
 import { formatMessageDateTime } from 'src/utils/dates.js';
 import { parseEmailContentWithQuotes } from 'src/utils/emailParser';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // constants
 import { EMAIL_REGEX } from 'boot/constants';
 
@@ -320,6 +323,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const $q = useQuasar();
     const { appContext } = getCurrentInstance();
+    const { isReadOnly } = usePermissions();
 
     // Component reactive state
     const state = reactive({
@@ -387,6 +391,7 @@ export default defineComponent({
 
     // Send button enabled state: requires To, message body, and subject
     const disableSendButton = computed(() => {
+      if (isReadOnly.value) return true;
       if (state.toEmails.length === 0) return true;
       if (plainHtmlContent.value?.length === 0) return true;
       if (!state.subject?.length) return true;

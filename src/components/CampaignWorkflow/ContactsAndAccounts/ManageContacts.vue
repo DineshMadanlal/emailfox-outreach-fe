@@ -67,6 +67,7 @@
           unelevated
 
           color="primary"
+          :disable="isReadOnly"
         >
           <div class="flex no-wrap items-center">
             <LocalSvgIcon
@@ -81,8 +82,14 @@
 
           <!-- Menu -->
           <CampaignsAddContactsMenu
+            v-if="!isReadOnly"
             @onUploadContacts="modals.showUploadContactsModal = true"
             @onMapListsToCampaign="modals.showMapListsToCampaignModal = true"
+          />
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
           />
         </q-btn>
       </div>
@@ -133,7 +140,8 @@
       <!-- Map List -->
       <div
         class="contact-option-item"
-        @click="modals.showMapListsToCampaignModal = true"
+        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
+        @click="!isReadOnly && (modals.showMapListsToCampaignModal = true)"
       >
         <div class="header-icon-circled">
           <LocalSvgIcon image="folder" class="header--icon" />
@@ -151,7 +159,8 @@
       <!-- Upload Contacts -->
       <div
         class="contact-option-item"
-        @click="modals.showUploadContactsModal = true"
+        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
+        @click="!isReadOnly && (modals.showUploadContactsModal = true)"
       >
         <LocalSvgIcon image="upload" />
 
@@ -178,6 +187,7 @@ import {
 
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 import CampaignListItem from 'components/CampaignWorkflow/ContactsAndAccounts/CampaignListItem.vue';
 import MapListsToCampaign from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/MapListsToCampaign.vue';
 import CampaignUploadContacts from 'components/CampaignWorkflow/ContactsAndAccounts/Modals/CampaignUploadContacts.vue';
@@ -186,6 +196,7 @@ import CampaignsAddContactsMenu from 'components/Menu/CampaignsAddContactsMenu.v
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -198,6 +209,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    AppTooltip,
     CampaignListItem,
     MapListsToCampaign,
     CampaignUploadContacts,
@@ -213,6 +225,7 @@ export default defineComponent({
   setup(props) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // app context
     const { appContext } = getCurrentInstance();
@@ -318,6 +331,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
       showApiLoader,
       hasConnectedLists,
 

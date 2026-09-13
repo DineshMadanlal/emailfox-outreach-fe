@@ -76,13 +76,16 @@
           dense
           size="sm"
           class="quick-action-btn"
-          @click.stop="$emit('reply')"
+          :disable="isReadOnly"
+          @click.stop="!isReadOnly && $emit('reply')"
         >
           <LocalSvgIcon
             image="email-reply"
             class="quick-icon"
           />
-          <AppTooltip content="Reply" />
+          <AppTooltip
+            :content="isReadOnly ? 'You have read-only access in this workspace' : 'Reply'"
+          />
         </q-btn>
 
         <q-btn
@@ -91,13 +94,16 @@
           dense
           size="sm"
           class="quick-action-btn"
-          @click.stop="$emit('forward')"
+          :disable="isReadOnly"
+          @click.stop="!isReadOnly && $emit('forward')"
         >
           <LocalSvgIcon
             image="email-reply"
             class="quick-icon forward-icon"
           />
-          <AppTooltip content="Forward" />
+          <AppTooltip
+            :content="isReadOnly ? 'You have read-only access in this workspace' : 'Forward'"
+          />
         </q-btn>
       </div>
     </div>
@@ -107,6 +113,9 @@
 <script>
 // vue
 import { defineComponent, computed } from 'vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -171,6 +180,8 @@ export default defineComponent({
   },
 
   setup(props) {
+    const { isReadOnly } = usePermissions();
+
     const isLinkedIn = computed(() => props.channelType === UNIBOX_CHANNEL_TYPE.LINKEDIN);
 
     const channelBadgeIcon = computed(() => (
@@ -194,6 +205,8 @@ export default defineComponent({
     const formattedBcc = computed(() => formatAddressList(props.bcc));
 
     return {
+      // computed
+      isReadOnly,
       channelBadgeIcon,
       formattedCc,
       formattedBcc,

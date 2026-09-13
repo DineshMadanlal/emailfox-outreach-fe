@@ -51,13 +51,16 @@
           dense
           size="sm"
           class="quick-action-btn"
-          @click.stop="$emit('reply')"
+          :disable="isReadOnly"
+          @click.stop="!isReadOnly && $emit('reply')"
         >
           <LocalSvgIcon
             image="email-reply"
             class="quick-icon"
           />
-          <AppTooltip content="Reply" />
+          <AppTooltip
+            :content="isReadOnly ? 'You have read-only access in this workspace' : 'Reply'"
+          />
         </q-btn>
       </div>
     </div>
@@ -67,6 +70,9 @@
 <script>
 // vue
 import { defineComponent } from 'vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -101,6 +107,16 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+  },
+
+  setup() {
+    // composables
+    const { isReadOnly } = usePermissions();
+
+    return {
+      // computed
+      isReadOnly,
+    };
   },
 });
 </script>

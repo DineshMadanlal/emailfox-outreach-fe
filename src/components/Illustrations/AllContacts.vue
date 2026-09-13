@@ -28,8 +28,14 @@
         color="primary"
         label="Upload Contacts"
 
-        :to="toRoute"
-      ></q-btn>
+        :disable="isReadOnly"
+        :to="isReadOnly ? undefined : toRoute"
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </div>
 </template>
@@ -38,8 +44,18 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
 export default defineComponent({
   name: 'AllContacts',
+
+  components: {
+    AppTooltip,
+  },
 
   props: {
     listId: {
@@ -53,6 +69,10 @@ export default defineComponent({
   },
 
   setup(props) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
+    // computed
     const toRoute = computed(() => {
       if (props.listId) {
         return `/outreach/contacts/${props.listId}/upload`;
@@ -66,6 +86,7 @@ export default defineComponent({
     return {
       // computed
       toRoute,
+      isReadOnly,
     };
   },
 });

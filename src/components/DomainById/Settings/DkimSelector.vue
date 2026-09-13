@@ -31,6 +31,7 @@
         no-caps
         color="primary"
         class="edit-btn"
+        :disable="isReadOnly"
         @click="$emit('editDkimSelector')"
       >
         <LocalSvgIcon
@@ -38,6 +39,10 @@
           classes="edit-icon"
         />
         <span>Edit</span>
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
       </q-btn>
     </div>
 
@@ -45,11 +50,16 @@
       v-else
       flat
       class="action-box-card"
-      @click="$emit('editDkimSelector')"
+      :class="{ 'disabled-action-card': isReadOnly }"
+      @click="!isReadOnly && $emit('editDkimSelector')"
     >
       <p class="action-box-text">
         + Add DKIM Selector
       </p>
+      <AppTooltip
+        v-if="isReadOnly"
+        content="You have read-only access in this workspace"
+      />
     </q-card>
 
     <!-- Authentication & Reputation Reports -->
@@ -68,13 +78,18 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // components
+import AppTooltip from 'components/General/AppTooltip.vue';
 import AuthenticationReports from 'components/MailboxById/Authentication.vue';
 
 export default defineComponent({
   name: 'DkimSelector',
 
   components: {
+    AppTooltip,
     AuthenticationReports,
   },
 
@@ -89,6 +104,10 @@ export default defineComponent({
   emits: ['editDkimSelector', 'updateDomainByIdJson'],
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
+    // computed
     const authReports = computed(() => ({
       spf_pass: props.domainByJson?.spf_pass || false,
       dkim_pass: props.domainByJson?.dkim_pass || false,
@@ -98,6 +117,7 @@ export default defineComponent({
 
     const dnsErrors = computed(() => props.domainByJson?.dns_errors || {});
 
+    // methods
     const onUpdateAuthReports = (response) => {
       const updatedDomain = {
         ...props.domainByJson,
@@ -107,8 +127,12 @@ export default defineComponent({
     };
 
     return {
+      // computed
       authReports,
       dnsErrors,
+      isReadOnly,
+
+      // methods
       onUpdateAuthReports,
     };
   },

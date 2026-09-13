@@ -5,7 +5,9 @@
   >
     <div class="secondary-nav-container">
       <!-- 1. MASTER INBOX / UNIBOX VIEW -->
-      <template v-if="isMasterInboxRoute">
+      <template
+        v-if="isMasterInboxRoute"
+      >
         <!-- HEADER ROW FOR UNIBOX VIEW -->
         <div class="nav-header-row settings-header-row">
           <div class="flex items-center">
@@ -16,6 +18,8 @@
               size="sm"
               class="back-btn"
               @click="goBackToOutreach"
+
+              v-if="!isInboxManager"
             >
               <q-icon name="arrow_back" size="18px" color="grey" />
 
@@ -201,7 +205,10 @@
         </div>
 
         <!-- Sticky / Pinned Bottom Section for Campaign Settings -->
-        <div class="pinned-bottom-section">
+        <div
+          v-if="canAccessSettings"
+          class="pinned-bottom-section"
+        >
           <q-item
             clickable
             class="sidebar-route-item settings-trigger-item"
@@ -233,7 +240,7 @@
 <script>
 // vue
 import {
-  defineComponent, computed, ref, watch,
+  defineComponent, computed, reactive, toRefs, watch,
 } from 'vue';
 
 // vue router
@@ -244,6 +251,7 @@ import { useUserPreferencesStore } from 'src/stores/userPreferences.js';
 
 // composables
 import { useWorkspace } from 'src/composables/useWorkspace';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Components
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -266,13 +274,24 @@ export default defineComponent({
     const {
       isClientLoggedIn,
     } = useWorkspace();
+    const {
+      isMailboxManager,
+      canAccessCampaigns,
+      canAccessMailboxes,
+      canAccessInbox,
+      canAccessSettings,
+      defaultRedirectPath,
+      isInboxManager,
+    } = usePermissions();
 
     // Access the user store
     const userPreferencesStore = useUserPreferencesStore();
 
-    // route tracking
-    const lastOutreachRoute = ref('/outreach/campaigns-all');
-    const lastSettingsRoute = ref('/settings/warmup-profiles');
+    // state
+    const state = reactive({
+      lastOutreachRoute: '/outreach/campaigns-all',
+      lastSettingsRoute: '/settings/warmup-profiles',
+    });
 
     // computed
     const activeRoutePath = computed(() => $route.path);
@@ -285,85 +304,120 @@ export default defineComponent({
       activeRoutePath,
       (newPath) => {
         if (newPath.includes('/outreach/')) {
-          lastOutreachRoute.value = newPath;
+          state.lastOutreachRoute = newPath;
         } else if (newPath.includes('/settings/')) {
-          lastSettingsRoute.value = newPath;
+          state.lastSettingsRoute = newPath;
         }
       },
       { immediate: true },
     );
 
     // engage routes
-    const engageRoutes = computed(() => [
-      {
-        name: 'campaigns',
-        label: 'Campaign',
-        icon: 'sequences',
-        route: '/outreach/campaigns-all',
-        isActive: activeRoutePath.value.includes('/outreach/campaigns'),
-      },
-      {
-        name: 'unibox',
-        label: 'Unibox',
-        icon: 'inbox',
-        route: '/unibox/inbox',
-        isActive: activeRoutePath.value.includes('/unibox'),
-      },
-      {
-        name: 'contacts',
-        label: 'Contacts',
-        icon: 'contacts',
-        route: '/outreach/contacts/all',
-        isActive: activeRoutePath.value.includes('/outreach/contacts'),
-      },
-      {
-        name: 'lists',
-        label: 'Lead List',
-        icon: 'lists',
-        route: '/outreach/lists/all',
-        isActive: activeRoutePath.value.includes('/outreach/lists/'),
-      },
-    ]);
+    const engageRoutes = computed(() => {
+      const routes = [];
+
+      if (canAccessCampaigns.value) {
+        routes.push({
+          name: 'campaigns',
+          label: 'Campaign',
+          icon: 'sequences',
+          route: '/outreach/campaigns-all',
+          isActive: activeRoutePath.value.includes('/outreach/campaigns'),
+        });
+      }
+
+      if (canAccessInbox.value) {
+        routes.push({
+          name: 'unibox',
+          label: 'Unibox',
+          icon: 'inbox',
+          route: '/unibox/inbox',
+          isActive: activeRoutePath.value.includes('/unibox'),
+        });
+      }
+
+      if (canAccessCampaigns.value) {
+        routes.push(
+          {
+            name: 'contacts',
+            label: 'Contacts',
+            icon: 'contacts',
+            route: '/outreach/contacts/all',
+            isActive: activeRoutePath.value.includes('/outreach/contacts'),
+          },
+          {
+            name: 'lists',
+            label: 'Lead List',
+            icon: 'lists',
+            route: '/outreach/lists/all',
+            isActive: activeRoutePath.value.includes('/outreach/lists/'),
+          },
+        );
+      }
+
+      return routes;
+    });
 
     // infrastructure routes
-    const infrastructureRoutes = computed(() => [
-      {
-        name: 'mailboxes',
-        label: 'Mailbox',
-        icon: 'mail',
-        route: '/outreach/mailboxes',
-        isActive: activeRoutePath.value.includes('/outreach/mailbox'),
-      },
-      {
-        name: 'linkedin',
-        label: 'Linkedin',
-        icon: 'linkedin-1',
-        iconClass: 'linkedin-icon',
-        route: '/outreach/linkedin/accounts',
-        isActive: activeRoutePath.value.includes('/outreach/linkedin'),
-      },
-      {
+    const infrastructureRoutes = computed(() => {
+      if (!canAccessMailboxes.value) {
+        return [];
+      }
+
+      const routes = [
+        {
+          name: 'mailboxes',
+          label: 'Mailbox',
+          icon: 'mail',
+          route: '/outreach/mailboxes',
+          isActive: activeRoutePath.value.includes('/outreach/mailbox'),
+        },
+      ];
+
+      if (!isMailboxManager.value) {
+        routes.push({
+          name: 'linkedin',
+          label: 'Linkedin',
+          icon: 'linkedin-1',
+          iconClass: 'linkedin-icon',
+          route: '/outreach/linkedin/accounts',
+          isActive: activeRoutePath.value.includes('/outreach/linkedin'),
+        });
+      }
+
+      routes.push({
         name: 'domains',
         label: 'Domain',
         icon: 'domains',
         route: '/outreach/domains',
         isActive: activeRoutePath.value.includes('/outreach/domain'),
-      },
-    ]);
+      });
 
-    const outreachSections = computed(() => [
-      {
-        heading: 'Engage',
-        routes: engageRoutes.value,
-      },
-      {
-        heading: 'Infrastructure',
-        routes: infrastructureRoutes.value,
-      },
-    ]);
+      return routes;
+    });
+
+    const outreachSections = computed(() => {
+      const sections = [];
+
+      if (engageRoutes.value.length > 0) {
+        sections.push({
+          heading: 'Engage',
+          routes: engageRoutes.value,
+        });
+      }
+
+      if (infrastructureRoutes.value.length > 0) {
+        sections.push({
+          heading: 'Infrastructure',
+          routes: infrastructureRoutes.value,
+        });
+      }
+
+      return sections;
+    });
 
     const developerPageRoutesByWorkspace = computed(() => {
-      if (isClientLoggedIn.value) {
+      if (isClientLoggedIn.value || !canAccessSettings.value) {
         return [];
       }
 
@@ -379,6 +433,10 @@ export default defineComponent({
     });
 
     const campaignSettingsRoutes = computed(() => {
+      if (!canAccessSettings.value) {
+        return [];
+      }
+
       const routes = [
         {
           name: 'WarmupProfiles',
@@ -423,22 +481,29 @@ export default defineComponent({
     };
 
     const navigateToSettings = () => {
-      $router.push(lastSettingsRoute.value || '/settings/warmup-profiles');
+      $router.push(state.lastSettingsRoute || '/settings/warmup-profiles');
     };
 
     const goBackToOutreach = () => {
-      $router.push(lastOutreachRoute.value || '/outreach/campaigns-all');
+      $router.push(state.lastOutreachRoute || defaultRedirectPath.value);
     };
 
     return {
+      // state
+      ...toRefs(state),
+
+      // computed
       drawerMiniState,
+      isInboxManager,
       isMasterInboxRoute,
       isWorkspaceSettingsRoute,
       activeRoutePath,
 
       outreachSections,
       campaignSettingsRoutes,
+      canAccessSettings,
 
+      // methods
       toggleDrawerMiniState,
       navigateToSettings,
       goBackToOutreach,

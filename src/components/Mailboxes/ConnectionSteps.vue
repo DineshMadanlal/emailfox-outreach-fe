@@ -101,11 +101,18 @@
         unelevated
 
         color="primary"
+
+        :disable="isReadOnly"
         :label="connectButtonCta"
         :loading="isConnectApiLoading"
 
         @click="onConnect"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </q-card>
 </template>
@@ -122,6 +129,12 @@ import { useRouter } from 'vue-router';
 // quasar
 import { copyToClipboard } from 'quasar';
 
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // utils
 import { isMainApp } from 'src/utils/applyBranding.js';
 import { connectGoogleAccount, connectOutlookAccount, connectAzureAccount } from 'src/utils/domainMailboxesApi.js';
@@ -133,6 +146,10 @@ import { MAILBOX_PROVIDERS } from 'boot/mailbox-constants';
 export default defineComponent({
   name: 'ConnectionSteps',
 
+  components: {
+    AppTooltip,
+  },
+
   emits: ['goBack'],
 
   props: {
@@ -143,6 +160,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // router
     const $router = useRouter();
 
@@ -329,6 +349,7 @@ export default defineComponent({
 
       // computed
       appName,
+      isReadOnly,
       providerIcon,
       providerHeader,
       isOAuthProvider,

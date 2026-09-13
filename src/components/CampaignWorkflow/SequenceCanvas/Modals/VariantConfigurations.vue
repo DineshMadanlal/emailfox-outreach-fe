@@ -184,12 +184,18 @@
         no-caps
         unelevated
         :loading="isApiLoading"
+        :disable="isReadOnly"
 
         color="primary"
         label="Save"
 
         @click="onSaveVariantConfigurations"
-      />
+      >
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+      </q-btn>
     </div>
   </q-card>
 </template>
@@ -206,6 +212,10 @@ import {
 // Components
 import SelectVariants from 'components/Dropdown/SelectVariants.vue';
 import SelectEmailMetric from 'components/Dropdown/SelectEmailMetric.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { findPercentage } from 'src/utils/numbers.js';
@@ -222,6 +232,7 @@ export default defineComponent({
   components: {
     SelectVariants,
     SelectEmailMetric,
+    AppTooltip,
   },
 
   props: {
@@ -236,6 +247,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // permissions
+    const { isReadOnly } = usePermissions();
+
     // inject
     const workflowContext = inject('workflowContext');
 
@@ -287,6 +301,8 @@ export default defineComponent({
 
     // methods
     const onSaveVariantConfigurations = () => {
+      if (isReadOnly.value) return;
+
       //
       const abTestConfig = {};
 
@@ -356,6 +372,7 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isReadOnly,
       variantTableColumns,
       variantDropdownOptions,
       remainingContactsPercentage,

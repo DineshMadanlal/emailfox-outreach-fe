@@ -11,6 +11,8 @@
       color="primary"
       class="compose-btn"
       @click="onComposeEmail"
+
+      v-if="!isReadOnly"
     >
       <div class="flex no-wrap items-center">
         <LocalSvgIcon
@@ -109,6 +111,9 @@ import { useRoute } from 'vue-router';
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // store pinia
 import { useUniboxStore } from 'src/stores/unibox.js';
 
@@ -130,6 +135,9 @@ export default defineComponent({
   },
 
   setup() {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // router
     const $route = useRoute();
 
@@ -182,6 +190,7 @@ export default defineComponent({
 
     // Trigger compose email modal
     const onComposeEmail = () => {
+      if (isReadOnly.value) return;
       uniboxPinia.setMultipleFields({
         secondarySidebarClickEvent: UNIBOX_SIDEBAR_CLICK_EVENTS.COMPOSE_EMAIL,
       });
@@ -189,6 +198,7 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
       primaryRoutes,
 
       // methods

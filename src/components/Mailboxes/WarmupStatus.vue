@@ -35,10 +35,10 @@
       <div
         v-else
         class="start-warmup-text"
-        @click.prevent.stop="$emit('onEnableWarmup')"
+        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
+        @click.prevent.stop="!isReadOnly && $emit('onEnableWarmup')"
       >
         Start Warmup
-
       </div>
     </div>
 
@@ -54,6 +54,9 @@
 <script>
 // vue
 import { defineComponent, computed } from 'vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { getWarmupStatus } from 'src/utils/warmupApi.js';
@@ -74,6 +77,7 @@ export default defineComponent({
   },
 
   setup(props) {
+    const { isReadOnly } = usePermissions();
     // computed
     const isWarmupBlocked = computed(() => props.mailboxJson.warmup_status
       === WARMUP_STATUS.BLOCKED);
@@ -89,6 +93,7 @@ export default defineComponent({
       isWarmupEnabled,
       warmupStatusJson,
       isWarmupBlocked,
+      isReadOnly,
     };
   },
 });

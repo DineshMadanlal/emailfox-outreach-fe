@@ -157,7 +157,7 @@
 
             @click.stop="onDeleteVariant(vIndex)"
 
-            v-if="!isEmailSingleVariant"
+            v-if="!isEmailSingleVariant && !isReadOnly"
           >
             <LocalSvgIcon
               image="delete"
@@ -171,7 +171,7 @@
           clickable
           class="each-variant"
 
-          v-if="emailVariantsLength < SEQUENCE_VARIANTS_MAX_LIMIT"
+          v-if="!isReadOnly && emailVariantsLength < SEQUENCE_VARIANTS_MAX_LIMIT"
 
           @click="onAddNewVariant"
         >
@@ -242,6 +242,7 @@ import ArchiveStepOrVariant from 'components/CampaignWorkflow/SequenceCanvas/Mod
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { getCleanText } from 'src/utils/froalaHelper';
@@ -273,6 +274,7 @@ export default defineComponent({
   setup(props) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // inject
     const workflowContext = inject('workflowContext');
@@ -316,6 +318,8 @@ export default defineComponent({
 
     // methods
     const onDeleteStep = () => {
+      if (isReadOnly.value) return;
+
       const step = props.data?.step;
 
       if (!step) {
@@ -326,6 +330,8 @@ export default defineComponent({
     };
 
     const onAddNewVariant = () => {
+      if (isReadOnly.value) return;
+
       const updatedNumberOfVariants = emailVariantsLength.value + 1;
 
       const variantWeight = findPercentage({
@@ -361,6 +367,8 @@ export default defineComponent({
     };
 
     const removeVariant = (variantIndex) => {
+      if (isReadOnly.value) return;
+
       const currentWorkflowJson = { ...props.data };
 
       const updatedVariants = [...(currentWorkflowJson.step?.variants || [])];
@@ -398,6 +406,8 @@ export default defineComponent({
     };
 
     const onUserConfirmArchiveVariant = (variantJson) => {
+      if (isReadOnly.value) return;
+
       const targetIndex = variantJson?.index;
       if (targetIndex !== null && targetIndex !== undefined && targetIndex >= 0) {
         removeVariant(targetIndex);
@@ -407,6 +417,8 @@ export default defineComponent({
     };
 
     const onDeleteVariant = (variantIndex) => {
+      if (isReadOnly.value) return;
+
       const variant = emailVariants.value[variantIndex];
       if (!variant) return;
 
@@ -434,6 +446,7 @@ export default defineComponent({
       // computed
       isEmailStep,
       isMobileDevice,
+      isReadOnly,
       isLinkedInStep,
       isSequenceFirstStep,
 

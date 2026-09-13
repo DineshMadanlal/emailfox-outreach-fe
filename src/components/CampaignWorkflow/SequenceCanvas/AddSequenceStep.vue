@@ -43,6 +43,7 @@
       color="primary"
       class="add-sequence-step-btn"
       :class="{ 'menu-active': showAddSequenceStepMenu }"
+      :disable="isReadOnly"
 
       @click="onAddStepSequence"
     >
@@ -64,7 +65,7 @@
 
         class="no-shadow"
 
-        v-if="!isEmailOutreachCampaign"
+        v-if="!isEmailOutreachCampaign && !isReadOnly"
       >
         <AddSequenceStepOptions
           @onEmailFollowUp="onAddEmailStep"
@@ -76,6 +77,11 @@
           :isMultiChannelOutreachCampaign="isMultiChannelOutreachCampaign"
         />
       </q-menu>
+
+      <AppTooltip
+        v-if="isReadOnly"
+        content="You have read-only access in this workspace"
+      />
     </q-btn>
   </div>
 </template>
@@ -89,9 +95,11 @@ import {
 import AddSequenceStepOptions from 'components/Menu/AddSequenceStepOptions.vue';
 import LinkedInStep from 'components/CampaignWorkflow/SequenceCanvas/Modals/LinkedInStep.vue';
 import ConditionalStep from 'components/CampaignWorkflow/SequenceCanvas/Modals/ConditionalStep.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { EMAIL_WORKFLOW_STEP_CATALOG, WORKFLOW_STEP_TYPES } from 'boot/campaign-constants';
@@ -103,6 +111,7 @@ export default defineComponent({
     AddSequenceStepOptions,
     LinkedInStep,
     ConditionalStep,
+    AppTooltip,
   },
 
   props: {
@@ -119,6 +128,7 @@ export default defineComponent({
 
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // state
     const state = reactive({
@@ -163,6 +173,7 @@ export default defineComponent({
 
       // computed
       isMobileDevice,
+      isReadOnly,
 
       isEmailOutreachCampaign,
       isLinkedInOutreachCampaign,

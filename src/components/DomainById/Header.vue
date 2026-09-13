@@ -73,12 +73,18 @@
         class="domain-id-right-section"
       >
         <!-- More Options -->
-        <DropdownOptionsButton>
+        <DropdownOptionsButton
+          :disable="isReadOnly"
+        >
           <template #menu>
             <DomainMoreOptions
               @deleteDomain="$emit('deleteDomain')"
             />
           </template>
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
         </DropdownOptionsButton>
       </div>
     </div>
@@ -117,10 +123,14 @@ import {
   defineComponent, computed,
 } from 'vue';
 
+// Composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // Components
 import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import DomainMoreOptions from 'components/Menu/DomainMoreOptions.vue';
 import DropdownOptionsButton from 'components/Buttons/DropdownOptionsButton.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 export default defineComponent({
   name: 'DomainByIdHeader',
@@ -131,6 +141,7 @@ export default defineComponent({
     EspProvider,
     DomainMoreOptions,
     DropdownOptionsButton,
+    AppTooltip,
   },
 
   props: {
@@ -145,6 +156,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // computed
     const returnRouteLink = computed(() => '/outreach/domains');
 
@@ -175,6 +189,7 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
       domainByIdPages,
       returnRouteLink,
       domainProvider,

@@ -8,6 +8,7 @@
       dense
       borderless
       :min="0"
+      :disable="isReadOnly"
 
       class="delay-input"
       input-class="number-input"
@@ -22,6 +23,7 @@
     <SelectDelay
       borderless
       :outlined="false"
+      :disable="isReadOnly"
 
       v-model="delayUnit"
 
@@ -49,6 +51,9 @@ import {
 // components
 import SelectDelay from 'components/Dropdown/SelectDelay.vue';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // utils
 import { getDelayState } from 'src/utils/campaignApi';
 
@@ -71,6 +76,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    // permissions
+    const { isReadOnly } = usePermissions();
+
     // inject
     const workflowContext = inject('workflowContext');
 
@@ -82,6 +90,7 @@ export default defineComponent({
 
     // methods
     const onInputChange = () => {
+      if (isReadOnly.value) return;
       // update the workflow context with the new delay values
       workflowContext.updateWorkflowStep({
         step: {
@@ -125,6 +134,9 @@ export default defineComponent({
     return {
       // state
       ...toRefs(state),
+
+      // computed
+      isReadOnly,
 
       // methods
       onInputChange,

@@ -195,7 +195,10 @@
     </div>
 
     <!-- Footer -->
-    <div class="smtp-footer-actions">
+    <div
+      v-if="!isReadOnly"
+      class="smtp-footer-actions"
+    >
       <q-btn
         flat no-caps unelevated
         label="Back"
@@ -237,6 +240,9 @@ import get from 'lodash/get';
 import { prettyMemoryBytes } from 'src/utils/numbers';
 import { downloadSmtpCsvTemplate } from 'src/utils/csvHelpers';
 
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
+
 // constants
 import { SMTP_BULK_FIELD_DEFINITIONS } from 'boot/mailbox-constants';
 
@@ -253,6 +259,9 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // composables
+    const { isReadOnly } = usePermissions();
+
     // quasar
     const $q = useQuasar();
 
@@ -448,6 +457,7 @@ export default defineComponent({
       // computed
       smtpFieldDefinitions,
       csvColumnOptions,
+      isReadOnly,
 
       // utils
       prettyMemoryBytes,

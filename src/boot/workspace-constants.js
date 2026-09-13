@@ -146,6 +146,11 @@ export const TEAM_MEMBER_ROLES = {
     label: 'Viewer',
     description: 'Read-only access to view data and reports across the app, except billing and settings',
   },
+  MAILBOX_MANAGER: {
+    value: 'MAILBOX_MANAGER',
+    label: 'Mailbox Manager',
+    description: 'Access restricted exclusively to the mailboxes module to connect and manage email accounts, without access to campaigns, inbox, settings, or billing',
+  },
 };
 
 export const CLIENT_MEMBER_ROLES = {
