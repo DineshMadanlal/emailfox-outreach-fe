@@ -9,7 +9,7 @@
 
     <!-- Dialog -->
     <q-dialog
-      v-model="showDeleteMailboxModal"
+      v-model="modals.showDeleteMailbox"
       class="app-modal-dialog"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
@@ -20,6 +20,22 @@
         :domainId="mailboxByJson.domain_id"
 
         @onSuccessfulDeleteMailbox="onSuccessfulDeleteMailbox"
+      />
+    </q-dialog>
+
+    <!-- Unblock Warmup Dialog -->
+    <q-dialog
+      persistent
+      v-model="modals.showUnblockWarmup"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <UnblockWarmup
+        :mailboxByJson="mailboxByJson"
+        :warmupDetails="warmupDetails"
+        @unblockSuccess="onSuccessfulUnblockWarmup"
       />
     </q-dialog>
 
@@ -40,9 +56,14 @@
     <router-view
       v-if="mailboxByJson.id"
 
+      :key="routerKey"
+
+      :warmupDetails="warmupDetails"
       :mailboxByJson="mailboxByJson"
 
       @updateMailbox="onUpdateMailboxJson"
+      @reloadPage="onReloadPage"
+      @unblockWarmup="modals.showUnblockWarmup = true"
     />
   </div>
 </template>
@@ -67,12 +88,17 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { convertStringToNumber } from 'src/utils/numbers';
+import { getMailboxWarmupDetails } from 'src/utils/warmupApi';
 import { getMailboxById } from 'src/utils/domainMailboxesApi';
 
 // Components
 import ApiLoader from 'src/components/General/ApiLoader.vue';
 import MailboxByIdHeader from 'components/MailboxById/Header.vue';
 import DeleteMailbox from 'components/Domains/Modals/DeleteMailbox.vue';
+import UnblockWarmup from 'components/MailboxById/Modals/UnblockWarmup.vue';
+
+// constants
+import { WARMUP_STATUS } from 'src/boot/warmup-constants';
 
 export default defineComponent({
   name: 'MailboxById',
@@ -80,6 +106,7 @@ export default defineComponent({
   components: {
     ApiLoader,
     DeleteMailbox,
+    UnblockWarmup,
     MailboxByIdHeader,
   },
 
@@ -96,13 +123,19 @@ export default defineComponent({
 
     // state
     const state = reactive({
+      routerKey: 0,
+
       isPageScrolled: false,
 
       mailboxByJson: {},
+      warmupDetails: null,
       fetchMailboxByIdApiLoading: false,
 
       // modals
-      showDeleteMailboxModal: false,
+      modals: {
+        showDeleteMailbox: false,
+        showUnblockWarmup: false,
+      },
     });
 
     // computed
@@ -118,9 +151,24 @@ export default defineComponent({
       state.isPageScrolled = !isVisible;
     };
 
+    const fetchMailboxWarmupDetails = async () => {
+      try {
+        // make api call to fetch warmup details
+        const response = await getMailboxWarmupDetails({
+          mailboxId: mailboxId.value,
+        });
+
+        state.warmupDetails = response || {};
+      } catch (error) {
+        if (error.message.includes('Warmup settings not found for this mailbox.')) {
+          state.warmupDetails = null;
+        }
+      }
+    };
+
     const makeApiCallOnMounted = async () => {
       try {
-        state.fetchMailboxByIdApiLoading = true;
+        state.fetchMailboxByIdApiLoading = isEmpty(state.mailboxByJson);
 
         // make api call
         const response = await getMailboxById(mailboxId.value);
@@ -136,6 +184,10 @@ export default defineComponent({
           $router.push('/outreach/mailbox-not-found');
         } else {
           state.mailboxByJson = response;
+
+          if (response.warmup_status === WARMUP_STATUS.BLOCKED) {
+            fetchMailboxWarmupDetails();
+          }
 
           // metadata
           useMeta(generateMetadata(state.mailboxByJson.email));
@@ -155,14 +207,25 @@ export default defineComponent({
     };
 
     const onDeleteMailbox = () => {
-      state.showDeleteMailboxModal = true;
+      state.modals.showDeleteMailbox = true;
     };
 
     const onSuccessfulDeleteMailbox = () => {
-      state.showDeleteMailboxModal = false;
+      state.modals.showDeleteMailbox = false;
 
       // Push to the previous page
       $router.go(-1);
+    };
+
+    const onReloadPage = () => {
+      makeApiCallOnMounted();
+      state.routerKey += 1;
+    };
+
+    const onSuccessfulUnblockWarmup = () => {
+      state.modals.showUnblockWarmup = false;
+
+      onReloadPage();
     };
 
     const onUpdateMailboxJson = (updatedMailbox) => {
@@ -183,10 +246,12 @@ export default defineComponent({
       isMobileDevice,
 
       // methods
+      onReloadPage,
       onDeleteMailbox,
       onVisibilityChange,
       onUpdateMailboxJson,
       onSuccessfulDeleteMailbox,
+      onSuccessfulUnblockWarmup,
     };
   },
 });

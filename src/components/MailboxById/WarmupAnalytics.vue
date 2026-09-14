@@ -1,11 +1,18 @@
 <template>
   <div class="warmup-analytics-page">
+    <WarmupBlockedBanner
+      :mailboxByJson="mailboxByJson"
+      :warmupDetails="mailboxWarmupDetails"
+
+      @unblockWarmup="$emit('unblockWarmup')"
+    />
+
     <WarmupDetails
       :mailboxByJson="mailboxByJson"
       :mailboxWarmupDetails="mailboxWarmupDetails"
     />
     <WarmupStats
-      :mailboxId="mailboxByJson.id"
+      :mailboxByJson="mailboxByJson"
     />
 
     <WarmupGrowthPlacement
@@ -36,9 +43,12 @@ import WarmupDetails from 'components/Warmup/WarmupDetails.vue';
 import MailboxHealth from 'components/Warmup/MailboxHealth.vue';
 import WarmupEspBreakdown from 'components/Warmup/WarmupEspBreakdown.vue';
 import WarmupGrowthPlacement from 'components/Warmup/WarmupGrowthPlacement.vue';
+import WarmupBlockedBanner from 'components/MailboxById/WarmupBlockedBanner.vue';
 
 export default defineComponent({
   name: 'MailboxByIdWarmupAnalytics',
+
+  emits: ['unblockWarmup'],
 
   components: {
     WarmupDetails,
@@ -46,6 +56,7 @@ export default defineComponent({
     MailboxHealth,
     WarmupEspBreakdown,
     WarmupGrowthPlacement,
+    WarmupBlockedBanner,
   },
 
   props: {

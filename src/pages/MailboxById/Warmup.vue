@@ -13,6 +13,8 @@
 
       :mailboxByJson="mailboxByJson"
       :mailboxWarmupDetails="mailboxWarmupDetails"
+
+      @unblockWarmup="$emit('unblockWarmup')"
     />
 
     <!-- If warmup not enabled -->
@@ -26,9 +28,12 @@
 </template>
 
 <script>
+// lodash
+import isEmpty from 'lodash/isEmpty';
+
 // vue
 import {
-  defineComponent, onMounted, reactive, toRefs, getCurrentInstance, computed,
+  defineComponent, onMounted, reactive, toRefs, getCurrentInstance, computed, watch,
 } from 'vue';
 
 // Components
@@ -39,14 +44,17 @@ import MailboxByIdWarmupAnalytics from 'components/MailboxById/WarmupAnalytics.v
 // utils
 import { getMailboxWarmupDetails } from 'src/utils/warmupApi';
 
-// constants
-import { WARMUP_STATUS } from 'src/boot/warmup-constants';
-
 export default defineComponent({
   name: 'MailboxByIdWarmup',
 
+  emits: ['unblockWarmup', 'reloadPage'],
+
   props: {
     mailboxByJson: {
+      type: Object,
+      default: () => ({}),
+    },
+    warmupDetails: {
       type: Object,
       default: () => ({}),
     },
@@ -58,7 +66,7 @@ export default defineComponent({
     MailboxByIdWarmupAnalytics,
   },
 
-  setup(props) {
+  setup(props, { emit }) {
     // instance
     const { appContext } = getCurrentInstance();
 
@@ -70,13 +78,12 @@ export default defineComponent({
     });
 
     // computed
-    const isWarmupEnabled = computed(() => state.mailboxWarmupDetails?.status
-      === WARMUP_STATUS.ACTIVE);
+    const isWarmupEnabled = computed(() => !!state.mailboxWarmupDetails?.warmup_profile_id);
 
     // methods
     const makeApiCallOnMounted = async () => {
       try {
-        state.isApiLoading = true;
+        state.isApiLoading = isEmpty(state.mailboxWarmupDetails);
 
         const response = await getMailboxWarmupDetails({
           mailboxId: props.mailboxByJson.id,
@@ -104,13 +111,29 @@ export default defineComponent({
     };
 
     const reloadApiCalls = () => {
-      makeApiCallOnMounted();
+      emit('reloadPage');
     };
 
     // lifecycle hook
     onMounted(() => {
       makeApiCallOnMounted();
+
+      //
+      if (props.warmupDetails && Object.keys(props.warmupDetails).length > 0) {
+        state.mailboxWarmupDetails = props.warmupDetails;
+      }
     });
+
+    // watch warmup details
+    watch(
+      () => props.warmupDetails,
+      (newVal) => {
+        if (newVal && Object.keys(newVal).length > 0) {
+          state.mailboxWarmupDetails = newVal;
+        }
+      },
+      { immediate: true },
+    );
 
     return {
       // state

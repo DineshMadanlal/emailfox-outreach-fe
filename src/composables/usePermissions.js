@@ -10,7 +10,7 @@ import { TEAM_MEMBER_ROLES } from 'src/boot/workspace-constants';
 // 🧪 DEV TESTING OVERRIDE:
 // Set to null to use actual logged-in user role, or assign any TEAM_MEMBER_ROLES value
 const devState = reactive({
-  roleOverride: TEAM_MEMBER_ROLES.VIEWER.value, // Defaults to MAILBOX_MANAGER for testing
+  roleOverride: TEAM_MEMBER_ROLES.SUPER_ADMIN.value, // Defaults to MAILBOX_MANAGER for testing
 });
 
 // Live browser console helper: window.setTestRole('MAILBOX_MANAGER') / window.setTestRole(null)

@@ -201,3 +201,32 @@ export const getWarmupStatus = (warmupStartedAt) => {
       : `${days} / ${MIN_WARMUP_DAYS} left`,
   };
 };
+
+export const sendUnblockWarmupOtp = async ({ mailboxId }) => {
+  try {
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: `/mailboxes/${mailboxId}/unblock/send-otp`,
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const verifyUnblockWarmupOtp = async ({ mailboxId, otp }) => {
+  try {
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: `/mailboxes/${mailboxId}/unblock/verify-otp`,
+      payload: {
+        otp,
+      },
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};

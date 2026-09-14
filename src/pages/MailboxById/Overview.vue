@@ -4,6 +4,13 @@
       v-if="mailboxByJson.id"
       class="full-width mailbox-by-id-overview-content"
     >
+      <WarmupBlockedBanner
+        :mailboxByJson="mailboxByJson"
+        :warmupDetails="warmupDetails"
+
+        @unblockWarmup="$emit('unblockWarmup')"
+      />
+
       <div class="mailbox-overview-authentication">
         <!-- Mailbox Overview -->
         <MailboxOverview
@@ -75,6 +82,7 @@ import TotalEngagement from 'components/DomainById/TotalEngagement.vue';
 import MailboxOverview from 'components/MailboxById/Overview.vue';
 import AuthenticationReports from 'components/MailboxById/Authentication.vue';
 import BounceCategories from 'components/MailboxById/BounceCategories.vue';
+import WarmupBlockedBanner from 'components/MailboxById/WarmupBlockedBanner.vue';
 
 // pinia
 import { storeExclusions } from 'src/stores/storeExclusions.js';
@@ -85,6 +93,8 @@ import { WARMUP_STATUS } from 'src/boot/warmup-constants';
 export default defineComponent({
   name: 'MailboxById',
 
+  emits: ['unblockWarmup'],
+
   components: {
     TotalEngagement,
     EmailEngagement,
@@ -92,12 +102,17 @@ export default defineComponent({
     MailboxOverview,
     AuthenticationReports,
     BounceCategories,
+    WarmupBlockedBanner,
   },
 
   props: {
     mailboxByJson: {
       type: Object,
       required: true,
+    },
+    warmupDetails: {
+      type: Object,
+      default: () => ({}),
     },
   },
 

@@ -76,7 +76,10 @@
       </div>
 
       <!-- Bounce Rate -->
-      <div class="each-health-card">
+      <div
+        v-if="false"
+        class="each-health-card"
+      >
         <!-- Icon -->
         <div
           class="health-icon-wrapper negative-bg"
@@ -119,9 +122,9 @@ export default defineComponent({
   },
 
   props: {
-    mailboxId: {
-      type: Number,
-      default: null,
+    mailboxByJson: {
+      type: Object,
+      default: () => ({}),
     },
   },
 
@@ -143,8 +146,8 @@ export default defineComponent({
       if (!totalSent.value) return 0;
 
       return findPercentage({
-        part: state.backendResponse.inbox_count || 0,
-        total: totalSent.value,
+        part: totalSent.value - state.backendResponse.spam_count || 0,
+        whole: totalSent.value,
       });
     });
 
@@ -153,7 +156,7 @@ export default defineComponent({
 
       return findPercentage({
         part: state.backendResponse.spam_count || 0,
-        total: totalSent.value,
+        whole: totalSent.value,
       });
     });
 
@@ -162,7 +165,7 @@ export default defineComponent({
 
       return findPercentage({
         part: state.backendResponse.bounce_count || 0,
-        total: totalSent.value,
+        whole: totalSent.value,
       });
     });
 
@@ -170,19 +173,10 @@ export default defineComponent({
  * Mailbox Health Formula
  * You can tweak weights later
  */
-    const mailboxHealth = computed(() => {
-      let score = 100;
-
-      score -= spamPlacement.value * 4;
-      score -= parseFloat(bounceRate.value) * 6;
-
-      if (score < 0) score = 0;
-
-      return Math.round(score);
-    });
+    const mailboxHealth = computed(() => props.mailboxByJson.health_score);
 
     const healthStatus = computed(() => {
-      if (mailboxHealth.value >= 80) return 'Healthy';
+      if (mailboxHealth.value >= 85) return 'Healthy';
       if (mailboxHealth.value >= 60) return 'Average';
 
       return 'Poor';
@@ -194,7 +188,7 @@ export default defineComponent({
         state.isApiLoading = true;
 
         const response = await getMailboxWarmupStats({
-          mailboxId: props.mailboxId,
+          mailboxId: props.mailboxByJson.id,
         });
 
         state.backendResponse = response;
