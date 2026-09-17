@@ -15,7 +15,7 @@
       <q-space />
 
       <p class="total-value-text">
-        {{ totalBouncedRate }}%
+        {{ getNumeralAmount(totalBouncedRate) }}
       </p>
     </div>
 
@@ -50,7 +50,7 @@
       <q-space />
 
       <p class="bounce-type-value-text">
-        {{ hardBouncedRate }}% <span>({{ hardBouncedPercentage }}%)</span>
+        {{ getNumeralAmount(hardBouncedRate) }} <span>({{ hardBouncedPercentage }}%)</span>
       </p>
     </div>
 
@@ -73,7 +73,7 @@
       <q-space />
 
       <p class="bounce-type-value-text">
-        {{ softBouncedRate }}% <span>({{ softBouncedPercentage }}%)</span>
+        {{ getNumeralAmount(softBouncedRate) }} <span>({{ softBouncedPercentage }}%)</span>
       </p>
     </div>
   </q-card>
@@ -88,7 +88,7 @@ import ApiLoader from 'src/components/General/ApiLoader.vue';
 import InfoTooltip from 'components/General/InfoTooltip.vue';
 
 // utils
-import { findPercentage } from 'src/utils/numbers';
+import { findPercentage, getNumeralAmount } from 'src/utils/numbers';
 
 export default defineComponent({
   name: 'BounceCategories',
@@ -137,6 +137,9 @@ export default defineComponent({
 
       hardBouncedRate,
       softBouncedRate,
+
+      // methods
+      getNumeralAmount,
     };
   },
 });

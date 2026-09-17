@@ -65,17 +65,17 @@ export default defineComponent({
     // computed
     const overallEngagement = computed(() => ({
       sent: {
-        value: props.engagementMetrics.sent,
+        value: props.engagementMetrics.sent_count,
         label: 'Emails Sent',
         icon: 'email-sent',
       },
       replies: {
-        value: props.engagementMetrics.replies,
+        value: props.engagementMetrics.received_count,
         label: 'Received',
         icon: 'email-replied',
       },
       bounce: {
-        value: props.engagementMetrics.bounced,
+        value: props.engagementMetrics.hard_bounce_count,
         label: 'Emails Bounced',
         icon: 'email-bounced',
       },
