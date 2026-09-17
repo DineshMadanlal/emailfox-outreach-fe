@@ -156,12 +156,12 @@ export default defineComponent({
         route: '/unibox/inbox',
         count: uniboxPinia.getInboxUnreadCount || null,
       },
-      // {
-      //   name: 'UniboxUntrackedReplies',
-      //   label: 'Untracked Replies',
-      //   icon: 'send',
-      //   route: '/unibox/untracked-replies',
-      // },
+      {
+        name: 'UniboxUntrackedReplies',
+        label: 'Untracked Emails',
+        icon: 'send',
+        route: '/unibox/untracked-emails',
+      },
       {
         name: 'UniboxImportant',
         label: 'Important',
@@ -191,6 +191,7 @@ export default defineComponent({
     // Trigger compose email modal
     const onComposeEmail = () => {
       if (isReadOnly.value) return;
+
       uniboxPinia.setMultipleFields({
         secondarySidebarClickEvent: UNIBOX_SIDEBAR_CLICK_EVENTS.COMPOSE_EMAIL,
       });

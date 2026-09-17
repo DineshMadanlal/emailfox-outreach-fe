@@ -44,7 +44,10 @@
       </div>
 
       <!-- Quick Action: Reply on Top-Right -->
-      <div class="card-quick-actions">
+      <div
+        v-if="canReply"
+        class="card-quick-actions"
+      >
         <q-btn
           flat
           round
@@ -106,6 +109,10 @@ export default defineComponent({
     isReceived: {
       type: Boolean,
       default: false,
+    },
+    canReply: {
+      type: Boolean,
+      default: true,
     },
   },
 

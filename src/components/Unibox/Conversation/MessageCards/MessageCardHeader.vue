@@ -68,7 +68,7 @@
       <!-- Quick Actions on Top-Right (visible when expanded) -->
       <div
         class="card-quick-actions"
-        v-if="isExpanded"
+        v-if="isExpanded && showActions"
       >
         <q-btn
           flat
@@ -177,6 +177,10 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    showActions: {
+      type: Boolean,
+      default: true,
+    },
   },
 
   setup(props) {
@@ -193,10 +197,22 @@ export default defineComponent({
       if (Array.isArray(raw)) {
         return raw.map((item) => {
           if (typeof item === 'object' && item !== null) {
-            return item.name ? `${item.name} <${item.email}>` : item.email;
+            const addr = item.address || item.email || '';
+            return item.name && item.name !== addr ? `${item.name} <${addr}>` : addr;
           }
           return String(item).trim();
         }).filter(Boolean).join(', ');
+      }
+      if (typeof raw === 'object' && raw !== null) {
+        if (Array.isArray(raw.value)) {
+          return raw.value.map((item) => {
+            const addr = item.address || item.email || '';
+            return item.name && item.name !== addr ? `${item.name} <${addr}>` : addr;
+          }).filter(Boolean).join(', ');
+        }
+        if (raw.text) {
+          return raw.text.trim();
+        }
       }
       return String(raw).trim();
     };

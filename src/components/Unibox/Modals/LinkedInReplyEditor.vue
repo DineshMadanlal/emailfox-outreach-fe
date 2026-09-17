@@ -155,6 +155,7 @@
             type="textarea"
             borderless
             autogrow
+            autofocus
             placeholder="Write your message here"
             class="composer-textarea"
             :input-style="{ minHeight: '70px', maxHeight: '160px' }"
@@ -358,13 +359,40 @@ export default defineComponent({
       let list = [];
 
       if (Array.isArray(rawMessages) && rawMessages.length > 0) {
-        // Filter strictly for LinkedIn direct messages
-        list = rawMessages.filter(
-          (m) => m.step_type === WORKFLOW_STEP_TYPES.LINKEDIN_MESSAGE,
-        );
+        // Filter for LinkedIn messages, received replies, and
+        // thread replies with conversational text
+        list = rawMessages.filter((m) => {
+          // Exclude email steps
+          if (m.step_type === WORKFLOW_STEP_TYPES.EMAIL) {
+            return false;
+          }
+
+          const rawText = (m.message || m.message_preview || m.body || '').trim();
+
+          // Exclude pure background activity execution logs
+          if (
+            /^(LINKEDIN_[A-Z_]+\s+executed)$/i.test(rawText)
+            || /^(LinkedIn\s+Connection\s+Request\s+Accepted)$/i.test(rawText)
+          ) {
+            return false;
+          }
+
+          // Must have text or attachments
+          const hasContent = Boolean(rawText || m.attachments?.length);
+
+          // Check if message belongs to LinkedIn channel / LinkedIn steps / Replies
+          const isLinkedInRelated = (
+            m.step_type?.startsWith('LINKEDIN')
+            || m.type === UNIBOX_EMAIL_TYPE.RECEIVED
+            || m.type === UNIBOX_EMAIL_TYPE.THREAD_REPLY
+            || m.type?.startsWith('LINKEDIN')
+          );
+
+          return isLinkedInRelated && hasContent;
+        });
       } else if (
         singleMessage
-        && (singleMessage.message || singleMessage.message_preview)
+        && (singleMessage.message || singleMessage.message_preview || singleMessage.body)
       ) {
         list = [singleMessage];
       }
@@ -399,7 +427,9 @@ export default defineComponent({
           senderName = contactDisplayName.value;
         } else {
           const contactOrSender = msg.sender
-            || props.contactData?.mailbox_email;
+            || props.contactData?.ln_provider_username
+            || props.contactData?.mailbox_email
+            || 'You';
 
           senderName = `You (${contactOrSender})`;
         }
@@ -410,7 +440,7 @@ export default defineComponent({
 
         //
         const formattedTime = formatMessageTime(dateVal);
-        const messageBody = msg.message_preview || '';
+        const messageBody = (msg.message || msg.message_preview || msg.body || '').trim();
         const attachments = msg.attachments || [];
 
         const item = {

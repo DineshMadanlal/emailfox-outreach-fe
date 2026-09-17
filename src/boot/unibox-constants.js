@@ -6,7 +6,7 @@
 // Thread types supported in Unibox
 export const UNIBOX_THREAD_TYPE = {
   INBOX: 'INBOX',
-  UNTRACKED_REPLIES: 'UNTRACKED_REPLIES',
+  UNTRACKED_REPLIES: 'UNTRACKED_EMAILS',
   IMPORTANT: 'IMPORTANT',
   BOUNCED: 'BOUNCED',
 };
@@ -69,4 +69,18 @@ export const AVATAR_COLOR_PALETTES = [
   { bg: '#E8F8F0', color: '#059669' }, // Emerald
   { bg: '#F3E8FF', color: '#7C3AED' }, // Purple
   { bg: '#FFE4E6', color: '#E11D48' }, // Rose
+];
+
+// LinkedIn workflow step types classification in Unibox
+export const UNIBOX_LINKEDIN_MESSAGE_STEP_TYPES = [
+  'LINKEDIN_MESSAGE',
+  'LINKEDIN_INMAIL',
+  'LINKEDIN_CONNECTION_REQUEST',
+];
+
+export const UNIBOX_LINKEDIN_ACTIVITY_STEP_TYPES = [
+  'LINKEDIN_VISIT_PROFILE',
+  'LINKEDIN_FOLLOW_PROFILE',
+  'LINKEDIN_LIKE_POST',
+  'LINKEDIN_CONNECTION_ACCEPTED',
 ];

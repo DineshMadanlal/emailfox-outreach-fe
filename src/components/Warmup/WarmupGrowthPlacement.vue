@@ -1,7 +1,10 @@
 <template>
   <div class="warmup-growth-placement-container">
     <!-- Warmup Growth Timeline -->
-    <q-card flat class="growth-placement-card">
+    <q-card
+      v-if="false"
+      flat class="growth-placement-card"
+    >
       <!-- Loader -->
       <ApiLoader
         show

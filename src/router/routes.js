@@ -385,7 +385,7 @@ const routes = [
             meta: { requiresAuth: true },
           },
           {
-            path: 'untracked-replies/:threadId?',
+            path: 'untracked-emails/:threadId?',
             name: 'UniboxUntrackedReplies',
             component: () => import('pages/Unibox/UntrackedReplies.vue'),
             meta: { requiresAuth: true },

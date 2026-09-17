@@ -413,10 +413,10 @@ export default defineComponent({
       switch (props.threadType) {
         case UNIBOX_THREAD_TYPE.UNTRACKED_REPLIES:
           return {
-            title: 'Untracked Replies',
+            title: 'Untracked Emails',
             emptyState: {
-              title: 'No Untracked Replies',
-              body: 'Replies that are not linked to tracked sequences will appear here.',
+              title: 'No Untracked Emails',
+              body: 'Emails that are not linked to tracked sequences will appear here.',
               cta: 'Go to Inbox',
               ctaRoute: '/unibox/inbox',
             },

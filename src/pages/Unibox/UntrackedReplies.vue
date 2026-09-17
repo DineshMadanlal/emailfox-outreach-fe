@@ -32,7 +32,7 @@ export default defineComponent({
     const { generateMetadata } = useAppHelpersApi();
 
     // page metadata
-    useMeta(generateMetadata('Untracked Replies | Unibox'));
+    useMeta(generateMetadata('Untracked Emails | Unibox'));
 
     return {
       // constants

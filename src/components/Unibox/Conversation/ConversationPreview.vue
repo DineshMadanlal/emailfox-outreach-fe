@@ -53,6 +53,7 @@
             <EmailMessageCard
               :messageJson="message"
               :contactData="fetchedData"
+              :threadTypeConfig="threadTypeConfig"
               :defaultExpanded="index === conversationMessages.length - 1"
 
               @reply="handleEmailReply"
@@ -248,8 +249,9 @@ export default defineComponent({
     // Fetch conversation message history for contact_mapping_id (tracked) or id (untracked)
     const loadMessages = async () => {
       const thread = props.threadJson;
-      const mappingId = thread?.contact_mapping_id;
+
       const rawId = thread?.id;
+      const mappingId = thread?.contact_mapping_id;
 
       // Determine if UUID (contact_mapping_id) or numeric id (untracked)
       const isUUID = !!mappingId || (typeof rawId === 'string' && rawId.includes('-'));
@@ -267,12 +269,14 @@ export default defineComponent({
           const response = await fetchUniboxConversationMessages({
             contactMappingId: targetId,
           });
+
           state.fetchedData = response?.data || response;
         } else {
           // Untracked parsed message
           const response = await fetchUniboxUntrackedParsedMessage({
             id: targetId,
           });
+
           state.fetchedData = response?.data || response;
         }
       } catch (error) {

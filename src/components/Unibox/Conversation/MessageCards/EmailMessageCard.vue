@@ -34,6 +34,7 @@
             :avatar-palette-style="avatarPaletteStyle"
             :channel-type="UNIBOX_CHANNEL_TYPE.EMAIL"
             :is-expanded="isExpanded"
+            :show-actions="!isUntrackedEmail"
             @reply="$emit('reply', messageJson)"
             @forward="$emit('forward', messageJson)"
           />
@@ -60,7 +61,7 @@
 
         <!-- 3. Bottom Footer Action Bar -->
         <MessageCardFooter
-          v-if="isExpanded"
+          v-if="isExpanded && !isUntrackedEmail"
           @reply="handleEmailReply"
           @forward="handleEmailForward"
         />
@@ -85,6 +86,7 @@ import MessageCardFooter from 'components/Unibox/Conversation/MessageCards/Messa
 // utils
 import { formatMessageDateTime, formatDate2 } from 'src/utils/dates';
 import { fetchUniboxParsedMessage } from 'src/utils/unibox';
+import { getFromAndEmailJson } from 'src/utils/skyboxApi';
 import {
   splitEmailQuotedText,
   parseEmailContentWithQuotes,
@@ -124,6 +126,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    threadTypeConfig: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 
   setup(props, { emit }) {
@@ -135,12 +141,52 @@ export default defineComponent({
       showQuotedText: false,
     });
 
+    // Address extraction helpers
+    const extractEmail = (field) => {
+      if (!field) return '';
+      if (typeof field === 'string') {
+        const parsed = getFromAndEmailJson(field);
+        return parsed.email || field.trim();
+      }
+      if (Array.isArray(field.value) && field.value.length > 0) {
+        return field.value.map((v) => v.address || v.email).filter(Boolean).join(', ');
+      }
+      if (field.text) {
+        const parsed = getFromAndEmailJson(field.text);
+        return parsed.email || field.text.trim();
+      }
+      return '';
+    };
+
+    const extractDisplayName = (field) => {
+      if (!field) return '';
+      if (typeof field === 'string') {
+        const parsed = getFromAndEmailJson(field);
+        return parsed.from || field.trim();
+      }
+      if (Array.isArray(field.value) && field.value.length > 0) {
+        const first = field.value[0];
+        return first.name?.trim() || first.address?.trim() || '';
+      }
+      if (field.text) {
+        const parsed = getFromAndEmailJson(field.text);
+        return parsed.from || field.text.trim();
+      }
+      return '';
+    };
+
     // Direction flags
+    const isUntrackedEmail = computed(() => (
+      props.threadTypeConfig?.data?.isUntracked
+      || (!props.contactData?.contact_mapping_id && !props.messageJson?.contact_mapping_id)
+    ));
+
     const isThreadReply = computed(() => (
       props.messageJson?.type === UNIBOX_EMAIL_TYPE.THREAD_REPLY
     ));
 
     const isReceived = computed(() => {
+      if (isUntrackedEmail.value) return true;
       if (isThreadReply.value) return true;
       return props.messageJson?.type === UNIBOX_EMAIL_TYPE.RECEIVED;
     });
@@ -150,15 +196,43 @@ export default defineComponent({
     ));
 
     const isSent = computed(() => {
+      if (isUntrackedEmail.value) return false;
       if (isForwarded.value) return true;
       return props.messageJson?.type === UNIBOX_EMAIL_TYPE.SENT;
     });
 
     // Email addresses
-    const senderEmail = computed(() => props.messageJson?.sender || '');
-    const recipientEmail = computed(() => props.messageJson?.recipient || '');
-    const ccAddresses = computed(() => props.messageJson?.cc || '');
-    const bccAddresses = computed(() => props.messageJson?.bcc || '');
+    const senderEmail = computed(() => {
+      const msg = props.messageJson;
+      const parsed = state.parsedData || msg?.parsedData;
+      return msg?.sender
+        || extractEmail(msg?.from)
+        || extractEmail(parsed?.from)
+        || extractEmail(props.contactData?.sender)
+        || '';
+    });
+
+    const recipientEmail = computed(() => {
+      const msg = props.messageJson;
+      const parsed = state.parsedData || msg?.parsedData;
+      return msg?.recipient
+        || extractEmail(msg?.to)
+        || extractEmail(parsed?.to)
+        || props.contactData?.mailbox_email
+        || '';
+    });
+
+    const ccAddresses = computed(() => {
+      const msg = props.messageJson;
+      const parsed = state.parsedData || msg?.parsedData;
+      return msg?.cc || parsed?.cc || '';
+    });
+
+    const bccAddresses = computed(() => {
+      const msg = props.messageJson;
+      const parsed = state.parsedData || msg?.parsedData;
+      return msg?.bcc || parsed?.bcc || '';
+    });
 
     // Display names
     const senderDisplayName = computed(() => {
@@ -166,12 +240,25 @@ export default defineComponent({
         return 'You';
       }
 
+      if (isUntrackedEmail.value) {
+        const msg = props.messageJson;
+        const parsed = state.parsedData || msg?.parsedData;
+        const fromName = extractDisplayName(msg?.from)
+          || extractDisplayName(parsed?.from)
+          || extractDisplayName(props.contactData?.sender);
+        if (fromName) return fromName;
+      }
+
       if (isReceived.value) {
         const first = props.contactData?.first_name?.trim() || '';
         const last = props.contactData?.last_name?.trim() || '';
         const fullName = `${first} ${last}`.trim();
         if (fullName) return fullName;
+
+        const fromName = extractDisplayName(props.messageJson?.from);
+        if (fromName) return fromName;
       }
+
       return 'You';
     });
 
@@ -182,13 +269,23 @@ export default defineComponent({
         const fullName = `${first} ${last}`.trim();
         if (fullName) return fullName;
       }
+
+      if (isUntrackedEmail.value) {
+        const msg = props.messageJson;
+        const parsed = state.parsedData || msg?.parsedData;
+        const toName = extractDisplayName(msg?.to)
+          || extractDisplayName(parsed?.to);
+        if (toName) return toName;
+      }
+
       return recipientEmail.value || '';
     });
 
     // Sender avatar initial
     const senderInitial = computed(() => {
-      const name = senderEmail.value.trim();
-      return name ? name.charAt(0).toUpperCase() : 'U';
+      const name = senderDisplayName.value !== 'You' ? senderDisplayName.value : (senderEmail.value || '');
+      const trimmed = name.trim();
+      return trimmed ? trimmed.charAt(0).toUpperCase() : 'U';
     });
 
     // Deterministic avatar palette style
@@ -258,7 +355,15 @@ export default defineComponent({
 
       try {
         state.isFetchingParsed = true;
-        const response = await fetchUniboxParsedMessage({ messageId: msgId });
+
+        let endpoint = `/unibox/messages/${msgId}/parsed`;
+
+        if (isUntrackedEmail.value) {
+          endpoint = `/unibox/untracked/${props.messageJson.id}/parsed`;
+        }
+
+        const response = await fetchUniboxParsedMessage({ endpoint });
+
         state.parsedData = response?.data || response || null;
       } catch (error) {
         // Fallback on error
@@ -354,6 +459,7 @@ export default defineComponent({
       parsedResult,
       hasQuotedText,
       emailAttachments,
+      isUntrackedEmail,
 
       // methods
       expandCard,
