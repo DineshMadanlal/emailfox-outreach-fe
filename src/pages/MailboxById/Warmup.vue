@@ -14,6 +14,7 @@
       :mailboxByJson="mailboxByJson"
       :mailboxWarmupDetails="mailboxWarmupDetails"
 
+      @reloadApiCalls="reloadApiCalls"
       @unblockWarmup="$emit('unblockWarmup')"
     />
 

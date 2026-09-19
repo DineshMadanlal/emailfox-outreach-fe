@@ -10,6 +10,8 @@
     <WarmupDetails
       :mailboxByJson="mailboxByJson"
       :mailboxWarmupDetails="mailboxWarmupDetails"
+
+      @reloadApiCalls="$emit('reloadApiCalls')"
     />
     <WarmupStats
       :mailboxByJson="mailboxByJson"
@@ -48,7 +50,7 @@ import WarmupBlockedBanner from 'components/MailboxById/WarmupBlockedBanner.vue'
 export default defineComponent({
   name: 'MailboxByIdWarmupAnalytics',
 
-  emits: ['unblockWarmup'],
+  emits: ['unblockWarmup', 'reloadApiCalls'],
 
   components: {
     WarmupDetails,

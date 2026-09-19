@@ -11,6 +11,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveWarmupProfile
+        :readOnly="isReadOnly || selectedWarmupProfileDetails?.is_public || isProfileReadOnly"
         :warmupProfileId="selectedWarmupProfileDetails?.id"
         :warmupProfileDetails="selectedWarmupProfileDetails"
 
@@ -126,9 +127,6 @@
                 unelevated
 
                 class="more-action-btn"
-                :disable="isReadOnly"
-
-                v-if="!props.row.is_public"
               >
                 <!-- more -->
                 <LocalSvgIcon
@@ -137,16 +135,12 @@
                 />
 
                 <WarmupMoreOptions
-                  v-if="!isReadOnly"
+                  :isReadOnly="isReadOnly"
                   :tableRow="props.row"
 
+                  @viewProfile="onViewWarmupProfile"
                   @editProfile="onEditWarmupProfile"
                   @deleteProfile="onRequestDeleteProfile"
-                />
-
-                <AppTooltip
-                  v-if="isReadOnly"
-                  content="You have read-only access in this workspace"
                 />
               </q-btn>
             </div>
@@ -238,6 +232,7 @@ export default defineComponent({
       },
       //
       selectedWarmupProfileDetails: {},
+      isProfileReadOnly: false,
 
       // modals
       showSaveWarmupProfileModal: false,
@@ -288,12 +283,21 @@ export default defineComponent({
 
     // methods
     const onCreateNewProfile = () => {
+      state.isProfileReadOnly = false;
       state.selectedWarmupProfileDetails = {};
 
       state.showSaveWarmupProfileModal = true;
     };
 
     const onEditWarmupProfile = (tableRow) => {
+      state.isProfileReadOnly = false;
+      state.selectedWarmupProfileDetails = tableRow;
+
+      state.showSaveWarmupProfileModal = true;
+    };
+
+    const onViewWarmupProfile = (tableRow) => {
+      state.isProfileReadOnly = true;
       state.selectedWarmupProfileDetails = tableRow;
 
       state.showSaveWarmupProfileModal = true;
@@ -395,6 +399,7 @@ export default defineComponent({
       onRequest,
       onSearchInput,
       onCreateNewProfile,
+      onViewWarmupProfile,
       onEditWarmupProfile,
       onRequestDeleteProfile,
       onWarmupProfilesChange,

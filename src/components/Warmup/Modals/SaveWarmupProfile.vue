@@ -1,5 +1,8 @@
 <template>
-  <q-card flat class="create-warmup-profile-card app-modal-card">
+  <q-card
+    flat
+    class="create-warmup-profile-card app-modal-card"
+  >
     <q-form
       class="warmup-profile-form"
       ref="saveWarmupProfileRef"

@@ -532,6 +532,12 @@ export const TIMEZONES_LIST = [
     value: 'Australia/Sydney',
     gmt: 'GMT+10',
   },
+  // UTC
+  {
+    label: 'Coordinated Universal Time',
+    value: 'UTC',
+    gmt: 'GMT+0',
+  },
 ];
 
 export const SUPPRESSION_LIST_TYPES = {

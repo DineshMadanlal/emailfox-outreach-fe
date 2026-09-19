@@ -41,7 +41,7 @@ import { defineComponent, computed } from 'vue';
 export default defineComponent({
   name: 'WarmupMoreOptions',
 
-  emits: ['editProfile', 'deleteProfile'],
+  emits: ['viewProfile', 'editProfile', 'deleteProfile'],
 
   props: {
     tableRow: {
@@ -49,11 +49,25 @@ export default defineComponent({
       required: true,
       default: () => ({}),
     },
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   setup(props, { emit }) {
     // computed
     const profileActions = computed(() => {
+      if (props.tableRow?.is_public || props.isReadOnly) {
+        return [
+          {
+            icon: 'show',
+            label: 'View Profile',
+            emitValue: 'viewProfile',
+          },
+        ];
+      }
+
       const availableActions = [
         {
           icon: 'edit',
