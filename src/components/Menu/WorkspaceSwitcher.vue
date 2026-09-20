@@ -10,13 +10,12 @@
         show
       />
 
-      <q-item
+      <div
         v-for="workspace in allWorkspaces"
         :key="`each-workspace-${workspace.id}`"
 
-        clickable
         class="workspace-switcher-item"
-        :class="{ active: activeWorkspaceJson.id === workspace.id }"
+        :class="{ 'workspace-active': activeWorkspaceJson.id === workspace.id }"
 
         type="a"
         :href="getWorkspaceUrl(workspace)"
@@ -28,12 +27,11 @@
             {{ workspace.name }}
           </p>
         </div>
-      </q-item>
+      </div>
     </div>
 
     <!-- Create workspace -->
-    <q-item
-      clickable
+    <div
       class="workspace-switcher-item create-workspace-item"
 
       type="a"
@@ -52,7 +50,7 @@
           Create a New Workspace
         </p>
       </div>
-    </q-item>
+    </div>
   </q-card>
 </template>
 
@@ -154,9 +152,11 @@ export default defineComponent({
   }
 
   .workspace-switcher-item {
+    position: relative;
     min-height: unset;
     padding: 6px 12px;
     border-radius: 6px;
+    cursor: pointer;
     border-bottom: 1px solid rgba($color: var(--grey-50-rgb), $alpha: 0.4);
 
     .workspace-box {
@@ -199,14 +199,13 @@ export default defineComponent({
       background-color: rgba($color: var(--primary-rgb), $alpha: 0.1);
     }
 
-    &.active {
-
+    &.workspace-active {
       &::before {
-        content: "";
+        content: '';
         position: absolute;
-        left: 0px;
-        top: 12px;
-        bottom: 12px;
+        left: 0;
+        top: 6px;
+        bottom: 6px;
         width: 3px;
         border-radius: 10px;
         background: $primary;

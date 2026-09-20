@@ -12,8 +12,7 @@
       style="min-width: 196px"
       class="more-action-list"
     >
-      <q-item
-        clickable
+      <div
         :class="`${action.class || ''} more-action-item`"
 
         v-for="action in moreActions"
@@ -24,7 +23,7 @@
         <div class="more-action-text">
           {{ action.label }}
         </div>
-      </q-item>
+      </div>
     </q-list>
   </q-menu>
 </template>
@@ -120,6 +119,7 @@ export default defineComponent({
 
   .more-action-item {
     padding: 8px 12px;
+    cursor: pointer;
     min-height: unset !important;
 
     .more-action-text {

@@ -5,10 +5,7 @@
     class="warmup-profiles-action-list"
   >
     <!-- Edit -->
-    <q-item
-      v-ripple
-      clickable
-
+    <div
       v-for="(action, index) of profileActions"
       :key="`team-profile-action-${index}`"
       :class="`flex items-center each-profile-action-item ${action.classes || ''}`"
@@ -23,7 +20,7 @@
       <p class="profile-action-text">
         {{ action.label }}
       </p>
-    </q-item>
+    </div>
   </q-list>
 </template>
 
@@ -91,6 +88,7 @@ export default defineComponent({
   .each-profile-action-item {
     padding: 10px 12px;
     min-height: unset;
+    cursor: pointer;
 
     .profile-action-text {
       color: $black;

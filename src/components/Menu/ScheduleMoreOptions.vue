@@ -11,10 +11,7 @@
       class="schedule-action-list"
     >
       <!-- Edit -->
-      <q-item
-        v-ripple
-        clickable
-
+      <div
         v-for="(action, index) of profileActions"
         :key="`schedule-action-${index}`"
         :class="`flex items-center each-schedule-action-item ${action.classes || ''}`"
@@ -29,7 +26,7 @@
         <p class="schedule-action-text">
           {{ action.label }}
         </p>
-      </q-item>
+      </div>
     </q-list>
   </q-menu>
 </template>
@@ -93,6 +90,7 @@ export default defineComponent({
   .each-schedule-action-item {
     padding: 10px 12px;
     min-height: unset;
+    cursor: pointer;
 
     .schedule-action-text {
       color: $black;

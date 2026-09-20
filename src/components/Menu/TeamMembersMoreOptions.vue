@@ -11,14 +11,10 @@
       class="team-members-action-list"
     >
       <!-- Edit -->
-      <q-item
-        v-ripple
-        clickable
-
+      <div
         v-for="(action, index) of memberActions"
-        :key="`team-member-action-${index}`"
 
-        class="flex items-center each-member-action-item"
+        :key="`team-member-action-${index}`"
         :class="`flex items-center each-member-action-item ${action.classes || ''}`"
 
         @click="onActionClick(action)"
@@ -31,7 +27,7 @@
         <p class="member-action-text">
           {{ action.label }}
         </p>
-      </q-item>
+      </div>
     </q-list>
   </q-menu>
 </template>
@@ -123,6 +119,7 @@ export default defineComponent({
   .each-member-action-item {
     padding: 10px 12px;
     min-height: unset;
+    cursor: pointer;
 
     .member-action-text {
       color: $black;
