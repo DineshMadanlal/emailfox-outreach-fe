@@ -91,7 +91,7 @@ import {
 } from 'vue';
 
 // Utils
-import { postApiCall } from 'src/utils/apiRequests';
+import { deleteApiCall } from 'src/utils/apiRequests';
 
 export default defineComponent({
   name: 'DeleteMailbox',
@@ -125,7 +125,7 @@ export default defineComponent({
       try {
         state.isApiLoading = true;
 
-        await postApiCall({
+        await deleteApiCall({
           includeWorkspace: true,
           endpoint: `/mailboxes/${props.mailboxId}`,
         });
