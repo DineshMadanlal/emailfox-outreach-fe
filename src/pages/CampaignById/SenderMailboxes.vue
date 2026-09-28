@@ -451,9 +451,7 @@ export default defineComponent({
           params,
         });
 
-        const { data } = response;
-
-        const formattedData = (data || []).map((element) => {
+        const formattedData = (response || []).map((element) => {
           // delivery rate
           const deliveryRate = findPercentage({
             part: (element.sent_count || 0) - (element.bounce_count || 0),
