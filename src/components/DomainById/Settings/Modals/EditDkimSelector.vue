@@ -117,7 +117,7 @@ import TipCard from 'components/General/TipCard.vue';
 import AuthenticationReports from 'components/MailboxById/Authentication.vue';
 
 // utils
-import { bulkUpdateDomains, checkDnsByDomainId } from 'src/utils/domainMailboxesApi';
+import { updateDomainDetailsById, checkDnsByDomainId } from 'src/utils/domainMailboxesApi';
 
 export default defineComponent({
   name: 'EditDkimSelector',
@@ -177,25 +177,21 @@ export default defineComponent({
       try {
         state.isApiLoading = true;
 
-        const cleanSelector = state.dkimSelector ? state.dkimSelector.trim() : '';
+        const cleanSelector = state.dkimSelector ? state.dkimSelector.trim() : null;
 
-        const updateFields = {};
+        const payload = {};
 
         if (cleanSelector) {
-          updateFields.dkim_selector = cleanSelector;
+          payload.dkim_selector = cleanSelector;
         } else {
-          updateFields.clear_dkim_selector = true;
+          payload.clear_dkim_selector = true;
         }
 
-        const payload = {
-          filter: {
-            ids: [props.domainByJson.id],
-          },
-          update_fields: updateFields,
-        };
-
         // 1. Update DKIM selector via PUT /domains/:id/details
-        await bulkUpdateDomains(payload);
+        await updateDomainDetailsById({
+          domainId: props.domainByJson.id,
+          payload,
+        });
 
         // 2. Run DNS check via POST /domains/:id/check-dns
         let checkDnsResponse = null;

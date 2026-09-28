@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="isWarmupBlocked && false"
+    v-if="isWarmupBlocked"
     class="warmup-blocked-banner"
   >
     <div class="banner-content">

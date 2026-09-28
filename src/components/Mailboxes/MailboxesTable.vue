@@ -1087,6 +1087,7 @@ export default defineComponent({
       resetFilters();
 
       state.filters.warmupStatus = WARMUP_STATUS.BLOCKED;
+      state.filters.status = MAILBOX_STATUS.ACTIVE;
 
       onFetchMailboxRecords();
     };

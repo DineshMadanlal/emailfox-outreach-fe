@@ -162,7 +162,7 @@ import AppTooltip from 'components/General/AppTooltip.vue';
 import InfoTooltip from 'components/General/InfoTooltip.vue';
 
 // utils
-import { bulkUpdateDomains, verifyTrackingUrlByDomainId } from 'src/utils/domainMailboxesApi';
+import { updateDomainDetailsById, verifyTrackingUrlByDomainId } from 'src/utils/domainMailboxesApi';
 
 // constants
 import { CUSTOM_TRACKING_URL_REGEX } from 'boot/constants';
@@ -275,24 +275,19 @@ export default defineComponent({
           }
         }
 
-        const updateFields = {};
+        // Prepare payload for updating domain details
+        const payload = {};
 
         if (isDomainEmpty) {
-          updateFields.clear_tracking_domain_url = true;
+          payload.clear_tracking_domain_url = true;
         } else {
-          updateFields.tracking_domain_url = cleanDomain;
+          payload.tracking_domain_url = cleanDomain;
         }
 
-        const payload = {
-          filter: {
-            domain_ids: [props.domainByJson.id],
-          },
-          update_fields: {
-            ...updateFields,
-          },
-        };
-
-        await bulkUpdateDomains(payload);
+        await updateDomainDetailsById({
+          domainId: props.domainByJson.id,
+          payload,
+        });
 
         appContext.config.globalProperties.$toast({
           message: 'Custom tracking domain updated successfully',

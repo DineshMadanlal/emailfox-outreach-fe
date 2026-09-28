@@ -214,7 +214,7 @@ export default defineComponent({
         state.isApiProcessing = true;
 
         await postApiCall({
-          endpoint: '/auth/reset-password',
+          endpoint: '/users/reset-password',
           payload: {
             token: tokenQuery,
             newPassword: state.newPassword,
