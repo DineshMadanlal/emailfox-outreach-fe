@@ -401,11 +401,11 @@ export default defineComponent({
           label: 'Bounce Rate',
           align: 'left',
         },
-        {
-          name: 'mailboxHealth',
-          label: 'Mailbox Health',
-          align: 'left',
-        },
+        // {
+        //   name: 'mailboxHealth',
+        //   label: 'Mailbox Health',
+        //   align: 'left',
+        // },
       ];
 
       return columns;

@@ -84,3 +84,19 @@ export const UNIBOX_LINKEDIN_ACTIVITY_STEP_TYPES = [
   'LINKEDIN_LIKE_POST',
   'LINKEDIN_CONNECTION_ACCEPTED',
 ];
+
+// Bulk action types for Inbox threads
+export const UNIBOX_INBOX_ACTIONS = {
+  ARCHIVE: 'archive',
+  UPDATE_CATEGORY: 'updateCategory',
+  CLEAR_CATEGORY: 'clearCategory',
+  MARK_AS_READ: 'markAsRead',
+  MARK_AS_UNREAD: 'markAsUnread',
+};
+
+// Bulk action types for Untracked replies
+export const UNIBOX_UNTRACKED_ACTIONS = {
+  DELETE: 'delete',
+  MARK_AS_READ: 'markAsRead',
+  MARK_AS_UNREAD: 'markAsUnread',
+};
