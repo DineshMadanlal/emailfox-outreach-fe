@@ -35,6 +35,45 @@
       <!-- Content -->
       <div class="app-modal-content">
         <div class="webhook-form-group">
+          <!-- Provider Type -->
+          <div class="full-width">
+            <InputLabel label="Provider Type" />
+
+            <div class="provider-type-options">
+              <!-- Slack Webhook Card -->
+              <div
+                class="provider-type-card"
+                :class="{ active: form.webhook_type === WEBHOOK_TYPES.SLACK }"
+                @click="onSelectWebhookType(WEBHOOK_TYPES.SLACK)"
+              >
+                <q-radio
+                  dense
+                  v-model="form.webhook_type"
+                  :val="WEBHOOK_TYPES.SLACK"
+                  class="provider-radio"
+                />
+                <LocalSvgIcon image="slack" class="provider-icon" />
+                <span class="provider-label">Slack Webhook</span>
+              </div>
+
+              <!-- Other Webhook Card -->
+              <div
+                class="provider-type-card"
+                :class="{ active: form.webhook_type === WEBHOOK_TYPES.HTTP }"
+                @click="onSelectWebhookType(WEBHOOK_TYPES.HTTP)"
+              >
+                <q-radio
+                  dense
+                  v-model="form.webhook_type"
+                  :val="WEBHOOK_TYPES.HTTP"
+                  class="provider-radio"
+                />
+                <LocalSvgIcon image="webhooks" class="provider-icon webhook-icon" />
+                <span class="provider-label">Custom Webhook</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Name -->
           <div class="full-width">
             <InputLabel
@@ -84,7 +123,7 @@
               ref="webhookUrlFormRef"
 
               lazy-rules="ondemand"
-              placeholder="Eg. https://your-domain.com/webhook/endpoint"
+              :placeholder="urlPlaceholder"
 
               :maxlength="2048"
               :rules="[
@@ -248,11 +287,31 @@ export default defineComponent({
       return 'Test Webhook';
     });
 
+    const urlPlaceholder = computed(() => {
+      if (state.form.webhook_type === WEBHOOK_TYPES.SLACK) {
+        return 'Eg. https://hooks.slack.com/services/T00/B00/XXXX';
+      }
+
+      return 'Eg. https://your-domain.com/webhook/endpoint';
+    });
+
     const webhookEventTypes = computed(() => Object.values(WEBHOOK_EVENT_TYPE));
 
     // methods
     const onInputChange = () => {
-      state.saveWebhookFormRef.resetValidation();
+      if (isSlackWebhookUrl(state.form.url)) {
+        state.form.webhook_type = WEBHOOK_TYPES.SLACK;
+      }
+      if (state.saveWebhookFormRef) {
+        state.saveWebhookFormRef.resetValidation();
+      }
+    };
+
+    const onSelectWebhookType = (type) => {
+      state.form.webhook_type = type;
+      if (state.saveWebhookFormRef) {
+        state.saveWebhookFormRef.resetValidation();
+      }
     };
 
     const getWebhookPayload = () => {
@@ -260,11 +319,12 @@ export default defineComponent({
         name: state.form.name,
         url: state.form.url,
         event_types: state.form.event_types,
-        webhook_type: state.form.webhook_type,
       };
 
       if (isSlackWebhookUrl(state.form.url)) {
         payload.webhook_type = WEBHOOK_TYPES.SLACK;
+      } else {
+        payload.webhook_type = WEBHOOK_TYPES.HTTP;
       }
 
       return payload;
@@ -386,14 +446,17 @@ export default defineComponent({
       webhookEventTypes,
       eventTypesLength,
       testWebhookCta,
+      urlPlaceholder,
 
       // methods
       onSaveWebhook,
       onTestWebhook,
       onInputChange,
+      onSelectWebhookType,
 
       // hardcoded
       HTTP_OR_HTTPS_REGEX,
+      WEBHOOK_TYPES,
     };
   },
 });
@@ -411,6 +474,55 @@ export default defineComponent({
       display: flex;
       flex-direction: column;
       gap: 24px;
+
+      .provider-type-options {
+        display: flex;
+        gap: 16px;
+        width: 100%;
+        flex-wrap: wrap;
+
+        .provider-type-card {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px;
+          border: 1px solid $grey-50;
+          border-radius: 8px;
+          cursor: pointer;
+          background-color: $white;
+          transition: border-color 0.2s ease, background-color 0.2s ease;
+
+          .provider-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: $black;
+            white-space: nowrap;
+          }
+
+          :deep(.provider-icon) {
+            width: 24px;
+            height: 24px;
+
+            &.webhook-icon {
+              @include svg-icon-stroke('path, circle, rect, ellipse', $primary);
+            }
+          }
+
+          &:hover {
+            border-color: rgba(var(--primary-rgb), 0.2);
+          }
+
+          &.active {
+            border-color: rgba(var(--primary-rgb), 0.4);
+            background-color: rgba(var(--primary-rgb), 0.1);
+
+            .provider-label {
+              font-weight: 600;
+            }
+          }
+        }
+      }
 
       .form-input {
         width: 100%;

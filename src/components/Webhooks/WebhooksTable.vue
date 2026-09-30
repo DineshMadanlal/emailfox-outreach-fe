@@ -221,11 +221,69 @@
           </q-td>
         </template>
 
+        <!-- webhook_type -->
+        <template v-slot:body-cell-webhook_type="props">
+          <q-td :props="props">
+            <!-- slack -->
+            <div
+              v-if="props.row.webhook_type === WEBHOOK_TYPES.SLACK"
+              class="webhook-type-badge"
+            >
+              <!--  -->
+              <LocalSvgIcon image="slack" class="type-icon" />
+
+              <!-- Webhook type label -->
+              <span>Slack</span>
+            </div>
+
+            <!-- Custom -->
+            <div
+              v-else
+              class="webhook-type-badge"
+            >
+              <!--  -->
+              <LocalSvgIcon image="webhooks" class="type-icon" />
+
+              <!-- Webhook type label -->
+              <span>Custom</span>
+            </div>
+          </q-td>
+        </template>
+
+        <!-- url -->
+        <template v-slot:body-cell-url="props">
+          <q-td :props="props">
+            <div class="url-cell flex items-center no-wrap">
+              <a
+                :href="props.row.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="url-text ellipsis"
+                :title="props.row.url"
+              >
+                {{ props.row.url }}
+              </a>
+
+              <q-btn
+                flat
+                round
+                dense
+                size="xs"
+                class="copy-url-btn q-ml-xs"
+                @click.stop="copyUrlToClipboard(props.row.url)"
+              >
+                <q-icon name="content_copy" size="14px" />
+                <AppTooltip content="Copy URL" />
+              </q-btn>
+            </div>
+          </q-td>
+        </template>
+
         <!-- event_types -->
         <template v-slot:body-cell-event_types="props">
           <q-td :props="props">
             <div
-              :title="props.row.event_types.join(', ')"
+              :title="props.row.event_types?.join(', ')"
             >
               {{ props.row.event_types?.length }}
             </div>
@@ -270,6 +328,9 @@ import {
   defineComponent, reactive, toRefs, onMounted, getCurrentInstance, computed,
 } from 'vue';
 
+// quasar
+import { copyToClipboard } from 'quasar';
+
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -294,6 +355,7 @@ import { getApiCall, patchApiCall } from 'src/utils/apiRequests.js';
 
 // constants
 import { DEFAULT_TABLE_PAGINATION } from 'src/boot/constants';
+import { WEBHOOK_TYPES } from 'src/boot/campaign-constants';
 
 // hardcoded
 const webhookFilters = {
@@ -400,6 +462,12 @@ export default defineComponent({
           align: 'left',
         },
         {
+          name: 'webhook_type',
+          label: 'Type',
+          field: 'webhook_type',
+          align: 'left',
+        },
+        {
           name: 'url',
           label: 'URL',
           field: 'url',
@@ -435,6 +503,21 @@ export default defineComponent({
           ...inputObject,
         },
       });
+    };
+
+    const copyUrlToClipboard = async (url) => {
+      if (!url) return;
+      try {
+        await copyToClipboard(url);
+        appContext.config.globalProperties.$toast({
+          message: 'Webhook URL copied to clipboard',
+        });
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: 'Failed to copy URL',
+        });
+      }
     };
 
     const onEditWebhook = (webhookJson) => {
@@ -626,9 +709,11 @@ export default defineComponent({
       onFetchWebhookRecords,
       onExistingWebhookUpdated,
       onSuccessfulWebhookDelete,
+      copyUrlToClipboard,
 
       formatDateWithTime,
       isReadOnly,
+      WEBHOOK_TYPES,
     };
   },
 });
@@ -690,6 +775,52 @@ export default defineComponent({
         .more-action-btn {
           .more-menu-icon {
             transform: rotate(90deg);
+          }
+        }
+      }
+
+      .webhook-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        width: fit-content;
+
+        .type-icon {
+          width: 14px;
+          height: 14px;
+        }
+      }
+
+      .url-cell {
+        max-width: 340px;
+
+        .url-text {
+          max-width: 290px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: $grey-9;
+          font-size: 13px;
+          text-decoration: none;
+
+          &:hover {
+            text-decoration: underline;
+            color: $primary;
+          }
+        }
+
+        .copy-url-btn {
+          color: $grey-7;
+          opacity: 0.7;
+          transition: opacity 0.2s ease;
+
+          &:hover {
+            opacity: 1;
+            color: $primary;
           }
         }
       }
