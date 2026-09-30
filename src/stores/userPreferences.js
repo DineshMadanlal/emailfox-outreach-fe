@@ -13,6 +13,8 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
     // app drawer mini state
     drawerMiniState: false,
 
+    lastVisitedRoute: '',
+
     appThemeColor: '',
     appMode: APP_MODE.LIGHT_MODE,
     appTheme: SUPPORTED_THEMES.DEFAULT.value,
@@ -110,6 +112,7 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
   const getAppTheme = computed(() => state.appTheme);
   const getAppThemeColor = computed(() => state.appThemeColor);
   const getDrawerMiniState = computed(() => state.drawerMiniState);
+  const getLastVisitedRoute = computed(() => state.lastVisitedRoute);
 
   const getAllWorkspaces = computed(() => state.allWorkspaces);
 
@@ -132,6 +135,10 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
     state.drawerMiniState = !state.drawerMiniState;
   };
 
+  const setLastVisitedRoute = (route) => {
+    state.lastVisitedRoute = route;
+  };
+
   return {
     // state
     ...toRefs(state),
@@ -142,11 +149,13 @@ export const useUserPreferencesStore = defineStore('storeUserPreferences', () =>
     getAppThemeColor,
     getDrawerMiniState,
     getAllWorkspaces,
+    getLastVisitedRoute,
 
     // methods
     setField,
     setMultipleFields,
     setAppMode,
     toggleDrawerMiniState,
+    setLastVisitedRoute,
   };
 });

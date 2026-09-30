@@ -4,7 +4,9 @@
  */
 
 // utils
-import { getApiCall, patchApiCall, postApiCall } from 'src/utils/apiRequests';
+import {
+  getApiCall, patchApiCall, postApiCall, deleteApiCall,
+} from 'src/utils/apiRequests';
 
 // constants
 import { UNIBOX_THREAD_TYPE } from 'boot/unibox-constants';
@@ -305,3 +307,58 @@ export const sendUniboxLinkedInReply = async ({
     includeWorkspace: true,
   });
 };
+
+/**
+ * Bulk updates read status for inbox threads
+ * @param {Object} payload - { is_read, select_all, ids, filters }
+ * @returns {Promise<Object>} API response
+ */
+export const bulkUpdateUniboxInboxReadStatus = async (payload = {}) => patchApiCall({
+  endpoint: '/unibox/inbox/read',
+  payload,
+  includeWorkspace: true,
+});
+
+/**
+ * Bulk updates read status for untracked replies
+ * @param {Object} payload - { is_read, select_all, ids, filters }
+ * @returns {Promise<Object>} API response
+ */
+export const bulkUpdateUniboxUntrackedReadStatus = async (payload = {}) => patchApiCall({
+  endpoint: '/unibox/untracked/read',
+  payload,
+  includeWorkspace: true,
+});
+
+/**
+ * Bulk deletes untracked replies
+ * @param {Object} payload - { select_all, ids, filters }
+ * @returns {Promise<Object>} API response
+ */
+export const bulkDeleteUniboxUntrackedReplies = async (payload = {}) => deleteApiCall({
+  endpoint: '/unibox/untracked',
+  payload,
+  includeWorkspace: true,
+});
+
+/**
+ * Bulk archives inbox threads
+ * @param {Object} payload - { select_all, ids, filters }
+ * @returns {Promise<Object>} API response
+ */
+export const bulkArchiveUniboxInboxThreads = async (payload = {}) => patchApiCall({
+  endpoint: '/unibox/inbox/archive',
+  payload,
+  includeWorkspace: true,
+});
+
+/**
+ * Bulk updates or clears reply category for inbox threads
+ * @param {Object} payload - { reply_category_id, clear_reply_category, select_all, ids, filters }
+ * @returns {Promise<Object>} API response
+ */
+export const bulkUpdateUniboxInboxCategory = async (payload = {}) => patchApiCall({
+  endpoint: '/unibox/inbox/reply-category',
+  payload,
+  includeWorkspace: true,
+});

@@ -115,8 +115,8 @@ export default defineComponent({
     // xs max
     @media (max-width: $breakpoint-xs-max) {
       width: 100%;
-      flex-direction: column;
-      align-items: flex-end;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
   }
 }

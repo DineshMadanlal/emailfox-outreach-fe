@@ -169,22 +169,6 @@
         </q-td>
       </template>
 
-      <!-- Provider -->
-      <template v-slot:body-cell-provider="props">
-        <q-td
-          :props="props"
-        >
-          <router-link
-            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
-            class="mailbox-route-link"
-          >
-            <EspProvider
-              :provider="props.row.provider || 'GMAIL'"
-            />
-          </router-link>
-        </q-td>
-      </template>
-
       <!-- Sent -->
       <template v-slot:body-cell-sent="props">
         <q-td
@@ -200,7 +184,7 @@
               />
 
               <div class="q-ml-sm">
-                {{ getNumeralAmount(props.row.sent_count) }}
+                {{ getNumeralAmount(props.row.email_sent) }}
               </div>
             </div>
           </router-link>
@@ -222,7 +206,51 @@
               />
 
               <div class="q-ml-sm">
-                {{ props.row.deliveryRate }}%
+                {{ getNumeralAmount(props.row.delivered) }} ({{ props.row.deliveryRate }}%)
+              </div>
+            </div>
+          </router-link>
+        </q-td>
+      </template>
+
+      <!-- Opens -->
+      <template v-slot:body-cell-openRate="props">
+        <q-td
+          :props="props"
+        >
+          <router-link
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
+            class="mailbox-route-link"
+          >
+            <div class="flex no-wrap items-center">
+              <LocalSvgIcon
+                image="seq-opened"
+              />
+
+              <div class="q-ml-sm">
+                {{ getNumeralAmount(props.row.opens) }} ({{ props.row.openRate }}%)
+              </div>
+            </div>
+          </router-link>
+        </q-td>
+      </template>
+
+      <!-- Clicks -->
+      <template v-slot:body-cell-clickRate="props">
+        <q-td
+          :props="props"
+        >
+          <router-link
+            :to="`/outreach/mailbox/${props.row.mailbox_id}`"
+            class="mailbox-route-link"
+          >
+            <div class="flex no-wrap items-center">
+              <LocalSvgIcon
+                image="seq-delivered"
+              />
+
+              <div class="q-ml-sm">
+                {{ getNumeralAmount(props.row.clicks) }} ({{ props.row.clickRate }}%)
               </div>
             </div>
           </router-link>
@@ -244,7 +272,7 @@
               />
 
               <div class="q-ml-sm">
-                {{ props.row.replyRate }}%
+                {{ getNumeralAmount(props.row.email_replies) }} ({{ props.row.replyRate }}%)
               </div>
             </div>
           </router-link>
@@ -267,7 +295,7 @@
               />
 
               <div class="q-ml-sm">
-                {{ props.row.bouncedRate }}%
+                {{ getNumeralAmount(props.row.email_bounces) }} ({{ props.row.bouncedRate }}%)
               </div>
             </div>
           </router-link>
@@ -284,9 +312,9 @@
             class="mailbox-route-link"
           >
             <StatusBadge
-              icon="seq-bounced"
-              status="Needs attention"
-              color="negative"
+              :icon="props.row.mailboxHealthJson.icon"
+              :status="props.row.mailboxHealthJson.label"
+              :color="props.row.mailboxHealthJson.color"
             />
           </router-link>
         </q-td>
@@ -311,7 +339,6 @@ import { getDeliverabilityRateJson, getBouncedRateJson } from 'src/utils/helperF
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // components
-import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import StatusBadge from 'components/CampaignById/StatusBadge.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
@@ -329,7 +356,6 @@ export default defineComponent({
 
   components: {
     StatusBadge,
-    EspProvider,
     AppSearchInput,
     ColumnsVisibility,
   },
@@ -377,35 +403,40 @@ export default defineComponent({
     const dynamicColumns = computed(() => {
       const columns = [
         {
-          name: 'provider',
-          label: 'Provider',
-          align: 'left',
-        },
-        {
           name: 'sent',
           label: 'Sent',
           align: 'left',
         },
         {
           name: 'deliveryRate',
-          label: 'Delivery Rate',
+          label: 'Delivery',
+          align: 'left',
+        },
+        {
+          name: 'openRate',
+          label: 'Opens',
+          align: 'left',
+        },
+        {
+          name: 'clickRate',
+          label: 'Clicks',
           align: 'left',
         },
         {
           name: 'replyRate',
-          label: 'Reply Rate',
+          label: 'Replies',
           align: 'left',
         },
         {
           name: 'bouncedRate',
-          label: 'Bounce Rate',
+          label: 'Bounce',
           align: 'left',
         },
-        // {
-        //   name: 'mailboxHealth',
-        //   label: 'Mailbox Health',
-        //   align: 'left',
-        // },
+        {
+          name: 'mailboxHealth',
+          label: 'Mailbox Health',
+          align: 'left',
+        },
       ];
 
       return columns;
@@ -452,30 +483,66 @@ export default defineComponent({
         });
 
         const formattedData = (response || []).map((element) => {
+          const sent = element.email_sent || 0;
+          const bounces = element.email_bounces || 0;
+          const replies = element.email_replies || 0;
+          const opens = element.email_unique_lead_opens || element.email_opens || 0;
+          const clicks = element.email_unique_lead_clicks || element.email_clicks || 0;
+
+          const delivered = Math.max(0, sent - bounces);
+
           // delivery rate
           const deliveryRate = findPercentage({
-            part: (element.sent_count || 0) - (element.bounce_count || 0),
-            whole: element.sent_count || 0,
+            part: delivered,
+            whole: sent,
+          });
+
+          // open rate
+          const openRate = findPercentage({
+            part: opens,
+            whole: sent,
+          });
+
+          // click rate
+          const clickRate = findPercentage({
+            part: clicks,
+            whole: sent,
+          });
+
+          // reply rate
+          const replyRate = findPercentage({
+            part: replies,
+            whole: sent,
           });
 
           // bounced rate
           const bouncedRate = findPercentage({
-            part: element.bounce_count || 0,
-            whole: element.sent_count || 0,
+            part: bounces,
+            whole: sent,
           });
 
           const bouncedRateJson = getBouncedRateJson(bouncedRate);
           const deliverabilityRateJson = getDeliverabilityRateJson(deliveryRate);
 
+          const mailboxHealthJson = (sent === 0)
+            ? { icon: 'circle-star', color: 'positive', label: 'New' }
+            : deliverabilityRateJson;
+
           // table data
           return {
             ...element,
+            delivered,
+            opens,
+            clicks,
             deliveryRate,
+            openRate,
+            clickRate,
             bouncedRate,
-            replyRate: 20,
+            replyRate,
 
             bouncedRateJson,
             deliverabilityRateJson,
+            mailboxHealthJson,
           };
         });
 

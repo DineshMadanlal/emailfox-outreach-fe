@@ -9,6 +9,7 @@ import Cookies from 'js-cookie';
 
 // Pinia
 import { useAuthStore } from 'src/stores/auth';
+import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
 // composables
 import { usePermissions } from 'src/composables/usePermissions';
@@ -42,6 +43,28 @@ const getWorkspaceAppPath = ({
 
 // CRITICAL: Notice the "async" keyword added here to handle the background backend handshake
 export default boot(({ router }) => {
+  // Clear the reload flag when navigation succeeds & track last visited route
+  router.afterEach((to) => {
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+
+    if (to.meta?.requiresAuth) {
+      const blacklistedRoutes = [
+        '/workspace',
+        '/outreach/contacts/upload',
+        '/outreach/mailboxes/new',
+        '/reachme/email/notification',
+      ];
+
+      const isBlacklisted = blacklistedRoutes.some((path) => to.path.startsWith(path))
+        || to.path.endsWith('/upload');
+
+      if (!isBlacklisted) {
+        const userPreferencesStore = useUserPreferencesStore();
+        userPreferencesStore.setLastVisitedRoute(to.fullPath);
+      }
+    }
+  });
+
   // Clear the reload flag when navigation succeeds
   router.afterEach(() => {
     sessionStorage.removeItem(CHUNK_RELOAD_KEY);
@@ -160,9 +183,17 @@ export default boot(({ router }) => {
     /** If the user is authenticated and the page is semi-public,
      * redirect them away from login/signup */
     if (isAuthenticated.value && isSemiPublic) {
+      const userPreferencesStore = useUserPreferencesStore();
+      const lastRoute = userPreferencesStore.getLastVisitedRoute.value
+        || userPreferencesStore.lastVisitedRoute;
+
+      const targetPath = (lastRoute && lastRoute !== '/' && lastRoute !== '/login')
+        ? lastRoute
+        : defaultRedirectPath.value;
+
       next({
         path: getWorkspaceAppPath({
-          path: defaultRedirectPath.value,
+          path: targetPath,
           activeWorkspaceData: activeWorkspaceData.value,
         }),
       });

@@ -4,8 +4,7 @@
     style="min-width: 250px"
     class="more-action-list"
   >
-    <q-item
-      clickable
+    <div
       :class="`${action.class || ''} more-action-item`"
 
       v-for="action in moreActions"
@@ -16,7 +15,7 @@
       <div class="more-action-text">
         {{ action.label }}
       </div>
-    </q-item>
+    </div>
   </q-list>
 </template>
 
@@ -25,10 +24,10 @@
 import { defineComponent, computed } from 'vue';
 
 // constants
-import { UNIBOX_INBOX_ACTIONS } from 'src/boot/unibox-constants.js';
+import { UNIBOX_UNTRACKED_ACTIONS } from 'src/boot/unibox-constants.js';
 
 export default defineComponent({
-  name: 'UniboxInboxMoreOptions',
+  name: 'UniboxUntrackedMoreOptions',
 
   emits: ['emitAction'],
 
@@ -37,24 +36,17 @@ export default defineComponent({
     const moreActions = computed(() => {
       const actions = [
         {
-          label: 'Archive',
-          emitValue: UNIBOX_INBOX_ACTIONS.ARCHIVE,
-        },
-        {
-          label: 'Update Category',
-          emitValue: UNIBOX_INBOX_ACTIONS.UPDATE_CATEGORY,
-        },
-        {
-          label: 'Clear Category',
-          emitValue: UNIBOX_INBOX_ACTIONS.CLEAR_CATEGORY,
-        },
-        {
           label: 'Mark as Read',
-          emitValue: UNIBOX_INBOX_ACTIONS.MARK_AS_READ,
+          emitValue: UNIBOX_UNTRACKED_ACTIONS.MARK_AS_READ,
         },
         {
           label: 'Mark as Unread',
-          emitValue: UNIBOX_INBOX_ACTIONS.MARK_AS_UNREAD,
+          emitValue: UNIBOX_UNTRACKED_ACTIONS.MARK_AS_UNREAD,
+        },
+        {
+          label: 'Delete',
+          emitValue: UNIBOX_UNTRACKED_ACTIONS.DELETE,
+          class: 'negative-action',
         },
       ];
 
@@ -72,13 +64,12 @@ export default defineComponent({
 .more-action-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5px;
-
+  gap: 1px;
   border-radius: 6px;
 
   .more-action-item {
+    cursor: pointer;
     padding: 8px 12px;
-    min-height: unset !important;
 
     .more-action-text {
       font-size: 14px;

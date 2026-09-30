@@ -1,5 +1,50 @@
 <template>
   <div class="unibox-page-content">
+    <!-- Action Summary Selection Dialog (Bottom Bar) -->
+    <q-dialog
+      seamless
+      :model-value="isSelectionActive"
+
+      position="bottom"
+      class="app-table-selection-dialog"
+    >
+      <UntrackedRepliesActionSummary
+        v-if="threadTypeConfig.data?.isUntracked"
+        :totalCount="pagination.count"
+        :numberOfSelectedItems="selectedCount"
+        :multiSelectOptionJson="multiSelectOptionJson"
+
+        @onCancel="resetTableMultiSelect"
+        @onAction="onUniboxBulkAction"
+      />
+      <InboxActionSummary
+        v-else
+        :totalCount="pagination.count"
+        :numberOfSelectedItems="selectedCount"
+        :multiSelectOptionJson="multiSelectOptionJson"
+
+        @onCancel="resetTableMultiSelect"
+        @onAction="onUniboxBulkAction"
+      />
+    </q-dialog>
+
+    <!-- Bulk Action Config Modal -->
+    <q-dialog
+      v-model="showBulkActionConfigModal"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <UniboxActionConfig
+        :filters="filters"
+        :actionType="bulkActionType"
+        :selectedThreadIds="selectedThreadIds"
+        :multiSelectOptionJson="multiSelectOptionJson"
+        :replyCategories="replyCategoriesList"
+        @onSuccessfulUpdate="onSuccessfulBulkAction"
+      />
+    </q-dialog>
+
     <!-- Empty State View: Illustration Only (No Header) -->
     <UniboxEmptyState
       v-if="isEmailListEmpty"
@@ -45,7 +90,8 @@
               :disable="isReadOnly"
 
               :model-value="isAllSelected ? true : null"
-              @update:model-value="!isReadOnly && resetTableMultiSelect"
+
+              @update:model-value="resetTableMultiSelect"
             >
               <!-- empty div is required here -->
               <div></div>
@@ -244,6 +290,9 @@ import UniboxEmailListItem from 'components/Unibox/EmailListItem.vue';
 import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import UniboxConversationPreview from 'components/Unibox/Conversation/ConversationPreview.vue';
 import AppTooltip from 'components/General/AppTooltip.vue';
+import InboxActionSummary from 'components/Unibox/Modals/InboxActionSummary.vue';
+import UntrackedRepliesActionSummary from 'components/Unibox/Modals/UntrackedRepliesActionSummary.vue';
+import UniboxActionConfig from 'components/Unibox/Modals/UniboxActionConfig.vue';
 
 // composables
 import { usePermissions } from 'src/composables/usePermissions';
@@ -256,6 +305,9 @@ import {
   updateUniboxThreadReadStatus,
   updateUniboxUntrackedReadStatus,
   updateUniboxThreadReplyCategory,
+  bulkUpdateUniboxInboxReadStatus,
+  bulkUpdateUniboxUntrackedReadStatus,
+  sanitizeUniboxQueryParams,
 } from 'src/utils/unibox';
 import { getNumeralAmount } from 'src/utils/numbers';
 
@@ -263,7 +315,12 @@ import { getNumeralAmount } from 'src/utils/numbers';
 import { useUniboxStore } from 'src/stores/unibox';
 
 // constants
-import { UNIBOX_THREAD_TYPE, DEFAULT_UNIBOX_FILTERS } from 'boot/unibox-constants';
+import {
+  UNIBOX_THREAD_TYPE,
+  DEFAULT_UNIBOX_FILTERS,
+  UNIBOX_INBOX_ACTIONS,
+  UNIBOX_UNTRACKED_ACTIONS,
+} from 'boot/unibox-constants';
 import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 
 export default defineComponent({
@@ -276,6 +333,9 @@ export default defineComponent({
     TableMultiSelect,
     UniboxConversationPreview,
     AppTooltip,
+    InboxActionSummary,
+    UntrackedRepliesActionSummary,
+    UniboxActionConfig,
   },
 
   props: {
@@ -323,6 +383,8 @@ export default defineComponent({
       // state
       selectedThreadIds: [],
       multiSelectOptionJson: {},
+      bulkActionType: '',
+      showBulkActionConfigModal: false,
 
       // pagination
       pagination: {
@@ -747,6 +809,63 @@ export default defineComponent({
       state.multiSelectOptionJson = {};
     };
 
+    // Bulk action router handler
+    const onUniboxBulkAction = async (actionType) => {
+      if (isReadOnly.value) return;
+
+      const isMarkRead = actionType === UNIBOX_INBOX_ACTIONS.MARK_AS_READ
+        || actionType === UNIBOX_UNTRACKED_ACTIONS.MARK_AS_READ;
+      const isMarkUnread = actionType === UNIBOX_INBOX_ACTIONS.MARK_AS_UNREAD
+        || actionType === UNIBOX_UNTRACKED_ACTIONS.MARK_AS_UNREAD;
+
+      if (isMarkRead || isMarkUnread) {
+        // Direct API Execution for Mark as Read / Unread
+        try {
+          state.flags.isApiProcessing = true;
+          const isRead = isMarkRead;
+          const sanitizedFilters = sanitizeUniboxQueryParams(state.filters);
+          const payload = {
+            is_read: isRead,
+            select_all: isSelectAllTotalActive.value,
+            ids: isSelectAllTotalActive.value ? [] : state.selectedThreadIds,
+            filters: sanitizedFilters,
+          };
+
+          if (props.threadType === UNIBOX_THREAD_TYPE.UNTRACKED_REPLIES) {
+            await bulkUpdateUniboxUntrackedReadStatus(payload);
+          } else {
+            await bulkUpdateUniboxInboxReadStatus(payload);
+          }
+
+          appContext.config.globalProperties.$toast?.({
+            message: `Marked as ${isRead ? 'read' : 'unread'} successfully`,
+          });
+
+          resetTableMultiSelect();
+          await fetchThreadList();
+        } catch (error) {
+          appContext.config.globalProperties.$toast?.({
+            warning: true,
+            message: error.message || 'Failed to update read status',
+          });
+        } finally {
+          state.flags.isApiProcessing = false;
+        }
+      } else {
+        // Open Confirmation Modal for Archive, Delete, Update Category, Clear Category
+        state.bulkActionType = actionType;
+        state.showBulkActionConfigModal = true;
+      }
+    };
+
+    // Callback on successful completion of modal bulk action
+    const onSuccessfulBulkAction = async () => {
+      state.showBulkActionConfigModal = false;
+      state.bulkActionType = '';
+      resetTableMultiSelect();
+      await fetchThreadList();
+    };
+
     // Toggle all currently loaded threads
     const onToggleSelectAllCurrent = () => {
       if (isReadOnly.value) return;
@@ -1030,7 +1149,10 @@ export default defineComponent({
       updateThreadInListById,
       loadMoreEmails,
       onScroll,
-      fetchThreadList,
+      // constants & bulk methods
+      UNIBOX_THREAD_TYPE,
+      onUniboxBulkAction,
+      onSuccessfulBulkAction,
     };
   },
 });
