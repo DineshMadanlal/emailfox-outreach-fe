@@ -5,6 +5,7 @@
     emit-value
     map-options
     options-dense
+    hide-bottom-space
 
     ref="selectListRef"
     class="app-filter-dropdown"

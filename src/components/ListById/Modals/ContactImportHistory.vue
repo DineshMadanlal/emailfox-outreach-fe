@@ -65,6 +65,14 @@
                 <LocalSvgIcon
                   image="csv"
                   classes="csv-file-icon"
+
+                  v-if="props.row.source === CONTACTS_IMPORT_SOURCE_TYPE.CSV_UPLOAD"
+                />
+
+                <LocalSvgIcon
+                  v-else
+                  image="activity-log"
+                  classes="manual-icon"
                 />
 
                 <div class="file-text-details">
@@ -321,7 +329,7 @@ import InfoTooltip from 'components/General/InfoTooltip.vue';
 import AppSearchInput from 'src/components/Input/AppSearchInput.vue';
 
 // constants
-import { CONTACT_IMPORT_CONFLICT_ACTION } from 'src/boot/campaign-constants';
+import { CONTACT_IMPORT_CONFLICT_ACTION, CONTACTS_IMPORT_SOURCE_TYPE } from 'src/boot/campaign-constants';
 
 const DEFAULT_TABLE_PAGINATION = {
   page: 1,
@@ -607,6 +615,9 @@ export default defineComponent({
       onSyncJobStatus,
       getFileSubtitle,
       getNumeralAmount,
+
+      // hardcoded
+      CONTACTS_IMPORT_SOURCE_TYPE,
     };
   },
 });
@@ -714,6 +725,12 @@ export default defineComponent({
         .csv-file-icon {
           width: 32px;
           height: 32px;
+          flex-shrink: 0;
+        }
+
+        .manual-icon {
+          width: 32px;
+          height: 24px;
           flex-shrink: 0;
         }
 

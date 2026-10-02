@@ -152,7 +152,7 @@
           />
         </q-btn>
 
-        <!-- Edit Button -->
+        <!-- Campaign Settings -->
         <q-btn
           flat
           no-caps
@@ -161,15 +161,15 @@
           color="black"
           class="edit-sequence-btn"
 
-          :to="`/outreach/campaigns/${campaignByIdJson.id}/edit`"
+          :to="`/outreach/campaigns/${campaignByIdJson.id}/edit/settings`"
         >
-          <LocalSvgIcon
-            image="edit"
-            classes="edit-icon"
-          />
+          <!-- <LocalSvgIcon
+            image="settings"
+            classes="settings-icon"
+          /> -->
 
           <p class="q-ml-xs">
-            Edit Campaign
+            Campaign Settings
           </p>
         </q-btn>
 

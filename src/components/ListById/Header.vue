@@ -91,6 +91,32 @@
           />
         </q-btn>
 
+        <!-- Add Contact -->
+        <q-btn
+          flat
+          no-caps
+          unelevated
+
+          color="primary"
+          class="light-primary-btn"
+
+          :disable="isReadOnly"
+          @click="$emit('onAddContact')"
+        >
+          <div class="flex no-wrap items-center">
+            <LocalSvgIcon image="add" classes="add-icon" />
+
+            <p class="add-button-text">
+              Add Contact
+            </p>
+          </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
+
         <!-- Upload -->
         <q-btn
           no-caps
@@ -115,9 +141,6 @@
             content="You have read-only access in this workspace"
           />
         </q-btn>
-      </div>
-      <div>
-
       </div>
     </div>
 
@@ -171,7 +194,7 @@ import { formatDateWithTime } from 'src/utils/dates';
 export default defineComponent({
   name: 'ListByIdHeader',
 
-  emits: ['importHistory', 'deleteList', 'deleteContacts', 'updateListName'],
+  emits: ['onAddContact', 'importHistory', 'deleteList', 'deleteContacts', 'updateListName'],
 
   components: {
     AppTooltip,

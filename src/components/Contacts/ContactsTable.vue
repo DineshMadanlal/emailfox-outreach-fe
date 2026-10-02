@@ -21,8 +21,9 @@
     </q-dialog>
 
     <!--  -->
+    <!-- Delete Contact Modal -->
     <q-dialog
-      v-model="showDeleteContactModal"
+      v-model="modals.showDeleteContact"
       class="app-modal-dialog"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
@@ -35,6 +36,22 @@
         :multiSelectOptionJson="multiSelectOptionJson"
 
         @onSuccessfulDelete="onSuccessfulDeleteContacts"
+      />
+    </q-dialog>
+
+    <!-- Add Contact Modal -->
+    <q-dialog
+      v-model="modals.showAddContact"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <AddContactModal
+        :listId="listId"
+        @onSuccessfulAddContact="onSuccessfulAddContact"
       />
     </q-dialog>
 
@@ -52,7 +69,7 @@
         :multiSelectOptionJson="multiSelectOptionJson"
 
         @onCancel="selectedContacts = []"
-        @onDelete="showDeleteContactModal = true"
+        @onDelete="modals.showDeleteContact = true"
       />
     </q-dialog>
 
@@ -60,7 +77,36 @@
       v-if="isMounted && !hideHeader"
       to="#mainContactsRightHeader"
     >
-      <div class="all-contacts-header-filter-section">
+      <div
+        v-if="!showAllContactsIllustration"
+        class="all-contacts-header-filter-section"
+      >
+        <!-- Add Contact -->
+        <q-btn
+          flat
+          no-caps
+          unelevated
+
+          color="primary"
+          class="light-primary-btn"
+
+          :disable="isReadOnly"
+          @click="modals.showAddContact = true"
+        >
+          <div class="flex no-wrap items-center">
+            <LocalSvgIcon image="add" classes="add-icon" />
+
+            <p class="add-button-text">
+              Add Contact
+            </p>
+          </div>
+
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
+
         <!-- Upload Button -->
         <q-btn
           no-caps
@@ -71,8 +117,6 @@
 
           :disable="isReadOnly"
           :to="isReadOnly ? undefined : '/outreach/contacts/upload'"
-
-          v-if="!showAllContactsIllustration"
         >
           <div class="flex no-wrap items-center">
             <LocalSvgIcon image="download" classes="download-icon" />
@@ -485,6 +529,7 @@ import SelectProvider from 'components/Dropdown/SelectProvider.vue';
 import SelectContactStatus from 'components/Dropdown/SelectContactStatus.vue';
 import ContactsMoreFilters from 'components/Menu/ContactsMoreFilters.vue';
 import DeleteContactsModal from 'components/Contacts/Modals/DeleteContacts.vue';
+import AddContactModal from 'components/Contacts/Modals/AddContact.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -518,6 +563,7 @@ export default defineComponent({
     ColumnsVisibility,
     ResetFiltersButton,
     DeleteContactsModal,
+    AddContactModal,
 
     AllContactsIllustration,
     ColumnsVisibilityButton,
@@ -587,10 +633,14 @@ export default defineComponent({
       showTableMultiSelectMenu: false,
 
       selectedContactJson: null,
-      showDeleteContactModal: false,
 
       visibleColumns: [],
       showColumnsVisibilityModal: false,
+
+      modals: {
+        showAddContact: false,
+        showDeleteContact: false,
+      },
     });
 
     const showApiLoader = computed(() => {
@@ -680,7 +730,7 @@ export default defineComponent({
       const customFieldColumns = workspaceCustomFields.value.map((field) => ({
         name: `custom_fields.${field.value}`,
         label: field.label,
-        field: `custom_fields.${field.value}`,
+        field: `${field.value}`,
         align: 'left',
       }));
 
@@ -880,7 +930,7 @@ export default defineComponent({
     const onSuccessfulDeleteContacts = () => {
       state.selectedContacts = [];
       state.multiSelectOptionJson = {};
-      state.showDeleteContactModal = false;
+      state.modals.showDeleteContact = false;
 
       // refetch data
       onFetchAllContacts();
@@ -888,6 +938,13 @@ export default defineComponent({
       if (props.listId) {
         emit('contactsDeleted');
       }
+    };
+
+    const onSuccessfulAddContact = () => {
+      state.modals.showAddContact = false;
+
+      // refetch all contacts after successfully adding a new contact
+      onFetchAllContacts();
     };
 
     const onSearchContactInput = () => {
@@ -963,6 +1020,7 @@ export default defineComponent({
       onRequest,
       onTableRowSelect,
       onSuccessfulDeleteContacts,
+      onSuccessfulAddContact,
       resetTableMultiSelect,
       updateMultiSelect,
       onSearchContactInput,

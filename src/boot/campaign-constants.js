@@ -316,6 +316,7 @@ export const CONTACT_IMPORT_CONFLICT_ACTION = {
 
 export const CONTACTS_IMPORT_SOURCE_TYPE = {
   CSV_UPLOAD: 'CSV_UPLOAD',
+  MANUAL: 'MANUAL',
 };
 
 export const CONTACT_STATUS_LABELS = {
@@ -1110,6 +1111,14 @@ export const WEBHOOK_EVENT_TYPE = {
   'linkedin.inmail_sent': {
     label: 'LinkedIn InMail Sent',
     value: 'linkedin.inmail_sent',
+  },
+  'email.disconnected': {
+    label: 'Email Disconnected',
+    value: 'email.disconnected',
+  },
+  'linkedin.disconnected': {
+    label: 'LinkedIn Disconnected',
+    value: 'linkedin.disconnected',
   },
 };
 

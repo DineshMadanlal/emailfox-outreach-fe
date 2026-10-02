@@ -3,6 +3,23 @@
     <!-- Api Loader -->
     <ApiLoader :show="showApiLoader" />
 
+    <!-- Add Contact -->
+    <q-dialog
+      v-model="modals.showAddContact"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <AddContact
+        :listId="listByJson.id"
+
+        @onSuccessfulAddContact="onContactAdded"
+      />
+    </q-dialog>
+
     <!-- Dialog -->
     <q-dialog
       v-model="modals.showSaveListName"
@@ -76,6 +93,7 @@
         :listByJson="listByJson"
 
         @deleteList="modals.showDeleteList = true"
+        @onAddContact="modals.showAddContact = true"
         @updateListName="modals.showSaveListName = true"
         @deleteContacts="modals.showDeleteContacts = true"
         @importHistory="modals.showContactsImportHistory = true"
@@ -110,6 +128,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import ListByIdHeader from 'components/ListById/Header.vue';
+import AddContact from 'components/Contacts/Modals/AddContact.vue';
 
 // modals
 import DeleteList from 'components/Lists/Modals/DeleteList.vue';
@@ -133,6 +152,7 @@ export default defineComponent({
 
     // modals
     DeleteList,
+    AddContact,
     SaveListName,
     DeleteContacts,
     ContactImportHistory,
@@ -164,6 +184,7 @@ export default defineComponent({
 
       modals: {
         showDeleteList: false,
+        showAddContact: false,
         showSaveListName: false,
         showDeleteContacts: false,
         showContactsImportHistory: false,
@@ -219,6 +240,13 @@ export default defineComponent({
       state.routerViewKey += 1;
     };
 
+    const onContactAdded = () => {
+      state.modals.showAddContact = false;
+
+      fetchListById();
+      state.routerViewKey += 1;
+    };
+
     const onSuccessfulDeleteList = () => {
       state.modals.showDeleteList = false;
 
@@ -245,6 +273,7 @@ export default defineComponent({
       fetchListById,
       onListNameUpdated,
       onSuccessfulDeleteContacts,
+      onContactAdded,
       onSuccessfulDeleteList,
     };
   },
