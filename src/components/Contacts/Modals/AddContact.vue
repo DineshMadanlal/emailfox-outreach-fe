@@ -95,7 +95,7 @@
               @click="toggles.showAiJsonBanner = false"
             >
               <LocalSvgIcon
-                image="close"
+                image="circle-close"
                 classes="app-negative-icon"
               />
             </q-btn>

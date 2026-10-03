@@ -151,6 +151,8 @@
 
         :listId="listId"
         :campaignId="campaignId"
+
+        @onAddContact="onAddNewContact"
       />
 
       <div
@@ -550,7 +552,7 @@ import { DEFAULT_TABLE_PAGINATION, TABLE_MULTI_SELECT_OPTIONS } from 'boot/const
 export default defineComponent({
   name: 'ContactsTable',
 
-  emits: ['contactsDeleted'],
+  emits: ['contactsDeleted', 'onAddContact'],
 
   components: {
     ApiLoader,
@@ -991,6 +993,15 @@ export default defineComponent({
       onFetchAllContacts();
     };
 
+    const onAddNewContact = () => {
+      if (props.listId) {
+        emit('onAddContact');
+      } else {
+        state.modals.showAddContact = true;
+      }
+    };
+
+    // lifecycle hooks
     onMounted(() => {
       getWorkspaceCustomFields();
 
@@ -1029,6 +1040,7 @@ export default defineComponent({
       clearAllFilters,
       onUpdateVisibleColumns,
       onUpdateFiltersModelValue,
+      onAddNewContact,
     };
   },
 });

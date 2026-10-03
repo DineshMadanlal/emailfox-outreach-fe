@@ -105,6 +105,7 @@
         :listByJson="listByJson"
 
         @refetchListById="fetchListById"
+        @onAddNewContact="modals.showAddContact = true"
       />
     </template>
   </div>

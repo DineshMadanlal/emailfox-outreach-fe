@@ -20,22 +20,44 @@
         Upload your list and manage all your outreach contacts from one place.
       </p>
 
-      <!-- Add new domain -->
-      <q-btn
-        no-caps
-        unelevated
+      <div class="flex no-wrap items-center">
+        <!-- Add Contact -->
+        <q-btn
+          flat
+          no-caps
+          unelevated
 
-        color="primary"
-        label="Upload Contacts"
+          color="primary"
+          label="Add Contact"
+          class="light-primary-btn q-mr-md"
 
-        :disable="isReadOnly"
-        :to="isReadOnly ? undefined : toRoute"
-      >
-        <AppTooltip
-          v-if="isReadOnly"
-          content="You have read-only access in this workspace"
-        />
-      </q-btn>
+          :disable="isReadOnly"
+
+          @click="$emit('onAddContact')"
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
+
+        <!-- Upload Contacts -->
+        <q-btn
+          no-caps
+          unelevated
+
+          color="primary"
+          label="Upload Contacts"
+
+          :disable="isReadOnly"
+          :to="isReadOnly ? undefined : toRoute"
+        >
+          <AppTooltip
+            v-if="isReadOnly"
+            content="You have read-only access in this workspace"
+          />
+        </q-btn>
+      </div>
     </div>
   </div>
 </template>
@@ -52,6 +74,8 @@ import AppTooltip from 'components/General/AppTooltip.vue';
 
 export default defineComponent({
   name: 'AllContacts',
+
+  emits: ['onAddContact'],
 
   components: {
     AppTooltip,
