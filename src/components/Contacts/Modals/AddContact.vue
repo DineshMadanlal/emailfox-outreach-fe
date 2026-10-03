@@ -1,5 +1,29 @@
 <template>
   <q-card flat class="app-modal-card add-contact-card">
+    <!-- Create Field Dialog -->
+    <q-dialog
+      v-model="modals.showCreateFieldModal"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <CreateField
+        @onFieldCreated="onFieldCreated"
+      />
+    </q-dialog>
+
+    <!-- Paste Contact JSON Dialog -->
+    <q-dialog
+      v-model="modals.showPasteJsonModal"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <PasteContactJson
+        @onApplyJson="onApplyJson"
+      />
+    </q-dialog>
+
     <q-form
       class="full-width add-contact-form custom-scrollbar"
       ref="addContactFormRef"
@@ -32,6 +56,51 @@
 
       <!-- Content -->
       <div class="app-modal-content">
+        <!-- AI / JSON Banner Card -->
+        <div
+          v-if="toggles.showAiJsonBanner"
+          class="full-width json-autofill-banner"
+        >
+          <!--  -->
+          <div class="banner-text-content">
+            <h6 class="banner-title">
+              Have AI-generated contact details or raw JSON?
+            </h6>
+            <p class="banner-subtitle">
+              Automatically populate all fields instantly by parsing clipboard data.
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="banner-actions">
+            <q-btn
+              outline
+              no-caps
+              dense
+              color="primary"
+              class="autofill-btn"
+              label="Autofill via JSON"
+              @click="modals.showPasteJsonModal = true"
+            />
+
+            <q-btn
+              flat
+              round
+              dense
+              size="sm"
+
+              color="negative"
+              class="app-negative-button"
+
+              @click="toggles.showAiJsonBanner = false"
+            >
+              <LocalSvgIcon
+                image="close"
+                classes="app-negative-icon"
+              />
+            </q-btn>
+          </div>
+        </div>
         <!-- First Name -->
         <div class="full-width">
           <InputLabel
@@ -395,22 +464,15 @@
         />
       </div>
     </q-form>
-
-    <!-- Create Field Dialog -->
-    <q-dialog
-      v-model="modals.showCreateFieldModal"
-      class="app-modal-dialog"
-      :transition-show="isMobileDevice ? 'slide-up' : ''"
-      :transition-hide="isMobileDevice ? 'slide-down' : ''"
-    >
-      <CreateField
-        @onFieldCreated="onFieldCreated"
-      />
-    </q-dialog>
   </q-card>
 </template>
 
 <script>
+// lodash
+import startCase from 'lodash/startCase';
+import kebabCase from 'lodash/kebabCase';
+
+// vue
 import {
   defineComponent, reactive, toRefs, computed, onMounted, getCurrentInstance,
 } from 'vue';
@@ -422,6 +484,7 @@ import SelectList from 'components/Dropdown/SelectList.vue';
 import SelectContactConflictAction from 'components/Dropdown/SelectContactConflictAction.vue';
 import CustomFieldsMenu from 'components/Menu/CustomFieldsMenu.vue';
 import CreateField from 'src/components/Contacts/Modals/CreateField.vue';
+import PasteContactJson from 'src/components/Contacts/Modals/PasteContactJson.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -432,7 +495,10 @@ import { postApiCall } from 'src/utils/apiRequests';
 
 // constants
 import { EMAIL_REGEX } from 'src/boot/constants';
-import { CONTACTS_IMPORT_SOURCE_TYPE, CONTACT_IMPORT_CONFLICT_ACTION } from 'boot/campaign-constants';
+import {
+  CONTACTS_IMPORT_SOURCE_TYPE,
+  CONTACT_IMPORT_CONFLICT_ACTION,
+} from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'AddContactModal',
@@ -446,6 +512,7 @@ export default defineComponent({
     SelectContactConflictAction,
     CustomFieldsMenu,
     CreateField,
+    PasteContactJson,
   },
 
   props: {
@@ -484,6 +551,7 @@ export default defineComponent({
       },
 
       toggles: {
+        showAiJsonBanner: true,
         isCustomFieldsOpen: false,
         isAdditionalDetailsOpen: false,
       },
@@ -491,6 +559,7 @@ export default defineComponent({
       modals: {
         showCustomFieldsMenu: false,
         showCreateFieldModal: false,
+        showPasteJsonModal: false,
       },
 
       // Custom fields selection UI
@@ -527,7 +596,9 @@ export default defineComponent({
 
     const generateRandomEmail = () => {
       const listId = props.listId || state.form.selectedList?.id || 'manual';
-      return `missing_${listId}_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}@example.com`;
+      const timestamp = Date.now().toString(36);
+      const randomStr = Math.random().toString(36).substring(2, 8);
+      return `missing_${listId}_${timestamp}_${randomStr}@example.com`;
     };
 
     const onToggleRandomEmail = (val) => {
@@ -566,6 +637,53 @@ export default defineComponent({
       } else {
         state.modals.showCreateFieldModal = true;
       }
+    };
+
+    const onApplyJson = (jsonObj = {}) => {
+      const fieldMap = {
+        first_name: ['first_name', 'firstName', 'name'],
+        last_name: ['last_name', 'lastName'],
+        email: ['email'],
+        phone: ['phone', 'phoneNumber', 'phone_number'],
+        job_title: ['job_title', 'jobTitle', 'title'],
+        company_name: ['company_name', 'companyName', 'company'],
+        linkedin_url: ['linkedin_url', 'linkedinUrl', 'linkedin'],
+        city: ['city'],
+        state: ['state'],
+        country: ['country'],
+      };
+
+      Object.keys(fieldMap).forEach((targetKey) => {
+        const keys = fieldMap[targetKey];
+        const matchedKey = keys.find((k) => jsonObj[k] !== undefined && jsonObj[k] !== null);
+        if (matchedKey) {
+          state.form[targetKey] = String(jsonObj[matchedKey]);
+        }
+      });
+
+      const customObj = jsonObj.custom_fields || {};
+      Object.keys(customObj).forEach((key) => {
+        const value = customObj[key];
+        const formattedKey = kebabCase(key).replace(/-/g, '_');
+        const label = startCase(key);
+
+        addCustomField({
+          label,
+          value: formattedKey,
+        });
+        state.form.custom_fields[formattedKey] = String(value);
+      });
+
+      state.toggles.isAdditionalDetailsOpen = true;
+      if (Object.keys(customObj).length > 0) {
+        state.toggles.isCustomFieldsOpen = true;
+      }
+
+      state.modals.showPasteJsonModal = false;
+
+      appContext.config.globalProperties.$toast({
+        message: 'Contact fields populated from JSON',
+      });
     };
 
     const resetForm = () => {
@@ -669,6 +787,7 @@ export default defineComponent({
       onInputChange,
       onFieldCreated,
       onCreateNewField,
+      onApplyJson,
       onSaveContact,
       addCustomField,
       removeCustomField,
@@ -717,6 +836,52 @@ export default defineComponent({
     gap: 16px;
     padding: 20px 24px;
     overflow-y: auto;
+
+    .json-autofill-banner {
+      background: rgb(var(--primary-rgb), 0.05);
+      border: 1px solid $grey-50;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      gap: 16px;
+
+      // text content
+      .banner-text-content {
+        flex: 1;
+        min-width: 0;
+
+        .banner-title {
+          font-size: 13px;
+          color: $black;
+          font-weight: 500;
+        }
+
+        .banner-subtitle {
+          font-size: 12px;
+          color: rgba(var(--black-rgb), 0.7);
+
+          margin-top: 2px;
+        }
+      }
+
+      .banner-actions {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .autofill-btn {
+          border-radius: 8px;
+          padding: 4px 12px;
+          border-color: $primary;
+          color: $primary;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+      }
+    }
 
     .input-width-maxed {
       width: 100%;
