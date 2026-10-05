@@ -1100,6 +1100,7 @@ export default defineComponent({
       onFetchMailboxRecords();
     };
 
+    // life cycle hooks
     onMounted(() => {
       const {
         connectionSuccess, mailbox_id, email,

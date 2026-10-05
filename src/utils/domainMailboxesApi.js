@@ -456,3 +456,16 @@ export const getDomainsOverallStatus = async () => {
     throw new Error(error);
   }
 };
+
+export const bulkReconnectMailboxes = async () => {
+  try {
+    const response = await postApiCall({
+      includeWorkspace: true,
+      endpoint: '/mailboxes/bulk-reconnect',
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};

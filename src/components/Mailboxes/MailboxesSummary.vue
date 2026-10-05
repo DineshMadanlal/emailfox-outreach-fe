@@ -1,7 +1,17 @@
 <template>
   <div class="mailboxes-summary-container">
+    <!-- Bulk Reconnect Modal -->
+    <q-dialog
+      v-model="modals.showBulkReconnectMailboxes"
+      class="app-modal-dialog"
+    >
+      <BulkReconnectMailboxes
+        @onSuccess="onSuccessfulBulkReconnect"
+      />
+    </q-dialog>
+
     <ApiLoader
-      v-if="mailboxesStats.connected_count === 0 && isApiLoading"
+      v-if="showApiLoader"
       show
     />
 
@@ -30,6 +40,48 @@
         </div>
       </div>
     </div>
+
+    <!-- Disconnected Banner -->
+    <div
+      v-if="mailboxesStats.disconnected_count > 0"
+      class="disconnected-mailboxes-banner"
+      :class="{ 'in-progress': isReconnectingInProgress }"
+    >
+      <div
+        v-if="isReconnectingInProgress"
+        class="banner-text"
+      >
+        <span class="font-weight-bold">
+          {{ getNumeralAmount(reconnectResponse?.queue_count
+            || mailboxesStats.disconnected_count) }}
+          mailboxes are reconnecting in the background.
+        </span>
+        <span>Reconnection may take a few minutes. Check back soon. </span>
+
+        <span
+          class="reconnect-action-link refresh-link"
+          @click="makeApiCallOnMounted"
+        >
+          <span>Refresh Status</span>
+        </span>
+      </div>
+
+      <div
+        v-else
+        class="banner-text"
+      >
+        <span class="font-weight-bold">
+          {{ getNumeralAmount(mailboxesStats.disconnected_count) }} mailboxes disconnected.
+        </span>
+        <span>Bulk reconnect all mailboxes with one click. </span>
+        <span
+          class="reconnect-action-link"
+          @click="modals.showBulkReconnectMailboxes = true"
+        >
+          <span>Reconnect Mailboxes</span>
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -42,6 +94,7 @@ import {
 
 // components
 import ApiLoader from 'components/General/ApiLoader.vue';
+import BulkReconnectMailboxes from 'components/Mailboxes/Modals/BulkReconnectMailboxes.vue';
 
 // utils
 import { getNumeralAmount } from 'src/utils/numbers.js';
@@ -64,6 +117,7 @@ export default defineComponent({
 
   components: {
     ApiLoader,
+    BulkReconnectMailboxes,
   },
 
   setup(props, { emit }) {
@@ -81,7 +135,13 @@ export default defineComponent({
         disconnected_count: 0,
       },
 
+      modals: {
+        showBulkReconnectMailboxes: false,
+      },
+
+      reconnectResponse: null,
       isApiLoading: false,
+      isReconnectingInProgress: false,
     });
 
     // computed
@@ -126,6 +186,14 @@ export default defineComponent({
       ];
     });
 
+    // computed
+    const showApiLoader = computed(() => {
+      if (state.isReconnectingInProgress) {
+        return state.isApiLoading;
+      }
+      return state.mailboxesStats.connected_count === 0 && state.isApiLoading;
+    });
+
     // methods
     const makeApiCallOnMounted = async () => {
       try {
@@ -166,6 +234,12 @@ export default defineComponent({
       }
     };
 
+    const onSuccessfulBulkReconnect = (response) => {
+      state.reconnectResponse = response;
+      state.modals.showBulkReconnectMailboxes = false;
+      state.isReconnectingInProgress = true;
+    };
+
     // lifecylce
     onMounted(() => {
       if (storedOverallStatus.value?.connected_count) {
@@ -181,10 +255,13 @@ export default defineComponent({
 
       // computed
       deliveryStats,
+      showApiLoader,
 
       // method
       onFilterStat,
       getNumeralAmount,
+      makeApiCallOnMounted,
+      onSuccessfulBulkReconnect,
     };
   },
 });
@@ -206,6 +283,8 @@ export default defineComponent({
 
     border-radius: 8px;
     background: rgba($color: var(--grey-50-rgb), $alpha: 0.3);
+    border: 1px solid rgba($color: var(--grey-100-rgb), $alpha: 0.2);
+    backdrop-filter: blur(10px);
 
     display: flex;
     align-items: center;
@@ -217,6 +296,9 @@ export default defineComponent({
     gap: 32px;
 
     padding: 24px 20px;
+
+    z-index: 1;
+    position: relative;
 
     // include custom scrollbar
     @include custom-scrollbar;
@@ -291,6 +373,79 @@ export default defineComponent({
           font-weight: 500;
 
           margin-top: 6px;
+        }
+      }
+    }
+  }
+
+  .disconnected-mailboxes-banner {
+    width: 100%;
+
+    border-radius: 0 0 8px 8px;
+    background: rgba(var(--negative-rgb), 0.05);
+
+    border: 1px solid rgba(var(--negative-rgb), 0.1);
+    border-top: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    bottom: 6px;
+
+    padding: 20px 20px 14px 20px;
+
+    @media (max-width: $breakpoint-xs-max) {
+      padding: 18px 12px 14px 12px;
+    }
+
+    &.in-progress {
+      background: rgba(var(--primary-rgb), 0.05);
+      border-color: rgba(var(--primary-rgb), 0.15);
+
+      .reconnect-action-link.refresh-link {
+        color: $primary;
+      }
+    }
+
+    .banner-text {
+      color: $grey-800;
+      font-size: 14px;
+      line-height: 20px;
+
+      .font-weight-bold {
+        font-weight: 600;
+        color: $black;
+      }
+
+      .reconnect-action-link {
+        color: $negative;
+        cursor: pointer;
+        margin-left: 4px;
+
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        text-decoration-line: underline;
+        text-decoration-style: solid;
+        text-decoration-skip-ink: none;
+        text-decoration-thickness: auto;
+        text-underline-offset: auto;
+        text-underline-position: from-font;
+
+        &.is-disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          pointer-events: none;
+        }
+
+        .reconnect-spinner {
+          color: $negative;
+        }
+
+        &:hover:not(.is-disabled) {
+          opacity: 0.85;
         }
       }
     }

@@ -347,12 +347,12 @@ export default defineComponent({
         align: 'left',
         field: 'contact_email',
       },
-      {
-        name: 'full_name',
-        label: 'Full Name',
-        align: 'left',
-        field: 'contact_email',
-      },
+      // {
+      //   name: 'full_name',
+      //   label: 'Full Name',
+      //   align: 'left',
+      //   field: 'contact_email',
+      // },
       {
         name: 'sequence',
         label: 'Sequence',
