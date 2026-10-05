@@ -1,5 +1,17 @@
 <template>
   <div class="mailboxes-table-container">
+    <!-- Export Loader -->
+    <q-dialog
+      full-width
+      seamless
+      v-model="isExporting"
+      position="top"
+    >
+      <FloatingLoader
+        label="Exporting mailboxes..."
+      />
+    </q-dialog>
+
     <!-- Column Visibility -->
     <q-dialog
       v-model="showColumnsVisibilityModal"
@@ -581,6 +593,7 @@ import SelectMailboxConnection from 'components/Dropdown/SelectMailboxConnection
 
 import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 import ActionConfig from 'components/Mailboxes/Modals/ActionConfig.vue';
+import FloatingLoader from 'components/Modals/FloatingLoader.vue';
 
 // Import the Pinia store
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
@@ -629,6 +642,7 @@ export default defineComponent({
 
     ResetFiltersButton,
     ActionConfig,
+    FloatingLoader,
   },
 
   props: {
@@ -693,6 +707,8 @@ export default defineComponent({
 
       actionType: '',
       showActionConfigModal: false,
+
+      isExporting: false,
 
       //
       mailboxesSummaryKey: 1,
@@ -826,50 +842,57 @@ export default defineComponent({
     };
 
     // API Calls
+    const getMailboxFilterParams = () => {
+      let params = {};
+
+      // filters
+      const {
+        searchText, provider, warmupStatus, status,
+      } = state.filters || {};
+
+      // search text
+      if (searchText) {
+        params.search_text = searchText;
+      }
+
+      // provider
+      if (provider) {
+        params.provider = provider;
+      }
+
+      // warmup status
+      if (warmupStatus) {
+        if (warmupStatus === WARMUP_STATUS.BLOCKED) {
+          params.is_warmup_error = true;
+        } else {
+          params.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
+        }
+      }
+
+      // status
+      if (status) {
+        params.status = status;
+      }
+
+      if (size(props.addedFilters)) {
+        params = {
+          ...params,
+          ...props.addedFilters,
+        };
+      }
+
+      return params;
+    };
+
     const fetchData = async (page = 1, perPage = 10) => {
       try {
         state.isApiProcessing = true;
 
-        let params = {
+        const params = {
           offset: (page - 1) * perPage,
           limit: perPage,
+          ...getMailboxFilterParams(),
         };
-
-        // filters
-        const {
-          searchText, provider, warmupStatus, status,
-        } = state.filters || {};
-
-        // search text
-        if (searchText) {
-          params.search_text = searchText;
-        }
-
-        // provider
-        if (provider) {
-          params.provider = provider;
-        }
-
-        // warmup status
-        if (warmupStatus) {
-          if (warmupStatus === WARMUP_STATUS.BLOCKED) {
-            params.is_warmup_error = true;
-          } else {
-            params.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
-          }
-        }
-
-        // status
-        if (status) {
-          params.status = status;
-        }
-
-        if (size(props.addedFilters)) {
-          params = {
-            ...params,
-            ...props.addedFilters,
-          };
-        }
 
         const response = await getApiCall({
           params,
@@ -1045,7 +1068,46 @@ export default defineComponent({
       onFetchMailboxRecords();
     };
 
+    const exportMailboxes = async () => {
+      try {
+        state.isExporting = true;
+
+        const params = getMailboxFilterParams();
+
+        const response = await getApiCall({
+          params,
+          endpoint: '/mailboxes/export',
+          includeWorkspace: true,
+          otherParams: {
+            responseType: 'blob',
+          },
+        });
+
+        const blob = new Blob([response], { type: 'application/zip' });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', `mailboxes_export_${Date.now()}.zip`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (error) {
+        appContext.config.globalProperties.$toast({
+          warning: true,
+          message: error.message || 'Unexpected error occurred. Unable to export mailboxes.',
+        });
+      } finally {
+        state.isExporting = false;
+      }
+    };
+
     const onActionConfig = (actionType) => {
+      if (actionType === MAILBOX_ACTIONS.EXPORT) {
+        exportMailboxes();
+        return;
+      }
+
       state.actionType = actionType;
       state.showActionConfigModal = true;
     };
@@ -1158,6 +1220,7 @@ export default defineComponent({
       clearAllFilters,
       onUpdateFiltersModelValue,
       onActionConfig,
+      exportMailboxes,
       onSuccessfulAction,
       onEnableWarmupByMailboxId,
 

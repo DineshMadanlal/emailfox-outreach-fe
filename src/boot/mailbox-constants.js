@@ -64,6 +64,7 @@ export const MAILBOX_ACTIONS = {
   SET_SIGNATURE: 'setSignature',
   CLEAR_SIGNATURE: 'clearSignature',
   DELETE: 'delete',
+  EXPORT: 'export',
 };
 
 export const ACTION_CONFIG = {

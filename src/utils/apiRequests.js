@@ -93,16 +93,24 @@ export const putApiCall = async ({ endpoint, payload, includeWorkspace = false }
   }
 };
 
-export const getApiCall = async ({ endpoint, params, includeWorkspace = false }) => {
+export const getApiCall = async ({
+  endpoint, params, otherParams, includeWorkspace = false,
+}) => {
   try {
     // url
     const url = getWorkspaceEndpoint(endpoint, includeWorkspace);
 
-    const response = await api({
+    let config = {
       url,
       method: 'get',
       params,
-    });
+    };
+
+    if (otherParams) {
+      config = { ...config, ...otherParams };
+    }
+
+    const response = await api(config);
     return response.data;
   } catch (error) {
     return throwApiError(error);

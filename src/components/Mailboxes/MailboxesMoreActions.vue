@@ -4,8 +4,7 @@
     style="min-width: 250px"
     class="more-action-list"
   >
-    <q-item
-      clickable
+    <div
       :class="`${action.class || ''} more-action-item`"
 
       v-for="action in moreActions"
@@ -16,7 +15,7 @@
       <div class="more-action-text">
         {{ action.label }}
       </div>
-    </q-item>
+    </div>
   </q-list>
 </template>
 <script>
@@ -70,6 +69,10 @@ export default defineComponent({
           emitValue: MAILBOX_ACTIONS.CLEAR_SIGNATURE,
         },
         {
+          label: 'Export',
+          emitValue: MAILBOX_ACTIONS.EXPORT,
+        },
+        {
           label: 'Delete',
           emitValue: MAILBOX_ACTIONS.DELETE,
           class: 'negative-action',
@@ -95,6 +98,7 @@ export default defineComponent({
   border-radius: 6px;
 
   .more-action-item {
+    cursor: pointer;
     padding: 8px 12px;
     min-height: unset !important;
 
@@ -108,6 +112,8 @@ export default defineComponent({
     }
 
     &.negative-action {
+      border-top: 1px solid $grey-50;
+
       .more-action-text {
         color: $negative;
       }
