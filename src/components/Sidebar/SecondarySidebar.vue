@@ -432,6 +432,25 @@ export default defineComponent({
       ];
     });
 
+    const customizationRoutes = computed(() => {
+      if (isClientLoggedIn.value || !canAccessSettings.value) {
+        return [];
+      }
+
+      const routes = [
+        // example customization route
+        {
+          name: 'Tags',
+          icon: 'tags',
+          label: 'Tags',
+          route: '/settings/tags',
+          isActive: activeRoutePath.value.includes('/settings/tags'),
+        },
+      ];
+
+      return routes;
+    });
+
     const campaignSettingsRoutes = computed(() => {
       if (!canAccessSettings.value) {
         return [];
@@ -467,6 +486,10 @@ export default defineComponent({
           isActive: activeRoutePath.value.includes('/settings/reply-categorization'),
         },
       ];
+
+      if (customizationRoutes.value.length > 0) {
+        routes.push(...customizationRoutes.value);
+      }
 
       if (developerPageRoutesByWorkspace.value.length > 0) {
         routes.push(...developerPageRoutesByWorkspace.value);

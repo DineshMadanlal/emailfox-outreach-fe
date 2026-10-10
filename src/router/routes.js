@@ -464,6 +464,12 @@ const routes = [
             component: () => import('pages/WorkspaceSettings/ReplyCategorization.vue'),
             meta: { requiresAuth: true },
           },
+          // tags
+          {
+            path: 'tags',
+            component: () => import('pages/WorkspaceSettings/Tags.vue'),
+            meta: { requiresAuth: true },
+          },
         ],
       },
 
