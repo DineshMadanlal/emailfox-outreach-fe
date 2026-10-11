@@ -77,6 +77,7 @@ import { useSubscription } from '@vue/apollo-composable';
 
 // Import the Pinia store
 import { useAuthStore } from 'src/stores/auth';
+import { useTagsStore } from 'src/stores/tags';
 import { useCustomerStore } from 'src/stores/customer';
 import { storeExclusions } from 'src/stores/storeExclusions.js';
 
@@ -108,6 +109,7 @@ export default defineComponent({
     const $route = useRoute();
 
     // store
+    const tagsStorePinia = useTagsStore();
     const authStorePinia = useAuthStore();
     const customerStorePinia = useCustomerStore();
     const storeExclusionsPinia = storeExclusions();
@@ -219,6 +221,11 @@ export default defineComponent({
       updateMainPageMaxHeight();
 
       fetchAllWorkspaces();
+
+      // Prefetch workspace tags into Pinia store
+      tagsStorePinia.fetchTags({
+        force: true,
+      });
 
       // enable vue froala plugin
       loadFroalaPlugin();

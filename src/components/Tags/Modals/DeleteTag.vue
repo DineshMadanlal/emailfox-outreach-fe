@@ -27,24 +27,18 @@
     <!-- Content -->
     <div class="app-modal-content">
       <p class="delete-warning-text">
+        Deleting this tag will remove it from all items where it is currently assigned. The
+        associated campaigns, contact lists, and mailboxes will remain unchanged.
+        <br />
+        <br />
         Are you sure you want to delete the tag
         <strong v-if="tagJson?.name">"{{ tagJson.name }}"</strong>?
-        <br />
-        <br />
-        This action cannot be undone.
       </p>
     </div>
 
     <!-- Footer -->
     <div class="app-modal-footer">
-      <q-btn
-        no-caps
-        unelevated
-        color="negative"
-        label="Delete Tag"
-        :loading="isApiLoading"
-        @click="onDeleteTag"
-      />
+      <q-space />
 
       <q-btn
         flat
@@ -54,7 +48,16 @@
 
         label="Cancel"
         color="negative"
-        class="q-ml-sm light-negative-btn"
+        class="q-mr-sm light-negative-btn"
+      />
+
+      <q-btn
+        no-caps
+        unelevated
+        color="negative"
+        label="Delete Tag"
+        :loading="isApiLoading"
+        @click="onDeleteTag"
       />
     </div>
   </q-card>
@@ -68,6 +71,9 @@ import {
 
 // Utils
 import { deleteApiCall } from 'src/utils/apiRequests';
+
+// Pinia store
+import { useTagsStore } from 'src/stores/tags';
 
 export default defineComponent({
   name: 'DeleteTag',
@@ -85,6 +91,9 @@ export default defineComponent({
   setup(props, { emit }) {
     // app context
     const { appContext } = getCurrentInstance();
+
+    // store
+    const tagsStorePinia = useTagsStore();
 
     // state
     const state = reactive({
@@ -105,6 +114,9 @@ export default defineComponent({
         appContext.config.globalProperties.$toast({
           message: 'Tag deleted successfully',
         });
+
+        // Remove from Pinia tags store
+        tagsStorePinia.deleteTagFromList(props.tagJson.id);
 
         //
         emit('onSuccessfulDelete', props.tagJson.id);

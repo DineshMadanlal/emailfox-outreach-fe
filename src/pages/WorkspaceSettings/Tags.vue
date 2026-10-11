@@ -4,7 +4,7 @@
     <div class="settings-section-header">
       <!-- Left Side -->
       <div class="settings-header-left-side">
-        <!-- Header Text & Count Badge -->
+        <!-- Header Text -->
         <div class="flex items-center gap-sm">
           <p class="settings-header-text">
             Tags
@@ -14,13 +14,12 @@
         <!-- Label Text -->
         <p class="settings-label-text">
           Organize your mailboxes, campaigns and contact lists using tags.
-          Create and manage tags to easily filter, segment and track your outreach.
         </p>
       </div>
 
       <!-- Right Side -->
       <div
-        v-if="tagsList.length > 0 || searchText"
+        v-if="allTagsCount > 0 || searchText"
         class="settings-header-right-side"
       >
         <!-- Create New Tag Button -->
@@ -38,9 +37,9 @@
             content="You have read-only access in this workspace"
           />
 
-          <div class="text-no-wrap flex items-center gap-xs">
+          <div class="text-no-wrap flex items-center no-wrap gap-xs">
             <q-icon name="add" size="18px" />
-            <span>Create Tag</span>
+            <div>Create Tag</div>
           </div>
         </q-btn>
       </div>
@@ -50,35 +49,33 @@
     <div class="settings-section-content q-mt-md">
       <!-- Search Filter Bar -->
       <div
-        v-if="tagsList.length > 0 || searchText || flags.isInitialLoading"
+        v-if="allTagsCount > 0 || searchText || isInitialLoading"
         class="tags-search-bar-wrapper q-mb-md"
       >
         <AppSearchInput
           v-model="searchText"
-
           clearable
           placeholder="Search tags by name..."
-          @update:model-value="onSearchInput"
         />
       </div>
 
-      <!-- Initial Skeleton Loader -->
+      <!-- Initial Spinner Loader -->
       <div
-        v-if="flags.isInitialLoading"
-        class="tags-list-card skeleton-card"
+        v-if="isInitialLoading"
+        class="tags-list-card skeleton-card flex flex-center q-pa-lg"
       >
         <q-spinner-dots size="32px" color="primary" />
       </div>
 
-      <!-- Global Empty State Illustration -->
+      <!-- Global Empty State Illustration (No tags created yet) -->
       <AllTagsIllustration
-        v-else-if="tagsList.length === 0 && !searchText"
+        v-else-if="allTagsCount === 0 && !searchText"
         @onCreateTag="onAddNewTag"
       />
 
       <!-- Search No Results State -->
       <div
-        v-else-if="tagsList.length === 0 && searchText"
+        v-else-if="filteredTagsList.length === 0 && searchText"
         class="tags-no-results-card"
       >
         <h6 class="tags-no-result-header-text">
@@ -91,7 +88,6 @@
         <q-btn
           flat
           no-caps
-
           color="primary"
           label="Clear search"
           class="light-primary-btn"
@@ -99,30 +95,22 @@
         />
       </div>
 
-      <!-- Tags List with Infinite Scroll -->
+      <!-- Tags List -->
       <div
         v-else
         class="tags-list-wrapper hide-scrollbar"
       >
         <div class="tags-list-card">
           <div
-            v-for="tag in tagsList"
-            :key="tag.id"
+            v-for="tag in filteredTagsList"
+            :key="`tags-${tag.id}`"
             class="tag-item-row"
           >
             <!-- Left: Tag Chip -->
-            <div class="tag-chip-wrapper">
-              <div
-                class="tag-chip"
-                :style="{
-                  backgroundColor: getTagRgbaColor(tag.color, 0.12),
-                  color: tag.color || '#2563EB',
-                  borderColor: getTagRgbaColor(tag.color, 0.25),
-                }"
-              >
-                {{ tag.name }}
-              </div>
-            </div>
+            <PreviewTag
+              :name="tag.name"
+              :color="tag.color"
+            />
 
             <!-- Right: Action Buttons (Edit & Delete) -->
             <div class="tag-actions-wrapper">
@@ -131,7 +119,6 @@
                 flat
                 round
                 dense
-
                 class="tag-action-btn"
                 :disable="isReadOnly"
                 @click="onEditTag(tag)"
@@ -158,29 +145,6 @@
               </q-btn>
             </div>
           </div>
-        </div>
-
-        <!-- Infinite Scroll Loading Indicator -->
-        <div
-          v-if="flags.isLoadingMore"
-          class="flex flex-center q-py-md full-width"
-        >
-          <q-spinner-dots color="primary" size="28px" />
-        </div>
-
-        <!-- Intersection Observer Target for Infinite Scroll -->
-        <q-intersection
-          v-if="pagination.hasMore && !flags.isInitialLoading && !flags.isLoadingMore"
-          @visibility="loadMoreOptions"
-        />
-
-        <!-- End of List Notice -->
-        <div
-          v-if="!pagination.hasMore && tagsList.length > 0
-            && !flags.isInitialLoading && !flags.isLoadingMore"
-          class="tags-end-of-results q-py-sm text-center"
-        >
-          All tags loaded ({{ pagination.count }})
         </div>
       </div>
     </div>
@@ -215,16 +179,13 @@
 </template>
 
 <script>
-// lodash
-import debounce from 'lodash/debounce';
-
 // vue
 import {
   defineComponent,
   reactive,
   toRefs,
+  computed,
   onMounted,
-  getCurrentInstance,
 } from 'vue';
 
 // quasar
@@ -234,8 +195,8 @@ import { useMeta, colors } from 'quasar';
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 import { usePermissions } from 'src/composables/usePermissions';
 
-// utils
-import { getApiCall } from 'src/utils/apiRequests';
+// pinia store
+import { useTagsStore } from 'src/stores/tags';
 
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
@@ -243,6 +204,7 @@ import AllTagsIllustration from 'components/Illustrations/AllTags.vue';
 import SaveTagModal from 'components/Tags/Modals/SaveTag.vue';
 import DeleteTagModal from 'components/Tags/Modals/DeleteTag.vue';
 import AppSearchInput from 'src/components/Input/AppSearchInput.vue';
+import PreviewTag from 'components/Tags/PreviewTag.vue';
 
 export default defineComponent({
   name: 'TagsManager',
@@ -253,37 +215,40 @@ export default defineComponent({
     SaveTagModal,
     DeleteTagModal,
     AppSearchInput,
+    PreviewTag,
   },
 
   setup() {
-    const { appContext } = getCurrentInstance();
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
     const { isReadOnly } = usePermissions();
+    const tagsStorePinia = useTagsStore();
 
     useMeta(generateMetadata('Tags'));
 
     const state = reactive({
-      tagsList: [],
       selectedTag: null,
       searchText: '',
-
-      pagination: {
-        page: 1,
-        limit: 50,
-        offset: 0,
-        count: 0,
-        hasMore: true,
-      },
-
-      flags: {
-        isInitialLoading: true,
-        isLoadingMore: false,
-      },
 
       modals: {
         showSaveTag: false,
         showDeleteTag: false,
       },
+    });
+
+    // computed from store
+    const isInitialLoading = computed(
+      () => tagsStorePinia.getIsApiLoading && !tagsStorePinia.hasFetchedOnce,
+    );
+    const storeTagsList = computed(() => tagsStorePinia.getTagsList || []);
+    const allTagsCount = computed(() => storeTagsList.value.length);
+
+    // Instant in-memory search across cached Pinia tags
+    const filteredTagsList = computed(() => {
+      if (!state.searchText?.trim()) {
+        return storeTagsList.value;
+      }
+      const search = state.searchText.trim().toLowerCase();
+      return storeTagsList.value.filter((t) => t.name?.toLowerCase().includes(search));
     });
 
     const getTagRgbaColor = (hexColor, alpha = 0.12) => {
@@ -293,115 +258,8 @@ export default defineComponent({
       return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
     };
 
-    const fetchTags = async (isInitial = true) => {
-      try {
-        if (isInitial) {
-          state.flags.isInitialLoading = true;
-          state.pagination.page = 1;
-          state.pagination.offset = 0;
-        }
-
-        const params = {
-          offset: 0,
-          limit: state.pagination.limit,
-        };
-
-        if (state.searchText?.trim()) {
-          params.search_text = state.searchText.trim();
-        }
-
-        const response = await getApiCall({
-          endpoint: '/tags',
-          params,
-          includeWorkspace: true,
-        });
-
-        state.tagsList = response?.data || [];
-        state.pagination.count = response?.count || state.tagsList.length;
-        state.pagination.offset = response?.offset || 0;
-        state.pagination.hasMore = !!response?.has_next
-          && state.tagsList.length < (response?.count || Infinity);
-      } catch (error) {
-        appContext.config.globalProperties.$toast?.({
-          warning: true,
-          message: error.message || 'Failed to fetch tags',
-        });
-      } finally {
-        state.flags.isInitialLoading = false;
-      }
-    };
-
-    const debouncedFetchTags = debounce(() => {
-      fetchTags(true);
-    }, 350);
-
-    const onSearchInput = () => {
-      debouncedFetchTags();
-    };
-
     const onClearSearch = () => {
       state.searchText = '';
-      fetchTags(true);
-    };
-
-    const loadMoreTags = async () => {
-      if (
-        state.flags.isLoadingMore
-        || state.flags.isInitialLoading
-        || !state.pagination.hasMore
-      ) {
-        return;
-      }
-
-      try {
-        state.flags.isLoadingMore = true;
-        const nextOffset = state.tagsList.length;
-
-        const params = {
-          offset: nextOffset,
-          limit: state.pagination.limit,
-        };
-
-        if (state.searchText?.trim()) {
-          params.search_text = state.searchText.trim();
-        }
-
-        const response = await getApiCall({
-          endpoint: '/tags',
-          params,
-          includeWorkspace: true,
-        });
-
-        const newItems = response?.data || [];
-        if (newItems.length > 0) {
-          state.tagsList = [...state.tagsList, ...newItems];
-          state.pagination.offset = nextOffset;
-          state.pagination.page += 1;
-          state.pagination.count = response?.count || state.pagination.count;
-          state.pagination.hasMore = !!response?.has_next
-            && state.tagsList.length < (response?.count || Infinity);
-        } else {
-          state.pagination.hasMore = false;
-        }
-      } catch (error) {
-        appContext.config.globalProperties.$toast?.({
-          warning: true,
-          message: error.message || 'Failed to load more tags',
-        });
-      } finally {
-        state.flags.isLoadingMore = false;
-      }
-    };
-
-    const loadMoreOptions = async (isVisible) => {
-      if (
-        isVisible
-        && state.pagination.hasMore
-        && !state.flags.isLoadingMore
-        && !state.flags.isInitialLoading
-      ) {
-        await loadMoreTags();
-      }
     };
 
     const onAddNewTag = () => {
@@ -419,29 +277,16 @@ export default defineComponent({
       state.modals.showDeleteTag = true;
     };
 
-    const onSuccessSaveTag = (savedTag) => {
+    const onSuccessSaveTag = () => {
       state.modals.showSaveTag = false;
-      if (!savedTag) return;
-
-      const existingIndex = state.tagsList.findIndex((t) => t.id === savedTag.id);
-      if (existingIndex !== -1) {
-        state.tagsList[existingIndex] = { ...savedTag };
-      } else {
-        state.tagsList.unshift(savedTag);
-        state.pagination.count += 1;
-      }
     };
 
-    const onSuccessDeleteTag = (deletedTagId) => {
+    const onSuccessDeleteTag = () => {
       state.modals.showDeleteTag = false;
-      if (!deletedTagId) return;
-
-      state.tagsList = state.tagsList.filter((t) => t.id !== deletedTagId);
-      state.pagination.count = Math.max(0, state.pagination.count - 1);
     };
 
     onMounted(() => {
-      fetchTags(true);
+      tagsStorePinia.fetchTags();
     });
 
     return {
@@ -451,10 +296,11 @@ export default defineComponent({
       // computed
       isReadOnly,
       isMobileDevice,
+      isInitialLoading,
+      allTagsCount,
+      filteredTagsList,
 
       // methods
-      loadMoreOptions,
-      onSearchInput,
       onClearSearch,
       onEditTag,
       onAddNewTag,
@@ -474,11 +320,8 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
 
-  .tags-count-badge {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
+  .settings-header-left-side {
+    margin-right: 12px;
   }
 
   .settings-section-content {
@@ -548,37 +391,14 @@ export default defineComponent({
           border-bottom: 1px solid $grey-50;
           transition: background-color 0.15s ease;
 
-          &:hover {
-            background-color: rgba(var(--primary-rgb), 0.05);
-          }
+          min-height: 62px;
 
           &:last-child {
             border-bottom: none;
           }
 
-          .tag-chip-wrapper {
-            display: flex;
-            align-items: center;
-
-            .tag-chip {
-              display: inline-flex;
-              align-items: center;
-              padding: 3px 8px;
-              border-radius: 50px;
-              font-size: 14px;
-              font-weight: 500;
-              line-height: 20px;
-              border: 1px solid transparent;
-              transition: transform 0.15s ease;
-
-              &:hover {
-                transform: translateY(-1px);
-              }
-            }
-          }
-
           .tag-actions-wrapper {
-            display: flex;
+            display: none;
             align-items: center;
             gap: 8px;
 
@@ -591,6 +411,7 @@ export default defineComponent({
               min-height: 32px;
               padding: 0;
               transition: all 0.15s ease;
+              background: $white;
 
               :deep(.tag-icon) {
                 @include svg-icon-stroke('path', $grey);
@@ -617,13 +438,15 @@ export default defineComponent({
               }
             }
           }
-        }
-      }
 
-      .tags-end-of-results {
-        color: $grey;
-        font-size: 13px;
-        max-width: 720px;
+          &:hover {
+            background-color: rgba(var(--primary-rgb), 0.05);
+
+            .tag-actions-wrapper {
+              display: flex;
+            }
+          }
+        }
       }
     }
   }

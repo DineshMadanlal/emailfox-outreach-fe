@@ -1,8 +1,13 @@
 // utils
+import { formatDate1 } from 'src/utils/dates';
+
+// utils
 import {
   getApiCall, postApiCall, putApiCall, deleteApiCall,
 } from 'src/utils/apiRequests';
-import { formatDate1 } from 'src/utils/dates';
+
+// constants
+import { WARMUP_STATUS } from 'src/boot/warmup-constants';
 
 // Helper to center the popup window on screen
 const openOAuthPopup = (url, title = 'Connect Account', w = 600, h = 700) => {
@@ -468,4 +473,44 @@ export const bulkReconnectMailboxes = async () => {
   } catch (error) {
     throw new Error(error);
   }
+};
+
+export const getBulkMailboxesPayload = ({
+  filters,
+  isAllSelected,
+  selectedRows,
+}) => {
+  const filterJson = {};
+
+  const {
+    searchText, provider, warmupStatus, status,
+  } = filters;
+
+  // search text
+  if (searchText) {
+    filterJson.search_text = searchText;
+  }
+
+  // provider
+  if (provider) {
+    filterJson.provider = provider;
+  }
+
+  // warmup status
+  if (warmupStatus) {
+    filterJson.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
+  }
+
+  // status
+  if (status) {
+    filterJson.status = status;
+  }
+
+  if (isAllSelected.value) {
+    filterJson.select_all = true;
+  } else {
+    filterJson.mailbox_ids = selectedRows.map((mailbox) => mailbox.id);
+  }
+
+  return filterJson;
 };

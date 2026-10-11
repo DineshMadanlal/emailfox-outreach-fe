@@ -38,10 +38,10 @@ export const MAILBOX_STATUS_LABELS = {
   //   label: 'Deleted',
   //   value: 'DELETED',
   // },
-  SUSPENDED: {
-    label: 'Suspended',
-    value: 'SUSPENDED',
-  },
+  // SUSPENDED: {
+  //   label: 'Suspended',
+  //   value: 'SUSPENDED',
+  // },
   // DISABLED: {
   //   label: 'Disabled',
   //   value: 'DISABLED',
@@ -65,6 +65,8 @@ export const MAILBOX_ACTIONS = {
   CLEAR_SIGNATURE: 'clearSignature',
   DELETE: 'delete',
   EXPORT: 'export',
+  ADD_TAGS: 'addTags',
+  CLEAR_TAGS: 'clearTags',
 };
 
 export const ACTION_CONFIG = {
@@ -104,6 +106,14 @@ export const ACTION_CONFIG = {
     title: ({ count, word }) => `Clear Signature for ${count} ${word}`,
     description: 'The signature will be cleared from the selected mailboxes.',
     submitLabel: 'Clear Signature',
+    type: 'confirm',
+    color: 'primary',
+  },
+
+  [MAILBOX_ACTIONS.CLEAR_TAGS]: {
+    title: ({ count, word }) => `Clear Tags for ${count} ${word}`,
+    description: 'All tags will be cleared from the selected mailboxes.',
+    submitLabel: 'Clear Tags',
     type: 'confirm',
     color: 'primary',
   },

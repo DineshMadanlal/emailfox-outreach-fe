@@ -201,3 +201,18 @@ export const CLIENT_MEMBER_STATUS = {
     color: 'negative',
   },
 };
+
+export const TAGS_PRESET_COLORS = [
+  '#2563EB', // Blue
+  '#0D9488', // Teal
+  '#BE185D', // Magenta/Pink
+  '#581C87', // Dark Purple
+  '#D97706', // Orange/Amber
+  '#374151', // Slate/Charcoal
+];
+
+export const BULK_ASSIGN_TAG_FEATURE = {
+  CAMPAIGNS: 'CAMPAIGNS',
+  MAILBOXES: 'MAILBOXES',
+  CONTACT_LISTS: 'CONTACT_LISTS',
+};

@@ -49,7 +49,7 @@
 
     <!-- Action Config -->
     <q-dialog
-      v-model="showActionConfigModal"
+      v-model="modals.showActionConfig"
       class="app-modal-dialog"
 
       :transition-show="isMobileDevice ? 'slide-up' : ''"
@@ -60,6 +60,25 @@
         :actionType="actionType"
 
         :selectedMailboxes="selectedMailboxes"
+        :multiSelectOptionJson="multiSelectOptionJson"
+
+        @onSuccessfulUpdate="onSuccessfulAction"
+      />
+    </q-dialog>
+
+    <!-- Action Config -->
+    <q-dialog
+      v-model="modals.showAssignTags"
+      class="app-modal-dialog"
+
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <AssignTags
+        :filters="filters"
+        :feature="BULK_ASSIGN_TAG_FEATURE.MAILBOXES"
+
+        :selectedRows="selectedMailboxes"
         :multiSelectOptionJson="multiSelectOptionJson"
 
         @onSuccessfulUpdate="onSuccessfulAction"
@@ -444,6 +463,22 @@
           </q-td>
         </template>
 
+        <!-- Tags -->
+        <template v-slot:body-cell-tags="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/mailbox/${props.row.id}`"
+              class="mailbox-route-link"
+            >
+              <TagsDisplay
+                :tagIds="props.row.tags"
+              />
+            </router-link>
+          </q-td>
+        </template>
+
         <!-- Deliverability Score -->
         <template v-slot:body-cell-deliverabilityScore="props">
           <q-td
@@ -578,6 +613,7 @@ import DeleteMailbox from 'components/Domains/Modals/DeleteMailbox.vue';
 import AllMailboxesIllustration from 'components/Illustrations/AllMailboxes.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 import EspProvider from 'components/Mailboxes/EspProvider.vue';
+import TagsDisplay from 'components/Tags/TagsDisplay.vue';
 import ConnectionStatus from 'components/Mailboxes/ConnectionStatus.vue';
 import MailboxesActionSummary from 'components/Mailboxes/Modals/MailboxesActionSummary.vue';
 import DeliverabilityScore from 'components/Mailboxes/DeliverabilityScore.vue';
@@ -595,6 +631,8 @@ import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 import ActionConfig from 'components/Mailboxes/Modals/ActionConfig.vue';
 import FloatingLoader from 'components/Modals/FloatingLoader.vue';
 
+import AssignTags from 'components/Modals/AssignTags.vue';
+
 // Import the Pinia store
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
 
@@ -603,6 +641,7 @@ import {
   TABLE_MULTI_SELECT_OPTIONS, DEFAULT_TABLE_PAGINATION,
 } from 'boot/constants';
 import { WARMUP_STATUS } from 'src/boot/warmup-constants';
+import { BULK_ASSIGN_TAG_FEATURE } from 'src/boot/workspace-constants';
 import { MAILBOX_ACTIONS, MAILBOX_STATUS } from 'src/boot/mailbox-constants';
 
 export default defineComponent({
@@ -621,6 +660,7 @@ export default defineComponent({
 
     ColumnsVisibility,
     EspProvider,
+    TagsDisplay,
     ConnectionStatus,
 
     DeleteMailbox,
@@ -642,6 +682,7 @@ export default defineComponent({
 
     ResetFiltersButton,
     ActionConfig,
+    AssignTags,
     FloatingLoader,
   },
 
@@ -706,12 +747,16 @@ export default defineComponent({
       filters: { ...mailboxFilters },
 
       actionType: '',
-      showActionConfigModal: false,
 
       isExporting: false,
 
       //
       mailboxesSummaryKey: 1,
+
+      modals: {
+        showAssignTags: false,
+        showActionConfig: false,
+      },
     });
 
     // computed
@@ -771,6 +816,11 @@ export default defineComponent({
         {
           name: 'provider',
           label: 'Provider',
+          align: 'left',
+        },
+        {
+          name: 'tags',
+          label: 'Tags',
           align: 'left',
         },
         {
@@ -1106,10 +1156,14 @@ export default defineComponent({
       if (actionType === MAILBOX_ACTIONS.EXPORT) {
         exportMailboxes();
         return;
+      } if (actionType === MAILBOX_ACTIONS.ADD_TAGS) {
+        state.modals.showAssignTags = true;
+
+        return;
       }
 
       state.actionType = actionType;
-      state.showActionConfigModal = true;
+      state.modals.showActionConfig = true;
     };
 
     const onSuccessfulAction = () => {
@@ -1118,9 +1172,13 @@ export default defineComponent({
         state.mailboxesSummaryKey += 1;
       }
 
+      if (state.modals.showAssignTags) {
+        state.modals.showAssignTags = false;
+      }
+
       state.actionType = '';
       state.selectedMailboxes = [];
-      state.showActionConfigModal = false;
+      state.modals.showActionConfig = false;
 
       state.multiSelectOptionJson = {};
 
@@ -1230,6 +1288,7 @@ export default defineComponent({
 
       // hardcoded
       WARMUP_STATUS,
+      BULK_ASSIGN_TAG_FEATURE,
     };
   },
 });

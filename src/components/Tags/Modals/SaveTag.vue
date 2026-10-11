@@ -61,7 +61,7 @@
 
           <div class="color-options-row">
             <div
-              v-for="colorItem in PRESET_COLORS"
+              v-for="colorItem in TAGS_PRESET_COLORS"
               :key="colorItem"
               class="color-swatch-item"
               :style="{
@@ -107,22 +107,18 @@
           <InputLabel label="Tag Preview" />
 
           <div class="tag-preview-container">
-            <div
-              class="tag-preview-chip"
-              :style="{
-                backgroundColor: getTagRgbaColor(color, 0.12),
-                color: color || '#2563EB',
-                borderColor: getTagRgbaColor(color, 0.25),
-              }"
-            >
-              {{ name?.trim() }}
-            </div>
+            <PreviewTag
+              :name="name"
+              :color="color"
+            />
           </div>
         </div>
       </div>
 
       <!-- footer -->
       <div class="app-modal-footer">
+        <q-space />
+
         <q-btn
           no-caps
           unelevated
@@ -143,6 +139,9 @@ import isEmpty from 'lodash/isEmpty';
 // quasar
 import { colors } from 'quasar';
 
+// constants
+import { TAGS_PRESET_COLORS } from 'src/boot/workspace-constants';
+
 // vue
 import {
   computed,
@@ -156,9 +155,13 @@ import {
 // Components
 import InputLabel from 'components/Form/InputLabel.vue';
 import LocalSvgIcon from 'components/Global/LocalSvgIcon.vue';
+import PreviewTag from 'components/Tags/PreviewTag.vue';
 
 // Utils
 import { postApiCall, putApiCall } from 'src/utils/apiRequests';
+
+// Pinia store
+import { useTagsStore } from 'src/stores/tags';
 
 export default defineComponent({
   name: 'SaveTag',
@@ -168,6 +171,7 @@ export default defineComponent({
   components: {
     InputLabel,
     LocalSvgIcon,
+    PreviewTag,
   },
 
   props: {
@@ -181,27 +185,20 @@ export default defineComponent({
     // instance
     const { appContext } = getCurrentInstance();
 
-    // Preset color options matching design spec
-    const PRESET_COLORS = [
-      '#2563EB', // Blue
-      '#0D9488', // Teal
-      '#BE185D', // Magenta/Pink
-      '#581C87', // Dark Purple
-      '#D97706', // Orange/Amber
-      '#374151', // Slate/Charcoal
-    ];
+    // store
+    const tagsStorePinia = useTagsStore();
 
     // state
     const state = reactive({
       name: '',
-      color: PRESET_COLORS[0],
+      color: TAGS_PRESET_COLORS[0],
       isApiLoading: false,
       saveTagFormRef: null,
     });
 
     // computed
     const isNewTag = computed(() => isEmpty(props.tagJson) || !props.tagJson?.id);
-    const isCustomColor = computed(() => !PRESET_COLORS.includes(state.color));
+    const isCustomColor = computed(() => !TAGS_PRESET_COLORS.includes(state.color));
 
     // Quasar color helper for RGBA conversion
     const getTagRgbaColor = (hexColor, alpha = 0.12) => {
@@ -230,6 +227,9 @@ export default defineComponent({
 
       const result = response?.data || response;
 
+      // Update Pinia tags store
+      tagsStorePinia.addTagToList(result);
+
       // emit
       emit('onSuccessSaveTag', result);
     };
@@ -251,6 +251,9 @@ export default defineComponent({
       });
 
       const result = response?.data || response;
+
+      // Update Pinia tags store
+      tagsStorePinia.updateTagInList(result);
 
       // emit
       emit('onSuccessSaveTag', result);
@@ -286,7 +289,7 @@ export default defineComponent({
     onMounted(() => {
       if (!isNewTag.value) {
         state.name = props.tagJson?.name || '';
-        state.color = props.tagJson?.color || PRESET_COLORS[0];
+        state.color = props.tagJson?.color || TAGS_PRESET_COLORS[0];
       }
     });
 
@@ -297,7 +300,7 @@ export default defineComponent({
       // computed
       isNewTag,
       isCustomColor,
-      PRESET_COLORS,
+      TAGS_PRESET_COLORS,
 
       // methods
       getTagRgbaColor,
@@ -382,18 +385,6 @@ export default defineComponent({
 
     .tag-preview-container {
       margin-top: 8px;
-
-      .tag-preview-chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 8px;
-        border-radius: 50px;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 20px;
-        border: 1px solid transparent;
-        transition: all 0.2s ease;
-      }
     }
   }
 

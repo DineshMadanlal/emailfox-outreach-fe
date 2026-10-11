@@ -56,7 +56,7 @@
           <q-field
             borderless
             hide-bottom-space
-            :model-value="agreeToDeleteMailboxes"
+            :model-value="agreeCheckboxField"
             :rules="[
               (val) => val === true || 'You must confirm to delete',
             ]"
@@ -66,11 +66,38 @@
               <q-checkbox
                 color="negative"
                 class="app-checkbox"
-                v-model="agreeToDeleteMailboxes"
+                v-model="agreeCheckboxField"
 
                 @update:modelValue="onInputChange"
 
                 label="I understand the consequences of deleting the mailbox"
+              />
+            </template>
+          </q-field>
+        </div>
+
+        <!-- Clear Tags -->
+        <div
+          class="modal-content-container no-max-width"
+          v-else-if="actionType === MAILBOX_ACTIONS.CLEAR_TAGS"
+        >
+          <q-field
+            borderless
+            hide-bottom-space
+            :model-value="agreeCheckboxField"
+            :rules="[
+              (val) => val === true || 'You must confirm to clear tags',
+            ]"
+            lazy-rules="ondemand"
+          >
+            <template v-slot:control>
+              <q-checkbox
+                class="app-checkbox"
+                v-model="agreeCheckboxField"
+
+                @update:modelValue="onInputChange"
+
+                label="Are you sure you want to clear tags for the selected mailboxes?"
               />
             </template>
           </q-field>
@@ -84,7 +111,7 @@
           <q-field
             borderless
             hide-bottom-space
-            :model-value="agreeToDisableWarmup"
+            :model-value="agreeCheckboxField"
             :rules="[
               (val) => val === true || 'You must confirm to disable warmup',
             ]"
@@ -93,7 +120,7 @@
             <template v-slot:control>
               <q-checkbox
                 class="app-checkbox"
-                v-model="agreeToDisableWarmup"
+                v-model="agreeCheckboxField"
 
                 @update:modelValue="onInputChange"
 
@@ -128,7 +155,7 @@
           <q-field
             borderless
             hide-bottom-space
-            :model-value="agreeToRemoveSignature"
+            :model-value="agreeCheckboxField"
             :rules="[
               (val) => val === true || 'You must confirm to clear signature',
             ]"
@@ -137,7 +164,7 @@
             <template v-slot:control>
               <q-checkbox
                 class="app-checkbox"
-                v-model="agreeToRemoveSignature"
+                v-model="agreeCheckboxField"
 
                 @update:modelValue="onInputChange"
 
@@ -291,6 +318,23 @@
 
       <!-- footer -->
       <div class="app-modal-footer">
+        <q-space />
+
+        <!-- Cancel -->
+        <q-btn
+          flat
+          no-caps
+          unelevated
+          v-close-popup
+
+          label="Cancel"
+          class="q-mr-md"
+
+          :color="config.color"
+          :loading="isApiLoading"
+          :class="`light-${config.color}-btn`"
+        />
+
         <!--  -->
         <q-btn
           no-caps
@@ -302,21 +346,6 @@
           :loading="isApiLoading"
 
           type="submit"
-        />
-
-        <!-- Cancel -->
-        <q-btn
-          flat
-          no-caps
-          unelevated
-          v-close-popup
-
-          label="Cancel"
-          class="q-ml-md"
-
-          :color="config.color"
-          :loading="isApiLoading"
-          :class="`light-${config.color}-btn`"
         />
       </div>
     </q-form>
@@ -343,10 +372,9 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // utils
 import { convertStringToNumber } from 'src/utils/numbers';
-import { bulkUpdateMailboxes, bulkDeleteMailboxes } from 'src/utils/domainMailboxesApi';
+import { bulkUpdateMailboxes, bulkDeleteMailboxes, getBulkMailboxesPayload } from 'src/utils/domainMailboxesApi';
 
 // constants
-import { WARMUP_STATUS } from 'src/boot/warmup-constants';
 import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 import { ACTION_CONFIG, MAILBOX_ACTIONS } from 'src/boot/mailbox-constants';
 
@@ -401,12 +429,10 @@ export default defineComponent({
       dailyLimit: null,
 
       signatureHtml: '',
-      agreeToRemoveSignature: false,
 
       warmupProfileId: null,
-      agreeToDisableWarmup: false,
 
-      agreeToDeleteMailboxes: false,
+      agreeCheckboxField: false,
 
       // ref
       actionConfigFormRef: null,
@@ -484,37 +510,11 @@ export default defineComponent({
     };
 
     const getFilterJson = () => {
-      const filterJson = {};
-
-      const {
-        searchText, provider, warmupStatus, status,
-      } = props.filters;
-
-      // search text
-      if (searchText) {
-        filterJson.search_text = props.filters.searchText;
-      }
-
-      // provider
-      if (provider) {
-        filterJson.provider = provider;
-      }
-
-      // warmup status
-      if (warmupStatus) {
-        filterJson.warmup_enabled = warmupStatus === WARMUP_STATUS.ACTIVE;
-      }
-
-      // status
-      if (status) {
-        filterJson.status = status;
-      }
-
-      if (isAllSelected.value) {
-        filterJson.select_all = true;
-      } else {
-        filterJson.mailbox_ids = props.selectedMailboxes.map((mailbox) => mailbox.id);
-      }
+      const filterJson = getBulkMailboxesPayload({
+        isAllSelected,
+        filters: props.filters,
+        selectedRows: props.selectedMailboxes,
+      });
 
       return filterJson;
     };
@@ -546,6 +546,11 @@ export default defineComponent({
       // clear signature
       if (props.actionType === MAILBOX_ACTIONS.CLEAR_SIGNATURE) {
         updateFields.clear_signature = true;
+      }
+
+      // clear tags
+      if (props.actionType === MAILBOX_ACTIONS.CLEAR_TAGS) {
+        updateFields.clear_tags = true;
       }
 
       return {

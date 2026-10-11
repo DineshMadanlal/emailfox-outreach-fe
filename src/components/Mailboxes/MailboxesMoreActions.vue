@@ -33,7 +33,15 @@ export default defineComponent({
 
   emits: ['emitAction'],
 
-  setup() {
+  props: {
+    displayedActions: {
+      type: Array,
+      default: () => [],
+      required: true,
+    },
+  },
+
+  setup(props) {
     // composition API
     const { isMobileDevice } = useAppHelpersApi();
 
@@ -43,18 +51,7 @@ export default defineComponent({
 
       if (isMobileDevice.value) {
         mobileActions.push(
-          {
-            label: 'Set Daily Send Count',
-            emitValue: MAILBOX_ACTIONS.SET_DAILY_SEND_COUNT,
-          },
-          {
-            label: 'Enable Warmup',
-            emitValue: MAILBOX_ACTIONS.ENABLE_WARMUP,
-          },
-          {
-            label: 'Disable Warmup',
-            emitValue: MAILBOX_ACTIONS.DISABLE_WARMUP,
-          },
+          ...props.displayedActions,
         );
       }
 
@@ -63,6 +60,10 @@ export default defineComponent({
         {
           label: 'Set Signature',
           emitValue: MAILBOX_ACTIONS.SET_SIGNATURE,
+        },
+        {
+          label: 'Clear Tags',
+          emitValue: MAILBOX_ACTIONS.CLEAR_TAGS,
         },
         {
           label: 'Clear Signature',

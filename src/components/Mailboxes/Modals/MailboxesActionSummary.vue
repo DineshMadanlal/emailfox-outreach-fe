@@ -77,6 +77,7 @@
         class="mailboxes-more-actions-menu"
       >
         <MailboxesMoreActions
+          :displayedActions="mailboxActions"
           @emitAction="($event) => $emit('onAction', $event)"
         />
       </q-menu>
@@ -150,6 +151,10 @@ export default defineComponent({
         {
           label: 'Disable Warmup',
           emitValue: MAILBOX_ACTIONS.DISABLE_WARMUP,
+        },
+        {
+          label: 'Add Tags',
+          emitValue: MAILBOX_ACTIONS.ADD_TAGS,
         },
       ];
 
