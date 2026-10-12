@@ -6,8 +6,9 @@
 
     v-model="internalValue"
 
-    lazy-rules="ondemand"
     mask="time"
+    lazy-rules="ondemand"
+
     :rules="['time']"
     :class="[
       'time-picker-input',
@@ -17,7 +18,9 @@
     <!-- Prepend -->
     <template #prepend>
       <q-icon name="access_time">
-        <q-popup-proxy>
+        <q-popup-proxy
+          v-if="!readonly"
+        >
           <q-time
             v-model="internalValue"
             format24h
@@ -46,6 +49,10 @@ export default defineComponent({
     moreClass: {
       type: String,
       default: '',
+    },
+    readonly: {
+      type: Boolean,
+      default: false,
     },
   },
 

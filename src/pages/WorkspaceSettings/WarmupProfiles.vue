@@ -104,7 +104,11 @@
           <q-td
             :props="props"
           >
-            <div class="name-and-action-cell">
+            <div
+              class="name-and-action-cell"
+
+              @click="handleProfileClick(props.row)"
+            >
               <div>
                 {{ props.row.name }}
               </div>
@@ -127,6 +131,8 @@
                 unelevated
 
                 class="more-action-btn"
+
+                @click.stop.prevent
               >
                 <!-- more -->
                 <LocalSvgIcon
@@ -146,6 +152,7 @@
             </div>
           </q-td>
         </template>
+
         <!-- Sending Schedule -->
         <template v-slot:body-cell-sendingSchedule="props">
           <q-td
@@ -303,6 +310,14 @@ export default defineComponent({
       state.showSaveWarmupProfileModal = true;
     };
 
+    const handleProfileClick = (tableRow) => {
+      if (tableRow.is_public || isReadOnly.value) {
+        onViewWarmupProfile(tableRow);
+      } else {
+        onEditWarmupProfile(tableRow);
+      }
+    };
+
     const onRequestDeleteProfile = (tableRow) => {
       state.selectedWarmupProfileDetails = tableRow;
 
@@ -398,6 +413,7 @@ export default defineComponent({
       // methods
       onRequest,
       onSearchInput,
+      handleProfileClick,
       onCreateNewProfile,
       onViewWarmupProfile,
       onEditWarmupProfile,

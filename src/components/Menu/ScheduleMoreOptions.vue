@@ -46,11 +46,23 @@ export default defineComponent({
       required: true,
       default: () => ({}),
     },
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   setup(props, { emit }) {
     // computed
     const profileActions = computed(() => {
+      if (props.isReadOnly) {
+        return [{
+          icon: 'show',
+          label: 'View Schedule',
+          emitValue: 'editSchedule',
+        }];
+      }
+
       const availableActions = [
         {
           icon: 'edit',

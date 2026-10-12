@@ -9,6 +9,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveSchedule
+        :isReadOnly="isReadOnly"
         :scheduleDetails="selectedScheduleDetails"
 
         @newCreated="onScheduleChange"
@@ -211,7 +212,10 @@
           <q-td
             :props="props"
           >
-            <div class="name-and-action-cell">
+            <div
+              class="name-and-action-cell"
+              @click="handleProfileClick(props.row)"
+            >
               <div>
                 {{ props.row.name }}
               </div>
@@ -225,7 +229,8 @@
                 unelevated
 
                 class="more-action-btn"
-                :disable="isReadOnly"
+
+                @click.stop.prevent
               >
                 <!-- more -->
                 <LocalSvgIcon
@@ -234,16 +239,11 @@
                 />
 
                 <ScheduleMoreOptions
-                  v-if="!isReadOnly"
                   :tableRow="props.row"
+                  :isReadOnly="isReadOnly"
 
                   @editSchedule="onEditSchedule"
                   @deleteSchedule="onRequestDeleteSchedule"
-                />
-
-                <AppTooltip
-                  v-if="isReadOnly"
-                  content="You have read-only access in this workspace"
                 />
               </q-btn>
             </div>
@@ -432,6 +432,10 @@ export default defineComponent({
       state.showSaveScheduleModal = true;
     };
 
+    const handleProfileClick = (tableRow) => {
+      onEditSchedule(tableRow);
+    };
+
     const onRequestDeleteSchedule = (tableRow) => {
       state.selectedScheduleDetails = tableRow;
 
@@ -544,6 +548,7 @@ export default defineComponent({
       onFetchRecords,
       onSearchInput,
       onEditSchedule,
+      handleProfileClick,
       onScheduleChange,
       onCreateNewSchedule,
       getSendingDaysLabel,

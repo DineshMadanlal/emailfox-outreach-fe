@@ -10,7 +10,7 @@
       <div class="app-modal-header">
         <!-- header text -->
         <h4 class="modal-header-text">
-          {{ isNewSchedule ? 'New Schedule' : 'Edit Schedule' }}
+          {{ modalHeaderText }}
         </h4>
 
         <q-space />
@@ -47,6 +47,7 @@
               dense
               outlined
               hide-bottom-space
+              :readonly="isReadOnly"
               :autofocus="isNewSchedule"
 
               v-model="name"
@@ -67,6 +68,7 @@
             />
 
             <SelectTimezone
+              :readonly="isReadOnly"
               :rules="timezoneRules"
 
               lazy-rules="ondemand"
@@ -81,6 +83,8 @@
             <q-checkbox
               dense
               v-model="skipHolidays"
+
+              :disable="isReadOnly"
 
               class="app-checkbox"
               label="Skip public holidays"
@@ -97,6 +101,7 @@
               />
 
               <CountriesSelect
+                :readonly="isReadOnly"
                 v-model="holidayCountry"
               />
             </div>
@@ -123,6 +128,8 @@
                 dense
                 v-model="item.enabled"
 
+                :disable="isReadOnly"
+
                 class="app-checkbox"
               >
                 <!-- Label -->
@@ -140,6 +147,8 @@
                 class="time-picker"
                 moreClass="dead-small"
 
+                :readonly="isReadOnly"
+
                 @update:model-value="onInputChange"
 
                 v-if="item.enabled"
@@ -153,6 +162,8 @@
                 class="time-picker"
                 moreClass="dead-small"
 
+                :readonly="isReadOnly"
+
                 @update:model-value="onInputChange"
 
                 v-if="item.enabled"
@@ -164,6 +175,8 @@
                 round
                 dense
                 class="copy-btn"
+
+                :disable="isReadOnly"
               >
                 <div class="copy-btn-content">
                   <LocalSvgIcon
@@ -173,6 +186,8 @@
 
                   <!-- Menu -->
                   <ScheduleCopyOptions
+                    v-if="!isReadOnly"
+
                     @copyAllDays="copyToAllDays(index)"
                     @copyWeekdays="copyToWeekdays(index)"
                     @copyWeekends="copyToWeekends(index)"
@@ -184,8 +199,26 @@
         </div>
       </div>
 
-      <!-- footer -->
-      <div class="app-modal-footer">
+      <!-- footer: read only -->
+      <div
+        v-if="isReadOnly"
+        class="app-modal-footer"
+      >
+        <q-btn
+          no-caps
+          unelevated
+          v-close-popup
+
+          color="primary"
+          label="Okay, close"
+        />
+      </div>
+
+      <!-- Actions -->
+      <div
+        v-else
+        class="app-modal-footer"
+      >
         <!-- Save -->
         <q-btn
           no-caps
@@ -253,6 +286,10 @@ export default defineComponent({
   },
 
   props: {
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
     scheduleDetails: {
       type: Object,
       default: () => ({}),
@@ -328,6 +365,14 @@ export default defineComponent({
 
     // computed
     const isNewSchedule = computed(() => !props.scheduleDetails?.id);
+
+    const modalHeaderText = computed(() => {
+      if (props.isReadOnly) {
+        return 'View Schedule';
+      }
+
+      return isNewSchedule.value ? 'Create New Schedule' : 'Edit Schedule';
+    });
 
     // methods
     const onInputChange = () => {
@@ -467,6 +512,7 @@ export default defineComponent({
 
       // computed
       isNewSchedule,
+      modalHeaderText,
 
       // methods
       onSubmitForm,
