@@ -464,6 +464,12 @@ const routes = [
             component: () => import('pages/WorkspaceSettings/ReplyCategorization.vue'),
             meta: { requiresAuth: true },
           },
+          // invitation withdrawl
+          {
+            path: 'invitation-withdrawl',
+            component: () => import('pages/WorkspaceSettings/InvitationWithdrawl.vue'),
+            meta: { requiresAuth: true },
+          },
           // tags
           {
             path: 'tags',

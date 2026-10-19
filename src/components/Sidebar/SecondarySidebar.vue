@@ -485,6 +485,15 @@ export default defineComponent({
           route: '/settings/reply-categorization',
           isActive: activeRoutePath.value.includes('/settings/reply-categorization'),
         },
+        // invitation withdrawl
+        {
+          name: 'InvitationWithdrawl',
+          icon: 'linkedin-1',
+          iconClass: 'linkedin-icon',
+          label: 'Invitation Withdrawal',
+          route: '/settings/invitation-withdrawl',
+          isActive: activeRoutePath.value.includes('/settings/invitation-withdrawl'),
+        },
       ];
 
       if (customizationRoutes.value.length > 0) {
