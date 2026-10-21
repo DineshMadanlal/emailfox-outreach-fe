@@ -95,6 +95,7 @@
           <!-- subject -->
           <q-input
             v-if="selectedLinkedInActionDetails.supportsSubject"
+            ref="subjectInputRef"
 
             dense
             counter
@@ -159,6 +160,7 @@
 
           <!-- message -->
           <q-input
+            ref="messageInputRef"
             counter
             borderless
             :outlined="selectedLinkedInActionDetails.supportsSubject"
@@ -257,7 +259,7 @@ import size from 'lodash/size';
 
 // vue
 import {
-  computed, defineComponent, reactive, toRefs, onMounted, inject,
+  computed, defineComponent, reactive, toRefs, ref, onMounted, inject,
 } from 'vue';
 
 // Components
@@ -349,6 +351,22 @@ export default defineComponent({
       limits: {},
     };
 
+    // input template refs
+    const subjectInputRef = ref(null);
+    const messageInputRef = ref(null);
+
+    const getSubjectInputEl = () => (
+      subjectInputRef.value?.$el?.querySelector('input')
+      || subjectInputRef.value?.nativeEl
+      || document.querySelector('.linkedin-subject input')
+    );
+
+    const getMessageInputEl = () => (
+      messageInputRef.value?.$el?.querySelector('textarea')
+      || messageInputRef.value?.nativeEl
+      || document.querySelector('.linkedin-message textarea')
+    );
+
     // computed
     const linkedInWorkflowSteps = computed(() => Object.values(LINKEDIN_WORKFLOW_STEP_CATALOG));
 
@@ -370,7 +388,7 @@ export default defineComponent({
 
     // methods
     const focusTextarea = () => {
-      const textarea = document.querySelector('.linkedin-message textarea');
+      const textarea = getMessageInputEl();
 
       if (textarea) {
         textarea.focus();
@@ -395,7 +413,7 @@ export default defineComponent({
     };
 
     const updateSubjectSelection = () => {
-      const subjectInput = document.querySelector('.linkedin-subject input');
+      const subjectInput = getSubjectInputEl();
 
       if (!subjectInput) return;
 
@@ -413,7 +431,7 @@ export default defineComponent({
         + state.subject.slice(end);
 
       requestAnimationFrame(() => {
-        const subjectInput = document.querySelector('.linkedin-subject input');
+        const subjectInput = getSubjectInputEl();
 
         if (!subjectInput) return;
 
@@ -431,7 +449,7 @@ export default defineComponent({
     };
 
     const updateMessageSelection = () => {
-      const textarea = document.querySelector('.linkedin-message textarea');
+      const textarea = getMessageInputEl();
 
       if (!textarea) return;
 
@@ -449,7 +467,7 @@ export default defineComponent({
         + state.message.slice(end);
 
       requestAnimationFrame(() => {
-        const textarea = document.querySelector('.linkedin-message textarea');
+        const textarea = getMessageInputEl();
 
         if (!textarea) return;
 
@@ -473,13 +491,30 @@ export default defineComponent({
     };
 
     const createVariantJson = () => {
-      const variantJson = {
+      const existingVariants = props.editWorkflowJson?.variants
+        || props.editWorkflowJson?.jsonSchema?.variants
+        || [];
+      const previousVariant = existingVariants[0] || {};
+
+      const updatedVariant = {
         message: state.message,
-        weight: 100,
+        weight: previousVariant.weight ?? 100,
       };
 
       if (selectedLinkedInActionDetails.value.supportsSubject) {
-        variantJson.subject = state.subject;
+        updatedVariant.subject = state.subject;
+      }
+
+      // Preserve previous variant properties (like id) if editing an existing variant
+      const variantJson = {
+        ...previousVariant,
+        ...updatedVariant,
+      };
+
+      // If the selected LinkedIn action does not support subject,
+      // ensure any previous subject is removed
+      if (!selectedLinkedInActionDetails.value.supportsSubject) {
+        delete variantJson.subject;
       }
 
       return variantJson;
@@ -515,6 +550,18 @@ export default defineComponent({
         }
       } else if (isEditWorkflow) {
         // delete variants if the step does not support message and is being edited
+        const existingVariants = props.editWorkflowJson?.variants
+          || props.editWorkflowJson?.jsonSchema?.variants
+          || [];
+        const previousVariantId = existingVariants[0]?.id;
+
+        if (previousVariantId) {
+          const archivedVariantsId = props.editWorkflowJson.archived_variants_id || [];
+          if (!archivedVariantsId.includes(previousVariantId)) {
+            workflowStepJson.archived_variants_id = [...archivedVariantsId, previousVariantId];
+          }
+        }
+
         workflowStepJson.variants = [];
       }
 
@@ -553,6 +600,10 @@ export default defineComponent({
     });
 
     return {
+      // refs
+      subjectInputRef,
+      messageInputRef,
+
       // state
       ...toRefs(state),
 

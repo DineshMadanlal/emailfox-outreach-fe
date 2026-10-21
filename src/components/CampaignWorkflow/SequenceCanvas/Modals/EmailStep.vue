@@ -60,11 +60,11 @@
         >
           <div class="flex no-wrap items-center">
             <div class="count-label-text char-text">
-              {{ spamResultJson.wordCount }}
+              {{ spamResultJson.wordCount.value }}
             </div>
 
             <div class="desc-label-text">
-              {{ $pluralize('Word', spamResultJson.wordCount) }}
+              {{ $pluralize('Word', spamResultJson.wordCount.value) }}
             </div>
           </div>
         </q-item>
@@ -151,7 +151,7 @@
         sequenceEditor
         :hideToolbar="isReadOnly"
         class="sequence-app-editor"
-        placeholderText="Enter your emai here..."
+        placeholderText="Enter your email here..."
 
         v-model="message"
 
@@ -184,7 +184,7 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, onMounted, computed,
+  defineComponent, reactive, toRefs, toRef, onMounted, computed,
   defineAsyncComponent, inject,
 } from 'vue';
 
@@ -255,8 +255,8 @@ export default defineComponent({
     });
 
     // Pass it to the hook
-    const spamResultJson = computed(() => useSpamAnalytics(state.message));
-    const spamAnalysis = computed(() => spamResultJson.value?.spamAnalysis?.value);
+    const spamResultJson = useSpamAnalytics(toRef(state, 'message'));
+    const spamAnalysis = computed(() => spamResultJson.spamAnalysis?.value || {});
 
     // methods
     const onSaveEmailStep = () => {
