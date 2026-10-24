@@ -114,16 +114,13 @@
 
       <q-space />
 
-      <!-- Right: Action Buttons (Three dots, LinkedIn, Email) -->
+      <!-- Right: Action Buttons -->
       <div class="contact-header-actions">
-        <!-- Three Dots Menu Button -->
+        <!-- More Options Menu Button -->
         <q-btn
-          flat
           dense
           outlined
           unelevated
-
-          color="blue-grey"
           class="contact-action-btn contact-more-btn"
         >
           <LocalSvgIcon
@@ -131,27 +128,11 @@
             classes="contact-more-icon"
           />
 
-          <q-menu
-            fit
-            anchor="bottom right"
-            self="top right"
-            class="app-dropdown-menu"
-          >
-            <q-list style="min-width: 140px">
-              <q-item
-                clickable
-                v-close-popup
-              >
-                <q-item-section>Copy Email</q-item-section>
-              </q-item>
-              <q-item
-                clickable
-                v-close-popup
-              >
-                <q-item-section>Edit Details</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
+          <ContactByIdMoreOptions
+            :contactJson="contactJson"
+            @editContact="$emit('editContact')"
+            @deleteContact="$emit('deleteContact')"
+          />
         </q-btn>
       </div>
     </div>
@@ -189,12 +170,24 @@ import {
 // vue router
 import { useRoute, useRouter } from 'vue-router';
 
+// components
+import ContactByIdMoreOptions from 'components/Menu/ContactByIdMoreOptions.vue';
+
 // constants
 import { ENGAGEMENT_SCORE_STATUS } from 'boot/workspace-constants';
 import { ESP_PROVIDERS } from 'boot/mailbox-constants';
 
+// utils
+import { formatLinkedinDisplayUrl, formatLinkedinHref } from 'src/utils/helperFunctions';
+
 export default defineComponent({
   name: 'ContactByIdHeader',
+
+  emits: ['editContact', 'deleteContact'],
+
+  components: {
+    ContactByIdMoreOptions,
+  },
 
   props: {
     contactJson: {
@@ -244,25 +237,9 @@ export default defineComponent({
     const contactEmail = computed(() => contactData.value.email);
     const contactLinkedIn = computed(() => contactData.value.linkedin);
 
-    const linkedinDisplayUrl = computed(() => {
-      const url = contactLinkedIn.value;
-      if (!url) return '';
-      const inMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i) || url.match(/^in\/([^/?#]+)/i);
-      if (inMatch) {
-        return `in/${inMatch[1]}`;
-      }
-      const companyMatch = url.match(/linkedin\.com\/company\/([^/?#]+)/i);
-      if (companyMatch) {
-        return `company/${companyMatch[1]}`;
-      }
-      return url.split('?')[0].split('#')[0].replace(/^https?:\/\//i, '').replace(/^www\./i, '');
-    });
+    const linkedinDisplayUrl = computed(() => formatLinkedinDisplayUrl(contactLinkedIn.value, ''));
 
-    const linkedinHref = computed(() => {
-      const url = contactLinkedIn.value;
-      if (!url || url === '-') return '#';
-      return url.startsWith('http') ? url : `https://${url}`;
-    });
+    const linkedinHref = computed(() => formatLinkedinHref(contactLinkedIn.value));
 
     const engagementScoreStatus = computed(() => {
       const status = (contactData.value.engagementStatus || '').toUpperCase();

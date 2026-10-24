@@ -24,7 +24,9 @@
 
     <!-- Actions -->
     <div class="contacts-actions">
+      <!-- Edit -->
       <q-btn
+        flat
         dense
         no-caps
         outline
@@ -32,12 +34,46 @@
 
         color="blue-grey"
         class="contacts-action-btn"
+        :disable="isEditDisabled"
+
+        @click="$emit('onEdit')"
+      >
+        <p class="action-text">
+          Edit
+        </p>
+
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
+        <AppTooltip
+          v-else-if="numberOfSelectedContacts > 1"
+          content="Select only 1 contact to edit"
+        />
+      </q-btn>
+
+      <!-- Delete -->
+      <q-btn
+        flat
+        dense
+        no-caps
+        outline
+        unelevated
+
+        color="negative"
+        class="contacts-action-btn negative-btn"
+        :disable="isReadOnly"
 
         @click="$emit('onDelete')"
       >
         <p class="action-text">
           Delete
         </p>
+
+        <AppTooltip
+          v-if="isReadOnly"
+          content="You have read-only access in this workspace"
+        />
       </q-btn>
     </div>
   </q-card>
@@ -46,6 +82,12 @@
 <script>
 // vue
 import { defineComponent, computed } from 'vue';
+
+// components
+import AppTooltip from 'components/General/AppTooltip.vue';
+
+// composables
+import { usePermissions } from 'src/composables/usePermissions';
 
 // Utils
 import { getNumeralAmount } from 'src/utils/numbers.js';
@@ -56,7 +98,11 @@ import { TABLE_MULTI_SELECT_OPTIONS } from 'boot/constants';
 export default defineComponent({
   name: 'ContactsActionSummary',
 
-  emits: ['onDelete', 'onCancel'],
+  components: {
+    AppTooltip,
+  },
+
+  emits: ['onDelete', 'onCancel', 'onEdit'],
 
   props: {
     numberOfSelectedContacts: {
@@ -78,6 +124,14 @@ export default defineComponent({
   },
 
   setup(props) {
+    const { isReadOnly } = usePermissions();
+
+    const isEditDisabled = computed(() => (
+      isReadOnly.value
+      || props.numberOfSelectedContacts !== 1
+      || props.multiSelectOptionJson?.selectedOption === TABLE_MULTI_SELECT_OPTIONS.SELECT_ALL
+    ));
+
     const selectionCountLabel = computed(() => {
       const totalCount = getNumeralAmount(props.totalCount);
 
@@ -91,6 +145,8 @@ export default defineComponent({
 
     return {
       // computed
+      isReadOnly,
+      isEditDisabled,
       selectionCountLabel,
     };
   },
@@ -140,7 +196,9 @@ export default defineComponent({
   }
 
   .contacts-action-btn {
+    min-width: 90px;
     padding: 8px 12px;
+    border: 1px solid $blue-grey;
 
     :deep(.contacts-action-summary-delete-icon) {
       width: 16px;
@@ -157,6 +215,17 @@ export default defineComponent({
 
     &:hover {
       background: rgba(var(--primary-rgb), 0.1) !important;
+    }
+
+    &.negative-btn {
+      &:hover {
+        border: 1px solid $negative;
+        background: rgba(var(--negative-rgb), 0.1) !important;
+
+        .action-text {
+          color: $negative;
+        }
+      }
     }
   }
 }

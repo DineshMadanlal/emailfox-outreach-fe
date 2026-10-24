@@ -49,9 +49,26 @@
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
-      <AddContactModal
+      <SaveContactModal
         :listId="listId"
         @onSuccessfulAddContact="onSuccessfulAddContact"
+      />
+    </q-dialog>
+
+    <!-- Edit Contact Modal -->
+    <q-dialog
+      v-model="modals.showEditContact"
+
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SaveContactModal
+        :listId="listId"
+        :contactJson="selectedContactJson"
+        @onSuccessfulUpdateContact="onSuccessfulUpdateContact"
       />
     </q-dialog>
 
@@ -70,6 +87,7 @@
 
         @onCancel="selectedContacts = []"
         @onDelete="modals.showDeleteContact = true"
+        @onEdit="onEditSelectedContact"
       />
     </q-dialog>
 
@@ -357,9 +375,14 @@
             :props="props"
             v-else-if="['first_name', 'last_name'].includes(props.col.name)"
           >
-            <div>
-              {{ props.value || '-' }}
-            </div>
+            <router-link
+              :to="`/outreach/contacts/${props.row.id}`"
+              class="table-route-link"
+            >
+              <div class="text-black">
+                {{ props.value || '-' }}
+              </div>
+            </router-link>
           </q-td>
 
           <!-- ESP -->
@@ -378,6 +401,31 @@
             <div>
               {{ props.value || '0' }}
             </div>
+          </q-td>
+
+          <!-- LinkedIn URL -->
+          <q-td
+            :props="props"
+            v-else-if="props.col.name === 'linkedin_url'"
+          >
+            <a
+              v-if="(props.row.linkedin_url || props.value)
+                && (props.row.linkedin_url || props.value) !== '-'"
+              :href="formatLinkedinHref(props.row.linkedin_url || props.value)"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="props.row.linkedin_url || props.value"
+              class="table-linkedin-link ellipsis"
+              @click.stop
+            >
+              {{ formatLinkedinDisplayUrl(props.row.linkedin_url || props.value) }}
+            </a>
+            <span
+              v-else
+              class="table-empty-cell"
+            >
+              -
+            </span>
           </q-td>
 
           <!-- Dynamic Columns -->
@@ -536,11 +584,12 @@ import SelectProvider from 'components/Dropdown/SelectProvider.vue';
 import SelectContactStatus from 'components/Dropdown/SelectContactStatus.vue';
 import ContactsMoreFilters from 'components/Menu/ContactsMoreFilters.vue';
 import DeleteContactsModal from 'components/Contacts/Modals/DeleteContacts.vue';
-import AddContactModal from 'components/Contacts/Modals/AddContact.vue';
+import SaveContactModal from 'components/Contacts/Modals/SaveContact.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount } from 'src/utils/numbers';
+import { formatLinkedinDisplayUrl, formatLinkedinHref } from 'src/utils/helperFunctions';
 
 // composables
 import { useWorkspace } from 'src/composables/useWorkspace';
@@ -570,7 +619,7 @@ export default defineComponent({
     ColumnsVisibility,
     ResetFiltersButton,
     DeleteContactsModal,
-    AddContactModal,
+    SaveContactModal,
 
     AllContactsIllustration,
     ColumnsVisibilityButton,
@@ -646,6 +695,7 @@ export default defineComponent({
 
       modals: {
         showAddContact: false,
+        showEditContact: false,
         showDeleteContact: false,
       },
     });
@@ -697,6 +747,18 @@ export default defineComponent({
 
     const baseColumns = [
       {
+        name: 'first_name',
+        label: 'First Name',
+        align: 'left',
+        field: 'first_name',
+      },
+      {
+        name: 'last_name',
+        label: 'Last Name',
+        align: 'left',
+        field: 'last_name',
+      },
+      {
         name: 'email',
         label: 'Email',
         align: 'left',
@@ -707,12 +769,6 @@ export default defineComponent({
         label: 'ESP',
         align: 'left',
         field: 'esp_provider',
-      },
-      {
-        name: 'first_name',
-        label: 'First Name',
-        align: 'left',
-        field: 'first_name',
       },
       // {
       //   name: 'campaigns_added',
@@ -725,14 +781,7 @@ export default defineComponent({
     const workspaceCustomFields = computed(() => userStore.workspaceCustomFields || []);
 
     const dynamicColumns = computed(() => {
-      const otherColumns = [
-        {
-          name: 'last_name',
-          label: 'Last Name',
-          align: 'left',
-          field: 'last_name',
-        },
-      ];
+      const otherColumns = [];
 
       const customFieldColumns = workspaceCustomFields.value.map((field) => ({
         name: `custom_fields.${field.value}`,
@@ -954,6 +1003,39 @@ export default defineComponent({
       onFetchAllContacts();
     };
 
+    const onEditSelectedContact = async () => {
+      if (state.selectedContacts.length !== 1) return;
+
+      const contact = state.selectedContacts[0];
+      try {
+        state.isApiProcessing = true;
+        const response = await getApiCall({
+          endpoint: `/contacts/${contact.id}`,
+          includeWorkspace: true,
+        });
+
+        state.selectedContactJson = response?.contact || response?.data || response || contact;
+        state.modals.showEditContact = true;
+      } catch (error) {
+        state.selectedContactJson = contact;
+        state.modals.showEditContact = true;
+      } finally {
+        state.isApiProcessing = false;
+      }
+    };
+
+    const onSuccessfulUpdateContact = (updatedContactJson) => {
+      // update the contact in the table data if it exists
+      const index = state.tableData.findIndex((c) => c.id === updatedContactJson.id);
+
+      if (index !== -1) {
+        state.tableData.splice(index, 1, updatedContactJson);
+      }
+
+      state.modals.showEditContact = false;
+      state.selectedContactJson = null;
+    };
+
     const onSearchContactInput = () => {
       onFetchAllContacts();
     };
@@ -1033,10 +1115,14 @@ export default defineComponent({
       showAllContactsIllustration,
 
       // methods
+      formatLinkedinDisplayUrl,
+      formatLinkedinHref,
       onRequest,
       onTableRowSelect,
       onSuccessfulDeleteContacts,
       onSuccessfulAddContact,
+      onEditSelectedContact,
+      onSuccessfulUpdateContact,
       resetTableMultiSelect,
       updateMultiSelect,
       onSearchContactInput,
@@ -1169,6 +1255,26 @@ export default defineComponent({
         font-size: 14px;
         font-weight: 500;
         line-height: 16px;
+      }
+
+      .table-linkedin-link {
+        color: $primary;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 16px;
+        text-decoration: none;
+        display: inline-block;
+        max-width: 240px;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .table-empty-cell {
+        color: rgba($color: var(--black-rgb), $alpha: 0.8);
+        font-size: 13px;
+        font-weight: 400;
       }
 
       .truncate-cell {

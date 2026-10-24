@@ -67,18 +67,6 @@
             -
           </span>
         </div>
-
-        <!-- Source -->
-        <div class="detail-item-row">
-          <span class="detail-label">Source</span>
-          <div class="detail-value source-value">
-            <LocalSvgIcon
-              image="csv"
-              classes="source-icon"
-            />
-            <span class="source-text">{{ sourceText }}</span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -180,6 +168,9 @@ import { defineComponent, computed } from 'vue';
 // components
 import MailboxEsp from 'components/Contacts/MailboxEsp.vue';
 
+// utils
+import { formatLinkedinDisplayUrl, formatLinkedinHref } from 'src/utils/helperFunctions';
+
 // constants
 import { DEFAULT_SYSTEM_FIELDS } from 'boot/campaign-constants';
 
@@ -213,30 +204,9 @@ export default defineComponent({
 
     const linkedinUrl = computed(() => contact.value.linkedin_url || '-');
 
-    const linkedinDisplayUrl = computed(() => {
-      const url = linkedinUrl.value;
-      if (!url || url === '-') return '-';
-      const inMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i) || url.match(/^in\/([^/?#]+)/i);
-      if (inMatch) {
-        return `in/${inMatch[1]}`;
-      }
-      const companyMatch = url.match(/linkedin\.com\/company\/([^/?#]+)/i);
-      if (companyMatch) {
-        return `company/${companyMatch[1]}`;
-      }
-      return url.split('?')[0].split('#')[0].replace(/^https?:\/\//i, '').replace(/^www\./i, '');
-    });
+    const linkedinDisplayUrl = computed(() => formatLinkedinDisplayUrl(linkedinUrl.value));
 
-    const linkedinHref = computed(() => {
-      const url = linkedinUrl.value;
-      if (!url || url === '-') return '#';
-      return url.startsWith('http') ? url : `https://${url}`;
-    });
-
-    const sourceText = computed(() => {
-      const c = contact.value;
-      return c.source || c.metadata?.source || '-';
-    });
+    const linkedinHref = computed(() => formatLinkedinHref(linkedinUrl.value));
 
     // Other Details Computed
     const location = computed(() => {
@@ -295,7 +265,6 @@ export default defineComponent({
       linkedinUrl,
       linkedinDisplayUrl,
       linkedinHref,
-      sourceText,
       location,
       jobTitle,
       companyName,
@@ -322,6 +291,7 @@ export default defineComponent({
 
     &.basic-details {
       border-bottom: 1px solid $grey-50;
+      background: rgba(var(--primary-rgb), 0.04);
     }
 
     .section-title {
@@ -386,24 +356,6 @@ export default defineComponent({
               font-weight: 400;
               margin-left: 6px;
             }
-          }
-        }
-
-        .source-value {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-
-          :deep(.source-icon) {
-            width: 16px;
-            height: 16px;
-          }
-
-          .source-text {
-            color: $black;
-            font-size: 13px;
-            font-weight: 400;
-            line-height: 16px;
           }
         }
       }

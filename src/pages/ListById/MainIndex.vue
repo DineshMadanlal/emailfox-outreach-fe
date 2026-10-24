@@ -13,7 +13,7 @@
       :transition-show="isMobileDevice ? 'slide-up' : ''"
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
-      <AddContact
+      <SaveContact
         :listId="listByJson.id"
 
         @onSuccessfulAddContact="onContactAdded"
@@ -129,7 +129,7 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import ListByIdHeader from 'components/ListById/Header.vue';
-import AddContact from 'components/Contacts/Modals/AddContact.vue';
+import SaveContact from 'components/Contacts/Modals/SaveContact.vue';
 
 // modals
 import DeleteList from 'components/Lists/Modals/DeleteList.vue';
@@ -153,7 +153,7 @@ export default defineComponent({
 
     // modals
     DeleteList,
-    AddContact,
+    SaveContact,
     SaveListName,
     DeleteContacts,
     ContactImportHistory,

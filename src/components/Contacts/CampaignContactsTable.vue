@@ -266,6 +266,7 @@ import SelectCampaignContactStatus from 'components/Dropdown/SelectCampaignConta
 import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount } from 'src/utils/numbers';
 import { formatDateWithTime } from 'src/utils/dates';
+import { formatLinkedinDisplayUrl, formatLinkedinHref } from 'src/utils/helperFunctions';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -430,24 +431,6 @@ export default defineComponent({
 
       return columns;
     });
-
-    const formatLinkedinDisplayUrl = (url) => {
-      if (!url || url === '-') return '-';
-      const inMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i) || url.match(/^in\/([^/?#]+)/i);
-      if (inMatch) {
-        return `in/${inMatch[1]}`;
-      }
-      const companyMatch = url.match(/linkedin\.com\/company\/([^/?#]+)/i);
-      if (companyMatch) {
-        return `company/${companyMatch[1]}`;
-      }
-      return url.split('?')[0].split('#')[0].replace(/^https?:\/\//i, '').replace(/^www\./i, '');
-    };
-
-    const formatLinkedinHref = (url) => {
-      if (!url || url === '-') return '#';
-      return url.startsWith('http') ? url : `https://${url}`;
-    };
 
     const getContactInitial = (row) => {
       const name = row.first_name || row.last_name || row.contact_name || row.name || row.contact_email || '';

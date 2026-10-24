@@ -329,3 +329,24 @@ export const isSlackWebhookUrl = (url) => {
     return false;
   }
 };
+
+export const formatLinkedinDisplayUrl = (url, fallback = '-') => {
+  if (!url || url === '-') return fallback;
+  const inMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i) || url.match(/^in\/([^/?#]+)/i);
+  if (inMatch) {
+    return `in/${inMatch[1]}`;
+  }
+  const companyMatch = url.match(/linkedin\.com\/company\/([^/?#]+)/i);
+  if (companyMatch) {
+    return `company/${companyMatch[1]}`;
+  }
+  return url.split('?')[0].split('#')[0].replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+};
+
+export const formatLinkedinHref = (url) => {
+  if (!url || url === '-') return '#';
+  if (url.match(/^(in|company)\//i)) {
+    return `https://www.linkedin.com/${url}`;
+  }
+  return url.startsWith('http') ? url : `https://${url}`;
+};

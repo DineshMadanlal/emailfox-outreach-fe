@@ -1,5 +1,5 @@
 <template>
-  <q-card flat class="app-modal-card add-contact-card">
+  <q-card flat class="app-modal-card save-contact-card">
     <!-- Create Field Dialog -->
     <q-dialog
       v-model="modals.showCreateFieldModal"
@@ -25,14 +25,14 @@
     </q-dialog>
 
     <q-form
-      class="full-width add-contact-form custom-scrollbar"
+      class="full-width save-contact-form custom-scrollbar"
       ref="addContactFormRef"
       @submit.prevent.stop="onSaveContact"
     >
       <!-- Header -->
       <div class="app-modal-header">
         <h4 class="modal-header-text">
-          Add Contact
+          {{ isEditMode ? 'Edit Contact' : 'Add Contact' }}
         </h4>
 
         <q-space />
@@ -58,7 +58,7 @@
       <div class="app-modal-content">
         <!-- AI / JSON Banner Card -->
         <div
-          v-if="toggles.showAiJsonBanner"
+          v-if="toggles.showAiJsonBanner && !isEditMode"
           class="full-width json-autofill-banner"
         >
           <!--  -->
@@ -167,7 +167,10 @@
           />
 
           <!-- Checkbox: Fill a random email address -->
-          <div class="q-mt-sm flex items-center">
+          <div
+            v-if="!isEditMode"
+            class="q-mt-sm flex items-center"
+          >
             <q-checkbox
               dense
               color="primary"
@@ -180,7 +183,10 @@
         </div>
 
         <!-- Associate List -->
-        <div class="full-width">
+        <div
+          v-if="!isEditMode"
+          class="full-width"
+        >
           <InputLabel
             :isImportant="isListRequired"
             label="Associate List"
@@ -199,7 +205,10 @@
         </div>
 
         <!-- Conflict Action / Merge Strategy -->
-        <div class="full-width">
+        <div
+          v-if="!isEditMode"
+          class="full-width"
+        >
           <InputLabel label="Merge Strategy" />
 
           <SelectContactConflictAction
@@ -227,118 +236,26 @@
 
           <!-- Slide Transition -->
           <q-slide-transition>
-            <div v-show="toggles.isAdditionalDetailsOpen"
-            class="accordion-content"
-          >
-              <!-- LinkedIn URL -->
-              <div class="full-width">
-                <InputLabel label="LinkedIn URL" />
+            <div
+              v-show="toggles.isAdditionalDetailsOpen"
+              class="accordion-content"
+            >
+              <!-- Dynamic Additional Text Fields -->
+              <div
+                v-for="field in additionalFields"
+                :key="`additional-field-${field.key}`"
+                class="full-width"
+              >
+                <InputLabel :label="field.label" />
 
                 <q-input
                   dense
                   outlined
                   hide-bottom-space
-
-                  v-model="form.linkedin_url"
-
+                  v-model="form[field.key]"
                   class="input-width-maxed"
-                  placeholder="www.linkedin.com/username"
-                />
-              </div>
-
-              <!-- Job Title -->
-              <div class="full-width">
-                <InputLabel label="Job Title" />
-
-                <q-input
-                  dense
-                  outlined
-                  hide-bottom-space
-
-                  v-model="form.job_title"
-
-                  class="input-width-maxed"
-                  placeholder="Software Engineer"
-                />
-              </div>
-
-              <!-- Company Name -->
-              <div class="full-width">
-                <InputLabel label="Company Name" />
-
-                <q-input
-                  dense
-                  outlined
-                  hide-bottom-space
-
-                  v-model="form.company_name"
-
-                  class="input-width-maxed"
-                  placeholder="Acme Corp"
-                />
-              </div>
-
-              <!-- Phone Number -->
-              <div class="full-width">
-                <InputLabel label="Phone Number" />
-
-                <q-input
-                  dense
-                  outlined
-                  hide-bottom-space
-
-                  v-model="form.phone"
-
-                  class="input-width-maxed"
-                  placeholder="+1 202 555 xxxx"
-                />
-              </div>
-
-              <!-- City -->
-              <div class="full-width">
-                <InputLabel label="City" />
-
-                <q-input
-                  dense
-                  outlined
-                  hide-bottom-space
-
-                  v-model="form.city"
-
-                  class="input-width-maxed"
-                  placeholder="New York"
-                />
-              </div>
-
-              <!-- State -->
-              <div class="full-width">
-                <InputLabel label="State" />
-
-                <q-input
-                  dense
-                  outlined
-                  hide-bottom-space
-
-                  v-model="form.state"
-
-                  class="input-width-maxed"
-                  placeholder="NY"
-                />
-              </div>
-
-              <!-- Country -->
-              <div class="full-width">
-                <InputLabel label="Country" />
-
-                <q-input
-                  dense
-                  outlined
-                  hide-bottom-space
-
-                  v-model="form.country"
-
-                  class="input-width-maxed"
-                  placeholder="United States"
+                  :placeholder="field.placeholder"
+                  @update:model-value="onInputChange"
                 />
               </div>
 
@@ -424,7 +341,7 @@
                   dense
 
                   color="primary"
-                  class="add-custom-fields-btn text-weight-medium"
+                  class="save-custom-fields-btn text-weight-medium"
                 >
                   <span class="flex items-center gap-xs">
                     + Add Custom Fields
@@ -456,7 +373,7 @@
           unelevated
 
           type="submit"
-          label="Save"
+          :label="isEditMode ? 'Update' : 'Save'"
           color="primary"
           class="save-next-btn"
 
@@ -471,10 +388,11 @@
 // lodash
 import startCase from 'lodash/startCase';
 import kebabCase from 'lodash/kebabCase';
+import isEmpty from 'lodash/isEmpty';
 
 // vue
 import {
-  defineComponent, reactive, toRefs, computed, onMounted, getCurrentInstance,
+  defineComponent, reactive, toRefs, computed, onMounted, getCurrentInstance, watch,
 } from 'vue';
 
 // components
@@ -486,12 +404,15 @@ import CustomFieldsMenu from 'components/Menu/CustomFieldsMenu.vue';
 import CreateField from 'src/components/Contacts/Modals/CreateField.vue';
 import PasteContactJson from 'src/components/Contacts/Modals/PasteContactJson.vue';
 
+// stores
+import { useUserPreferencesStore } from 'src/stores/userPreferences';
+
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
 import { useWorkspace } from 'src/composables/useWorkspace';
 
 // utils
-import { postApiCall } from 'src/utils/apiRequests';
+import { postApiCall, putApiCall } from 'src/utils/apiRequests';
 
 // constants
 import { EMAIL_REGEX } from 'src/boot/constants';
@@ -500,10 +421,65 @@ import {
   CONTACT_IMPORT_CONFLICT_ACTION,
 } from 'boot/campaign-constants';
 
-export default defineComponent({
-  name: 'AddContactModal',
+const ADDITIONAL_FIELDS = [
+  { key: 'phone', label: 'Phone', placeholder: 'e.g., +1 234 567 8900' },
+  { key: 'job_title', label: 'Job Title', placeholder: 'e.g., Senior Developer' },
+  { key: 'company_name', label: 'Company Name', placeholder: 'e.g., Acme Corp' },
+  { key: 'linkedin_url', label: 'LinkedIn Profile URL', placeholder: 'e.g., https://linkedin.com/in/username' },
+  { key: 'city', label: 'City', placeholder: 'e.g., San Francisco' },
+  { key: 'state', label: 'State / Province', placeholder: 'e.g., California' },
+  { key: 'country', label: 'Country', placeholder: 'e.g., United States' },
+];
 
-  emits: ['onSuccessfulAddContact'],
+const CONTACT_FIELD_KEYS = [
+  'first_name',
+  'last_name',
+  'email',
+  'phone',
+  'job_title',
+  'company_name',
+  'linkedin_url',
+  'city',
+  'state',
+  'country',
+  'timezone',
+];
+
+const JSON_FIELD_MAP = {
+  first_name: ['first_name', 'firstName', 'name'],
+  last_name: ['last_name', 'lastName'],
+  email: ['email'],
+  phone: ['phone', 'phoneNumber', 'phone_number'],
+  job_title: ['job_title', 'jobTitle', 'title'],
+  company_name: ['company_name', 'companyName', 'company'],
+  linkedin_url: ['linkedin_url', 'linkedinUrl', 'linkedin'],
+  city: ['city'],
+  state: ['state'],
+  country: ['country'],
+};
+
+const getDefaultForm = (listId = null) => ({
+  first_name: '',
+  last_name: '',
+  email: '',
+  isRandomEmail: false,
+  phone: '',
+  job_title: '',
+  company_name: '',
+  linkedin_url: '',
+  city: '',
+  state: '',
+  country: '',
+  timezone: '',
+  selectedList: listId ? { id: listId } : null,
+  merge_strategy: CONTACT_IMPORT_CONFLICT_ACTION.SKIP.value,
+  custom_fields: {},
+});
+
+export default defineComponent({
+  name: 'SaveContactModal',
+
+  emits: ['onSuccessfulAddContact', 'onSuccessfulUpdateContact'],
 
   components: {
     InputLabel,
@@ -520,11 +496,18 @@ export default defineComponent({
       type: [String, Number],
       default: null,
     },
+    contactJson: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 
   setup(props, { emit }) {
     // app context
     const { appContext } = getCurrentInstance();
+
+    // stores
+    const userStore = useUserPreferencesStore();
 
     // composables
     const { isMobileDevice } = useAppHelpersApi();
@@ -532,23 +515,7 @@ export default defineComponent({
 
     // state
     const state = reactive({
-      form: {
-        first_name: '',
-        last_name: '',
-        email: '',
-        isRandomEmail: false,
-        phone: '',
-        job_title: '',
-        company_name: '',
-        linkedin_url: '',
-        city: '',
-        state: '',
-        country: '',
-        timezone: '',
-        selectedList: null,
-        merge_strategy: CONTACT_IMPORT_CONFLICT_ACTION.SKIP.value,
-        custom_fields: {},
-      },
+      form: getDefaultForm(props.listId),
 
       toggles: {
         showAiJsonBanner: true,
@@ -570,6 +537,10 @@ export default defineComponent({
     });
 
     // computed
+    const contactData = computed(() => props.contactJson);
+
+    const isEditMode = computed(() => !isEmpty(contactData.value) && !!contactData.value.id);
+
     const emailRules = computed(() => {
       if (state.form.isRandomEmail) return [];
       return [
@@ -578,10 +549,10 @@ export default defineComponent({
       ];
     });
 
-    const isListRequired = computed(() => !props.listId);
+    const isListRequired = computed(() => !props.listId && !isEditMode.value);
 
     const listRules = computed(() => {
-      if (props.listId) return [];
+      if (props.listId || isEditMode.value) return [];
       return [
         (val) => !!val?.id || 'Associate list is required',
       ];
@@ -633,28 +604,18 @@ export default defineComponent({
       state.modals.showCustomFieldsMenu = false;
 
       if (searchTerm) {
-        onFieldCreated();
+        onFieldCreated({
+          label: startCase(searchTerm),
+          value: kebabCase(searchTerm).replace(/-/g, '_'),
+        });
       } else {
         state.modals.showCreateFieldModal = true;
       }
     };
 
     const onApplyJson = (jsonObj = {}) => {
-      const fieldMap = {
-        first_name: ['first_name', 'firstName', 'name'],
-        last_name: ['last_name', 'lastName'],
-        email: ['email'],
-        phone: ['phone', 'phoneNumber', 'phone_number'],
-        job_title: ['job_title', 'jobTitle', 'title'],
-        company_name: ['company_name', 'companyName', 'company'],
-        linkedin_url: ['linkedin_url', 'linkedinUrl', 'linkedin'],
-        city: ['city'],
-        state: ['state'],
-        country: ['country'],
-      };
-
-      Object.keys(fieldMap).forEach((targetKey) => {
-        const keys = fieldMap[targetKey];
+      Object.keys(JSON_FIELD_MAP).forEach((targetKey) => {
+        const keys = JSON_FIELD_MAP[targetKey];
         const matchedKey = keys.find((k) => jsonObj[k] !== undefined && jsonObj[k] !== null);
         if (matchedKey) {
           state.form[targetKey] = String(jsonObj[matchedKey]);
@@ -687,24 +648,68 @@ export default defineComponent({
     };
 
     const resetForm = () => {
-      state.form.first_name = '';
-      state.form.last_name = '';
-      state.form.email = '';
-      state.form.isRandomEmail = false;
-      state.form.phone = '';
-      state.form.job_title = '';
-      state.form.company_name = '';
-      state.form.linkedin_url = '';
-      state.form.city = '';
-      state.form.state = '';
-      state.form.country = '';
-      state.form.timezone = '';
-      state.form.custom_fields = {};
+      Object.assign(state.form, getDefaultForm(props.listId));
       state.activeCustomFields = [];
+      onInputChange();
+    };
 
-      if (state.addContactFormRef) {
-        state.addContactFormRef.resetValidation();
+    const populateFormFromContact = () => {
+      const c = contactData.value;
+      if (!c || !c.id) return;
+
+      CONTACT_FIELD_KEYS.forEach((key) => {
+        state.form[key] = c[key] || '';
+      });
+
+      const custom = {};
+      Object.keys(c.custom_fields || {}).forEach((key) => {
+        custom[key] = c.custom_fields[key] !== null && c.custom_fields[key] !== undefined
+          ? String(c.custom_fields[key])
+          : '';
+      });
+      state.form.custom_fields = custom;
+
+      const customKeys = Object.keys(custom);
+      if (customKeys.length > 0) {
+        state.toggles.isCustomFieldsOpen = true;
+
+        const customFieldsList = userStore.workspaceCustomFields || [];
+        state.activeCustomFields = customKeys.map((key) => {
+          const matched = customFieldsList.find((f) => f.value === key);
+          return {
+            value: key,
+            label: matched?.label || startCase(key),
+          };
+        });
       }
+
+      if (ADDITIONAL_FIELDS.some((field) => Boolean(c[field.key])) || Boolean(c.timezone)) {
+        state.toggles.isAdditionalDetailsOpen = true;
+      }
+    };
+
+    watch(
+      () => props.contactJson,
+      () => {
+        if (isEditMode.value) {
+          populateFormFromContact();
+        }
+      },
+      { immediate: true, deep: true },
+    );
+
+    const getContactPayload = () => {
+      const contactPayload = {
+        custom_fields: { ...state.form.custom_fields },
+      };
+
+      CONTACT_FIELD_KEYS.forEach((key) => {
+        if (key !== 'timezone') {
+          contactPayload[key] = state.form[key]?.trim?.() || state.form[key] || '';
+        }
+      });
+
+      return contactPayload;
     };
 
     const onSaveContact = async () => {
@@ -713,64 +718,64 @@ export default defineComponent({
         if (!isValid) return;
 
         state.isApiProcessing = true;
+        const contactPayload = getContactPayload();
 
-        const targetListId = props.listId || state.form.selectedList?.id;
+        if (isEditMode.value) {
+          const payload = { ...contactPayload };
 
-        const payload = {
-          source: CONTACTS_IMPORT_SOURCE_TYPE.MANUAL,
-          source_file_name: 'Manual Entry',
-          merge_strategy: state.form.merge_strategy || CONTACT_IMPORT_CONFLICT_ACTION.SKIP.value,
-          allow_missing_emails: true,
-          contacts: [
-            {
-              email: state.form.email,
-              first_name: state.form.first_name,
-              last_name: state.form.last_name,
-              phone: state.form.phone,
-              job_title: state.form.job_title,
-              company_name: state.form.company_name,
-              linkedin_url: state.form.linkedin_url,
-              city: state.form.city,
-              state: state.form.state,
-              country: state.form.country,
-              custom_fields: state.form.custom_fields,
-            },
-          ],
-        };
+          const response = await putApiCall({
+            endpoint: `/contacts/${contactData.value.id}`,
+            includeWorkspace: true,
+            payload,
+          });
 
-        const endpoint = targetListId
-          ? `/lists/${targetListId}/import`
-          : '/contacts/import';
+          //
+          appContext.config.globalProperties.$toast({
+            message: response?.message || 'Contact updated successfully',
+          });
 
-        await postApiCall({
-          endpoint,
-          includeWorkspace: true,
-          payload,
-        });
+          emit('onSuccessfulUpdateContact', {
+            ...contactData.value,
+            ...payload,
+            id: contactData.value.id,
+          });
+        } else {
+          const targetListId = props.listId || state.form.selectedList?.id;
 
-        appContext.config.globalProperties.$toast({
-          message: 'Contact added successfully',
-        });
+          const payload = {
+            source: CONTACTS_IMPORT_SOURCE_TYPE.MANUAL,
+            source_file_name: 'Manual Entry',
+            merge_strategy: state.form.merge_strategy || CONTACT_IMPORT_CONFLICT_ACTION.SKIP.value,
+            allow_missing_emails: true,
+            contacts: [contactPayload],
+          };
 
-        emit('onSuccessfulAddContact');
-        resetForm();
+          await postApiCall({
+            payload,
+            includeWorkspace: true,
+            endpoint: `/lists/${targetListId}/import`,
+          });
+
+          appContext.config.globalProperties.$toast({
+            message: 'Contact added successfully',
+          });
+
+          emit('onSuccessfulAddContact');
+          resetForm();
+        }
       } catch (error) {
         appContext.config.globalProperties.$toast({
           warning: true,
-          message: error.message || 'Failed to add contact. Please try again.',
+          message: error.message || `Failed to ${isEditMode.value ? 'update' : 'add'} contact. Please try again.`,
         });
       } finally {
         state.isApiProcessing = false;
       }
     };
 
-    onMounted(() => {
+    onMounted(async () => {
       // get custom fields for the workspace
-      getWorkspaceCustomFields();
-
-      if (props.listId) {
-        state.form.selectedList = { id: props.listId };
-      }
+      await getWorkspaceCustomFields();
     });
 
     return {
@@ -778,10 +783,14 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isEditMode,
       emailRules,
       listRules,
       isListRequired,
       isMobileDevice,
+
+      // constants / fields
+      additionalFields: ADDITIONAL_FIELDS,
 
       // methods
       onInputChange,
@@ -798,7 +807,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.add-contact-card {
+.save-contact-card {
   max-width: 600px;
   position: relative;
 
@@ -820,7 +829,7 @@ export default defineComponent({
     width: calc(100vw - 32px);
   }
 
-  .add-contact-form {
+  .save-contact-form {
     flex: 1;
     width: 100%;
     display: flex;
@@ -930,7 +939,7 @@ export default defineComponent({
       }
     }
 
-    .add-custom-fields-btn {
+    .save-custom-fields-btn {
       padding: 0;
       font-size: 14px;
     }
