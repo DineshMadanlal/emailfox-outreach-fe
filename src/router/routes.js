@@ -157,7 +157,31 @@ const routes = [
             component: () => import('pages/Contacts/UploadContacts.vue'),
             meta: { requiresAuth: true },
           },
-
+          {
+            path: 'contacts/:contactId',
+            redirect: (to) => ({
+              path: `/outreach/contacts/${to.params.contactId}/overview`,
+            }),
+            component: () => import('pages/ContactById/Index.vue'),
+            meta: { requiresAuth: true },
+            children: [
+              {
+                path: 'overview',
+                component: () => import('src/pages/ContactById/Overview.vue'),
+                meta: { requiresAuth: true },
+              },
+              {
+                path: 'inbox',
+                component: () => import('src/pages/ContactById/Inbox.vue'),
+                meta: { requiresAuth: true },
+              },
+              {
+                path: 'campaigns',
+                component: () => import('src/pages/ContactById/Campaigns.vue'),
+                meta: { requiresAuth: true },
+              },
+            ],
+          },
           {
             path: 'mailboxes',
             component: () => import('src/pages/Mailboxes/All.vue'),

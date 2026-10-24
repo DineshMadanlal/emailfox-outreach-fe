@@ -98,6 +98,26 @@
           @createNewCampaign="onCreateNewSequence"
         />
 
+        <!-- Contact Sequence Illustration -->
+        <div
+          v-else-if="contactId"
+          class="contact-sequence-illustration"
+        >
+          <LocalSvgIcon
+            image="sequences"
+            :isIconFolder="false"
+            :isIllustrationFolder="true"
+          />
+
+          <p class="illustration-header-text">
+            No sequences linked to this contact
+          </p>
+
+          <p class="illustration-body-text">
+            This contact hasn’t been enrolled in any campaigns yet.
+          </p>
+        </div>
+
         <!-- Mailbox Sequence Illustration -->
         <MailboxSequenceIllustration
           v-else
@@ -105,7 +125,7 @@
       </div>
 
       <!-- Filter Header -->
-      <div v-else
+      <div v-else-if="!contactId"
         class="filter-campaigns-header"
       >
         <!-- search input -->
@@ -406,6 +426,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
   },
 
   setup(props) {
@@ -438,7 +462,7 @@ export default defineComponent({
       // data
       visibleColumns: [],
       tableData: [],
-      pagination: {},
+      pagination: { ...DEFAULT_TABLE_PAGINATION },
       selectedCampaignJson: {},
 
       // filters
@@ -587,8 +611,8 @@ export default defineComponent({
     const getContactsStats = (row) => {
       const contactStats = row?.contact_stats || {};
 
-      const total = contactStats.total_contacts;
-      const active = contactStats.active_count;
+      const total = contactStats.total_contacts ?? row.total_no_contacts ?? 0;
+      const active = contactStats.active_count ?? row.active_contacts ?? 0;
 
       return {
         value: getNumeralAmount(total),
@@ -597,6 +621,15 @@ export default defineComponent({
     };
 
     const getRepliesStats = (row) => {
+      if (row?.reply_rate !== undefined) {
+        return {
+          icon: 'seq-replied',
+          class: 'information',
+          value: `${row.reply_rate || 0}%`,
+          label: `${getNumeralAmount(row.replies || 0)} Response Rate`,
+        };
+      }
+
       const stats = row?.stats || {};
 
       // email replies
@@ -631,6 +664,14 @@ export default defineComponent({
     };
 
     const getPositiveRepliesStats = (row) => {
+      if (row?.positive_reply_rate !== undefined) {
+        return {
+          icon: 'positive-reply',
+          value: `${row.positive_reply_rate || 0}%`,
+          label: `${getNumeralAmount(row.positive_replies || 0)} Qualified`,
+        };
+      }
+
       const stats = row?.stats || {};
 
       const emailPositive = stats.email_positive_replies || 0;
@@ -673,9 +714,13 @@ export default defineComponent({
         }
 
         // API Call
+        const endpoint = props.contactId
+          ? `/contacts/${props.contactId}/campaigns`
+          : '/sequences';
+
         const response = await getApiCall({
           params,
-          endpoint: '/sequences',
+          endpoint,
           includeWorkspace: true,
         });
 
@@ -785,6 +830,8 @@ export default defineComponent({
         state.tableData = tableData || [];
         state.pagination = localStoredPagination.value;
         state.filters = filters || { ...campaignFilters };
+      } else {
+        state.pagination = { ...DEFAULT_TABLE_PAGINATION };
       }
 
       // set from store
@@ -885,6 +932,35 @@ export default defineComponent({
 
     display: flex;
     flex-direction: column;
+
+    .contact-sequence-illustration {
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      @media (max-width: $breakpoint-xs-max) {
+        padding: 20px 16px;
+      }
+
+      .illustration-header-text {
+        color: $black;
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: 24px;
+        text-align: center;
+      }
+
+      .illustration-body-text {
+        margin-top: 8px;
+        color: rgba(var(--black-rgb), 0.8);
+        font-size: 14px;
+        font-weight: 400;
+        text-align: center;
+        max-width: 430px;
+      }
+    }
 
     .filter-campaigns-header {
       padding: 20px;

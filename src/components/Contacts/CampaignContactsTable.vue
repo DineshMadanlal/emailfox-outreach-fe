@@ -130,20 +130,6 @@
           </div>
         </template>
 
-        <!-- Full Name Cell -->
-        <template v-slot:body-cell-full_name="props">
-          <q-td :props="props">
-            <div class="flex items-center no-wrap contact-name-cell">
-              <div class="contact-avatar-box">
-                {{ getContactInitial(props.row) }}
-              </div>
-              <span class="contact-name-text ellipsis">
-                {{ getContactName(props.row) }}
-              </span>
-            </div>
-          </q-td>
-        </template>
-
         <!-- Email Cell -->
         <template v-slot:body-cell-email="props">
           <q-td :props="props">
@@ -176,6 +162,43 @@
                   />
                 </q-btn>
               </div>
+            </div>
+          </q-td>
+        </template>
+
+        <!-- LinkedIn URL Cell -->
+        <template v-slot:body-cell-linkedin_url="props">
+          <q-td :props="props">
+            <a
+              v-if="props.row.linkedin_url && props.row.linkedin_url !== '-'"
+              :href="formatLinkedinHref(props.row.linkedin_url)"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="props.row.linkedin_url"
+              class="table-linkedin-link ellipsis"
+              @click.stop
+            >
+              {{ formatLinkedinDisplayUrl(props.row.linkedin_url) }}
+            </a>
+            <span
+              v-else
+              class="table-empty-cell"
+            >
+              -
+            </span>
+          </q-td>
+        </template>
+
+        <!-- Full Name Cell -->
+        <template v-slot:body-cell-full_name="props">
+          <q-td :props="props">
+            <div class="flex items-center no-wrap contact-name-cell">
+              <div class="contact-avatar-box">
+                {{ getContactInitial(props.row) }}
+              </div>
+              <span class="contact-name-text ellipsis">
+                {{ getContactName(props.row) }}
+              </span>
             </div>
           </q-td>
         </template>
@@ -229,7 +252,7 @@ import isEmpty from 'lodash/isEmpty';
 // vue
 import {
   defineComponent, reactive, toRefs, computed,
-  onMounted, getCurrentInstance,
+  onMounted, getCurrentInstance, inject,
 } from 'vue';
 
 // components
@@ -281,6 +304,14 @@ export default defineComponent({
     const userStore = useUserPreferencesStore();
     const { appContext } = getCurrentInstance();
     const { isMobileDevice } = useAppHelpersApi();
+    const editCampaignContext = inject('editCampaignContext', {});
+
+    const isLinkedInOutreachCampaign = computed(
+      () => Boolean(editCampaignContext?.isLinkedInOutreachCampaign?.value),
+    );
+    const isMultiChannelOutreachCampaign = computed(
+      () => Boolean(editCampaignContext?.isMultiChannelOutreachCampaign?.value),
+    );
 
     const state = reactive({
       tableDataMenu: {},
@@ -340,55 +371,94 @@ export default defineComponent({
 
     const selectedContactsLength = computed(() => size(state.selectedContacts));
 
-    const baseColumns = [
-      {
-        name: 'email',
-        label: 'Email',
-        align: 'left',
-        field: 'contact_email',
-      },
-      // {
-      //   name: 'full_name',
-      //   label: 'Full Name',
-      //   align: 'left',
-      //   field: 'contact_email',
-      // },
-      {
-        name: 'sequence',
-        label: 'Sequence',
-        align: 'left',
-        field: 'current_step_number',
-      },
-      {
-        name: 'status',
-        label: 'Status',
-        align: 'left',
-        field: 'status',
-      },
-      {
-        name: 'last_activity',
-        label: 'Last Activity',
-        align: 'left',
-        field: 'last_sent_at',
-      },
-      {
-        name: 'replies',
-        label: 'Last Reply At',
-        align: 'left',
-        field: 'last_reply_at',
-      },
-    ];
+    const tableColumns = computed(() => {
+      const columns = [
+        {
+          name: 'full_name',
+          label: 'Contact Name',
+          align: 'left',
+          field: 'first_name',
+        },
+      ];
 
-    const tableColumns = computed(() => [
-      ...baseColumns,
-    ]);
+      // Email column is shown in Email-only and Multi-channel campaigns
+      if (!isLinkedInOutreachCampaign.value) {
+        columns.push({
+          name: 'email',
+          label: 'Email',
+          align: 'left',
+          field: 'contact_email',
+        });
+      }
+
+      // LinkedIn URL column is shown in LinkedIn-only and Multi-channel campaigns
+      if (isLinkedInOutreachCampaign.value || isMultiChannelOutreachCampaign.value) {
+        columns.push({
+          name: 'linkedin_url',
+          label: 'LinkedIn URL',
+          align: 'left',
+          field: 'linkedin_url',
+        });
+      }
+
+      columns.push(
+        {
+          name: 'sequence',
+          label: 'Sequence',
+          align: 'left',
+          field: 'current_step_number',
+        },
+        {
+          name: 'status',
+          label: 'Status',
+          align: 'left',
+          field: 'status',
+        },
+        {
+          name: 'last_activity',
+          label: 'Last Activity',
+          align: 'left',
+          field: 'last_sent_at',
+        },
+        {
+          name: 'replies',
+          label: 'Last Reply At',
+          align: 'left',
+          field: 'last_reply_at',
+        },
+      );
+
+      return columns;
+    });
+
+    const formatLinkedinDisplayUrl = (url) => {
+      if (!url || url === '-') return '-';
+      const inMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i) || url.match(/^in\/([^/?#]+)/i);
+      if (inMatch) {
+        return `in/${inMatch[1]}`;
+      }
+      const companyMatch = url.match(/linkedin\.com\/company\/([^/?#]+)/i);
+      if (companyMatch) {
+        return `company/${companyMatch[1]}`;
+      }
+      return url.split('?')[0].split('#')[0].replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    };
+
+    const formatLinkedinHref = (url) => {
+      if (!url || url === '-') return '#';
+      return url.startsWith('http') ? url : `https://${url}`;
+    };
 
     const getContactInitial = (row) => {
-      const name = row.contact_name || row.name || row.contact_email || '';
+      const name = row.first_name || row.last_name || row.contact_name || row.name || row.contact_email || '';
       return (name.charAt(0) || '').toUpperCase() || 'C';
     };
 
     const getContactName = (row) => {
+      const fullName = `${row.first_name || ''} ${row.last_name || ''}`.trim();
+      if (fullName) {
+        return fullName;
+      }
       if (row.contact_name || row.name) {
         return row.contact_name || row.name;
       }
@@ -603,6 +673,8 @@ export default defineComponent({
       // methods
       getContactInitial,
       getContactName,
+      formatLinkedinDisplayUrl,
+      formatLinkedinHref,
       getStatusLabel,
       formatLastActivity,
       formatLastReply,
@@ -717,6 +789,26 @@ export default defineComponent({
           align-items: center;
           gap: 12px;
         }
+      }
+
+      .table-linkedin-link {
+        color: $primary;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 16px;
+        text-decoration: none;
+        display: inline-block;
+        max-width: 240px;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .table-empty-cell {
+        color: rgba($color: var(--black-rgb), $alpha: 0.8);
+        font-size: 13px;
+        font-weight: 400;
       }
 
       .step-cell-text {

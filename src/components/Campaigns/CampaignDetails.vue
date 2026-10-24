@@ -48,12 +48,16 @@
         </div>
 
         <LocalSvgIcon
+          v-if="tableRowJson.created_at"
           image="circle-dot"
           classes="circle-dot-icon"
         />
 
         <!-- Campaign Created At -->
-        <div class="each-detail-block">
+        <div
+          v-if="tableRowJson.created_at"
+          class="each-detail-block"
+        >
           <LocalSvgIcon
             image="time"
             classes="each-detail-icon"

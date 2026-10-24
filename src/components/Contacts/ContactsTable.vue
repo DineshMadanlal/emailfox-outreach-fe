@@ -340,11 +340,16 @@
             :props="props"
             v-if="props.col.name === 'email'"
           >
-            <div class="email-and-action-cell">
-              <div class="email-cell-text">
-                {{ props.value || '-' }}
+            <router-link
+              :to="`/outreach/contacts/${props.row.id}`"
+              class="table-route-link"
+            >
+              <div class="email-and-action-cell">
+                <div class="email-cell-text">
+                  {{ props.value || '-' }}
+                </div>
               </div>
-            </div>
+            </router-link>
           </q-td>
 
           <!-- Base Columns: First Name, Last Name, Email -->
@@ -1140,6 +1145,16 @@ export default defineComponent({
         height: 100%;
         overflow-x: auto;
         overflow-y: auto;
+      }
+
+      .table-route-link {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        text-decoration: unset;
+
+        justify-content: center;
       }
 
       .email-and-action-cell {

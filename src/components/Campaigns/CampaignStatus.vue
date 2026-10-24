@@ -69,7 +69,9 @@ export default defineComponent({
         return 0;
       }
 
-      return props.tableRowJson?.contact_stats?.progress_percentage || 0;
+      return props.tableRowJson?.progress_percentage
+        ?? props.tableRowJson?.contact_stats?.progress_percentage
+        ?? 0;
     });
 
     return {

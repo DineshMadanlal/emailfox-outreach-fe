@@ -216,3 +216,26 @@ export const BULK_ASSIGN_TAG_FEATURE = {
   MAILBOXES: 'MAILBOXES',
   CONTACT_LISTS: 'CONTACT_LISTS',
 };
+
+export const ENGAGEMENT_SCORE_STATUS = {
+  HOT: {
+    label: 'Hot',
+    value: 'HOT',
+    color: 'positive',
+  },
+  ENGAGED: {
+    label: 'Engaged',
+    value: 'ENGAGED',
+    color: 'warning',
+  },
+  COLD: {
+    label: 'Cold',
+    value: 'COLD',
+    color: 'information',
+  },
+  INACTIVE: {
+    label: 'Inactive',
+    value: 'INACTIVE',
+    color: 'grey',
+  },
+};
