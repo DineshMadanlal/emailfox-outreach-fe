@@ -2,304 +2,7 @@
 import { cleanEditorHtmlForSave } from 'src/utils/helperFunctions';
 
 // constants
-import { VARIABLE_REGEX, SPINTAX_REGEX, PRODUCT_VARIABLES_VALUES } from 'src/boot/campaign-constants';
-
-export const wrapVariable = (value) => {
-  const variableName = value
-    .replace('{{', '')
-    .replace('}}', '')
-    .trim();
-
-  return `<span class="editor-token editor-token-variable" data-token-type="variable" data-variable="${variableName}" contenteditable="false">${value}</span>`;
-};
-
-export const createTag = (tag, attrs, content = '') => {
-  const attrString = Object.entries(attrs)
-    .map(([key, value]) => `${key}="${value}"`)
-    .join(' ');
-
-  return `<${tag} ${attrString}>${content}</${tag}>`;
-};
-
-export const wrapSpintax = (value = '{}') => {
-  const cleanValue = value.trim();
-
-  const innerValue = cleanValue
-    .replace(/^\{/, '')
-    .replace(/\}$/, '');
-
-  let options = innerValue.split('|').map((option) => option.trim());
-
-  if (!options.length) {
-    options = [''];
-  }
-
-  const startBraceHtml = createTag('span', {
-    class: 'spintax-brace spintax-brace-start',
-    contenteditable: 'false',
-  }, '{');
-
-  const endBraceHtml = createTag('span', {
-    class: 'spintax-brace spintax-brace-end',
-    contenteditable: 'false',
-  }, '}');
-
-  const optionsHtml = options.map((option, index) => {
-    const optionHtml = createTag('span', {
-      class: 'spintax-option',
-      contenteditable: 'true',
-      spellcheck: 'false',
-      'data-placeholder': index === 0 ? 'Write first variation and press Tab' : 'Write another variation and press Tab',
-    }, option || '\u200B');
-
-    if (index === options.length - 1) return optionHtml;
-
-    const separatorHtml = createTag('span', {
-      class: 'spintax-separator',
-      contenteditable: 'false',
-    }, '|');
-
-    return `${optionHtml}${separatorHtml}`;
-  }).join('');
-
-  return `${createTag('span', {
-    class: 'editor-token editor-token-spintax',
-    'data-token-type': 'spintax',
-    contenteditable: 'true',
-  }, `${startBraceHtml}${optionsHtml}${endBraceHtml}`)}`;
-};
-
-export const highlightVariablesAndSpintax = (html = '') => {
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = html;
-
-  const walker = document.createTreeWalker(
-    wrapper,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode(node) {
-        const parent = node.parentElement;
-
-        if (parent?.closest('[data-token-type]')) {
-          return NodeFilter.FILTER_REJECT;
-        }
-
-        const text = node.nodeValue || '';
-
-        VARIABLE_REGEX.lastIndex = 0;
-        SPINTAX_REGEX.lastIndex = 0;
-
-        if (VARIABLE_REGEX.test(text) || SPINTAX_REGEX.test(text)) {
-          return NodeFilter.FILTER_ACCEPT;
-        }
-
-        return NodeFilter.FILTER_REJECT;
-      },
-    },
-  );
-
-  const textNodes = [];
-
-  while (walker.nextNode()) {
-    textNodes.push(walker.currentNode);
-  }
-
-  textNodes.forEach((node) => {
-    let text = node.nodeValue || '';
-
-    VARIABLE_REGEX.lastIndex = 0;
-    SPINTAX_REGEX.lastIndex = 0;
-
-    text = text
-      .replace(VARIABLE_REGEX, (match) => wrapVariable(match))
-      .replace(SPINTAX_REGEX, (match) => wrapSpintax(match));
-
-    const temp = document.createElement('span');
-    temp.innerHTML = text;
-
-    node.replaceWith(...Array.from(temp.childNodes));
-  });
-
-  return wrapper.innerHTML;
-};
-
-const tokenSelector = '[data-token-type="variable"], [data-token-type="spintax"]';
-
-const isWhitespaceTextNode = (node) => (
-  node
-      && node.nodeType === Node.TEXT_NODE
-      && /^[\s\u00A0]*$/.test(node.nodeValue)
-);
-
-const removeTokenWithSpace = (token) => {
-  const next = token.nextSibling;
-
-  if (isWhitespaceTextNode(next)) {
-    next.remove();
-  }
-
-  token.remove();
-};
-
-const isCaretAtStartOfElement = (element, range) => {
-  const beforeRange = document.createRange();
-  beforeRange.selectNodeContents(element);
-  beforeRange.setEnd(range.startContainer, range.startOffset);
-
-  return beforeRange.toString().length === 0;
-};
-
-const isCaretAtEndOfElement = (element, range) => {
-  const afterRange = document.createRange();
-  afterRange.selectNodeContents(element);
-  afterRange.setStart(range.startContainer, range.startOffset);
-
-  return afterRange.toString().length === 0;
-};
-
-export const bindTokenDelete = (editor) => {
-  editor.el.addEventListener('keydown', (e) => {
-    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
-
-    const selection = window.getSelection();
-    if (!selection || !selection.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
-    if (!range.collapsed) return;
-
-    const node = range.startContainer;
-    const offset = range.startOffset;
-
-    const currentToken = (
-      node.nodeType === Node.TEXT_NODE
-        ? node.parentElement?.closest?.(tokenSelector)
-        : node.closest?.(tokenSelector)
-    );
-
-    // If cursor is inside spintax, allow normal character editing.
-    if (currentToken?.dataset.tokenType === 'spintax') {
-      const isAtStart = isCaretAtStartOfElement(currentToken, range);
-      const isAtEnd = isCaretAtEndOfElement(currentToken, range);
-
-      if (
-        (e.key === 'Backspace' && (isAtStart || isAtEnd)) || (e.key === 'Delete' && isAtEnd)
-      ) {
-        e.preventDefault();
-
-        removeTokenWithSpace(currentToken);
-
-        editor.events.trigger('contentChanged');
-
-        return;
-      }
-
-      return;
-    }
-
-    let targetToken = null;
-
-    if (e.key === 'Backspace') {
-      // Case: cursor is in whitespace right after token
-      if (
-        node.nodeType === Node.TEXT_NODE
-        && isWhitespaceTextNode(node)
-      ) {
-        const previousNode = node.previousSibling;
-
-        if (
-          previousNode?.nodeType === Node.ELEMENT_NODE
-          && previousNode.matches(tokenSelector)
-        ) {
-          targetToken = previousNode;
-        }
-      }
-
-      // Case: cursor directly after token
-      if (
-        !targetToken
-        && node.nodeType === Node.TEXT_NODE
-        && offset === 0
-      ) {
-        const previousNode = node.previousSibling;
-
-        if (
-          previousNode?.nodeType === Node.ELEMENT_NODE
-          && previousNode.matches(tokenSelector)
-        ) {
-          targetToken = previousNode;
-        }
-      }
-
-      if (
-        !targetToken
-        && node.nodeType === Node.ELEMENT_NODE
-        && offset > 0
-      ) {
-        const previousNode = node.childNodes[offset - 1];
-
-        if (
-          previousNode?.nodeType === Node.ELEMENT_NODE
-          && previousNode.matches(tokenSelector)
-        ) {
-          targetToken = previousNode;
-        }
-      }
-    }
-
-    if (e.key === 'Delete') {
-      // Case: cursor is in whitespace before token
-      if (
-        node.nodeType === Node.TEXT_NODE
-        && isWhitespaceTextNode(node)
-      ) {
-        const nextNode = node.nextSibling;
-
-        if (
-          nextNode?.nodeType === Node.ELEMENT_NODE
-          && nextNode.matches(tokenSelector)
-        ) {
-          targetToken = nextNode;
-        }
-      }
-
-      // Case: cursor directly before token
-      if (
-        !targetToken
-        && node.nodeType === Node.TEXT_NODE
-        && offset === node.nodeValue.length
-      ) {
-        const nextNode = node.nextSibling;
-
-        if (
-          nextNode?.nodeType === Node.ELEMENT_NODE
-          && nextNode.matches(tokenSelector)
-        ) {
-          targetToken = nextNode;
-        }
-      }
-
-      if (
-        !targetToken
-        && node.nodeType === Node.ELEMENT_NODE
-      ) {
-        const nextNode = node.childNodes[offset];
-
-        if (
-          nextNode?.nodeType === Node.ELEMENT_NODE
-          && nextNode.matches(tokenSelector)
-        ) {
-          targetToken = nextNode;
-        }
-      }
-    }
-
-    if (!targetToken) return;
-
-    e.preventDefault();
-    removeTokenWithSpace(targetToken);
-    editor.events.trigger('contentChanged');
-  });
-};
+import { PRODUCT_VARIABLES_VALUES } from 'src/boot/campaign-constants';
 
 export const bindPlainPasteShortcut = (editor) => {
   let isPlainPasteRequested = false;
@@ -334,11 +37,21 @@ export const bindPlainPasteShortcut = (editor) => {
     }
 
     if (text) {
-      const formattedHtml = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, '<br>');
+      const cleanText = text
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\n{3,}/g, '\n\n');
+
+      const formattedHtml = cleanText
+        .split('\n')
+        .map((line) => {
+          const escaped = line
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          return escaped ? `<div>${escaped}</div>` : '<div><br></div>';
+        })
+        .join('');
 
       editor.selection.restore();
       editor.html.insert(formattedHtml);
@@ -369,75 +82,6 @@ export const bindEditorCopy = (editor) => {
     e.clipboardData.setData('text/plain', text);
     e.preventDefault();
   }, true);
-};
-
-// wrap spintax
-export const placeCursorInsideElement = (element) => {
-  if (!element) return;
-
-  const range = document.createRange();
-  const selection = window.getSelection();
-
-  range.selectNodeContents(element);
-  range.collapse(false);
-
-  selection.removeAllRanges();
-  selection.addRange(range);
-};
-
-export const focusLatestSpintaxOption = (editor) => {
-  const editorEl = editor.el || editor.$el?.get?.(0);
-
-  if (!editorEl) return;
-
-  const spintaxes = editorEl.querySelectorAll('.editor-token-spintax');
-  const latestSpintax = spintaxes[spintaxes.length - 1];
-
-  if (!latestSpintax) return;
-
-  const firstOption = latestSpintax.querySelector('.spintax-option');
-
-  placeCursorInsideElement(firstOption);
-};
-
-export const bindSpintaxTabHandler = (editor, onChange) => {
-  const editorEl = editor.el || editor.$el?.get?.(0);
-
-  if (!editorEl) return;
-
-  editorEl.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab') return;
-
-    const selection = window.getSelection();
-
-    if (!selection || !selection.rangeCount) return;
-
-    const activeOption = selection.anchorNode?.parentElement?.closest?.('.spintax-option');
-
-    if (!activeOption) return;
-
-    e.preventDefault();
-
-    const separator = document.createElement('span');
-    separator.className = 'spintax-separator';
-    separator.contentEditable = 'false';
-    separator.innerText = '|';
-
-    const newOption = document.createElement('span');
-    newOption.className = 'spintax-option';
-    newOption.contentEditable = 'true';
-    newOption.spellcheck = false;
-
-    activeOption.after(separator, newOption);
-
-    placeCursorInsideElement(newOption);
-
-    editor.events.trigger('contentChanged');
-
-    if (onChange) {
-      onChange();
-    }
-  });
 };
 
 export const removePreviousOpeningBrace = () => {
@@ -498,7 +142,8 @@ export const getCleanText = (html) => {
   // 2. Extract text (now containing newlines)
   const text = tempDiv.textContent || tempDiv.innerText || '';
 
-  return text;
+  // 3. Collapse multiple consecutive newlines (max 2 newlines = 1 blank line)
+  return text.replace(/\n{3,}/g, '\n\n').trim();
 };
 
 export const findTemplateIssues = (html = '', variableMenuOptions = []) => {
@@ -563,54 +208,7 @@ export const findTemplateIssues = (html = '', variableMenuOptions = []) => {
   });
 
   // -------------------------
-  // 2. Validate DOM spintax tokens
-  // -------------------------
-  const spintaxTokens = wrapper.querySelectorAll('[data-token-type="spintax"]');
-
-  spintaxTokens.forEach((token, tokenIndex) => {
-    const tokenText = token.textContent.trim();
-
-    const options = [...token.querySelectorAll('.spintax-option')]
-      .map((option) => option.textContent.trim());
-
-    const separatorCount = token.querySelectorAll('.spintax-separator').length;
-
-    if (options.length < 2 || separatorCount < 1) {
-      issues.push({
-        type: 'SPINTAX_MIN_OPTIONS',
-        severity: 'error',
-        message: 'Spintax needs at least 2 variations',
-        value: tokenText,
-        tokenIndex,
-      });
-    }
-
-    if (tokenText.includes('|}')) {
-      issues.push({
-        type: 'EMPTY_SPINTAX_OPTION',
-        severity: 'error',
-        message: 'One spintax variation is empty',
-        value: tokenText,
-        tokenIndex,
-      });
-    }
-
-    options.forEach((option, optionIndex) => {
-      if (!option) {
-        issues.push({
-          type: 'EMPTY_SPINTAX_OPTION',
-          severity: 'error',
-          message: 'One spintax variation is empty',
-          value: tokenText,
-          tokenIndex,
-          optionIndex,
-        });
-      }
-    });
-  });
-
-  // -------------------------
-  // 3. Fallback raw text spintax validation
+  // 2. Validate spintax (raw text)
   // -------------------------
   const rawSpintaxMatches = [...text.matchAll(/{([^{}]*\|[^{}]*)}/g)];
 

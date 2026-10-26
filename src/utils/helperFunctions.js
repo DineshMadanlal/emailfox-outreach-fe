@@ -203,16 +203,19 @@ export const backendApiUrl = () => {
   let baseURL = process.env.AUTHENTICATION_API;
 
   if (!isPrimaryApp) {
-    baseURL = 'https://api.boltapi.ai/api';
+    baseURL = 'https://outreach-api.apiruntime.com/api';
   }
 
   return baseURL;
 };
 
 export const cleanEditorHtmlForSave = (html = '') => {
+  if (!html || typeof html !== 'string') return '';
+
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
 
+  // 1. Unwrap variable tokens
   wrapper
     .querySelectorAll('[data-token-type="variable"], .editor-token-variable')
     .forEach((chip) => {
@@ -220,6 +223,7 @@ export const cleanEditorHtmlForSave = (html = '') => {
       chip.replaceWith(document.createTextNode(value));
     });
 
+  // 2. Unwrap spintax tokens
   wrapper
     .querySelectorAll('[data-token-type="spintax"], .editor-token-spintax')
     .forEach((chip) => {
@@ -246,6 +250,120 @@ export const cleanEditorHtmlForSave = (html = '') => {
       chip.replaceWith(document.createTextNode(value));
     });
 
+  // 3. Remove dirty attributes & inline webkit/clipboard junk
+  wrapper.querySelectorAll('*').forEach((el) => {
+    el.removeAttribute('data-pasted');
+    el.removeAttribute('fr-original-style');
+
+    Array.from(el.attributes).forEach((attr) => {
+      if (attr.name.startsWith('data-fr-')) {
+        el.removeAttribute(attr.name);
+      }
+    });
+
+    if (el.hasAttribute('style')) {
+      const rawStyle = el.getAttribute('style') || '';
+      const cleanedStyle = rawStyle
+        .replace(/-webkit-tap-highlight-color:\s*[^;]+;?/gi, '')
+        .replace(/box-sizing:\s*inherit;?/gi, '')
+        .replace(/font-family:\s*unset;?/gi, '')
+        .replace(/line-height:\s*unset;?/gi, '')
+        .trim();
+
+      if (!cleanedStyle || cleanedStyle === ';') {
+        el.removeAttribute('style');
+      } else {
+        el.setAttribute('style', cleanedStyle);
+      }
+    }
+  });
+
+  // 4. Clean list items: remove leading non-breaking space / whitespace
+  wrapper.querySelectorAll('li').forEach((li) => {
+    const { firstChild } = li;
+    if (firstChild && firstChild.nodeType === 3 /* Node.TEXT_NODE */) {
+      firstChild.nodeValue = firstChild.nodeValue.replace(/^[\s\u00A0]+/, '');
+    }
+  });
+
+  // 5. Remove empty <ul> or <ol> elements
+  wrapper.querySelectorAll('ul, ol').forEach((list) => {
+    if (!list.querySelector('li') || !list.textContent.trim()) {
+      list.remove();
+    }
+  });
+
+  // 6. Normalize trailing <br> inside block elements (div, p)
+  // When pasted, Froala often creates: <div>Hi hi<br><br></div>
+  const blockElements = Array.from(wrapper.children);
+  blockElements.forEach((block) => {
+    if (['DIV', 'P'].includes(block.tagName)) {
+      const hasContent = Array.from(block.childNodes).some(
+        (node) => (node.nodeType === 3 ? !!node.nodeValue.trim() : node.tagName !== 'BR'),
+      );
+
+      if (hasContent) {
+        let trailingBrCount = 0;
+        while (
+          block.lastChild
+          && (block.lastChild.tagName === 'BR'
+            || (block.lastChild.nodeType === 3 && !block.lastChild.nodeValue.trim()))
+        ) {
+          if (block.lastChild.tagName === 'BR') {
+            trailingBrCount += 1;
+          }
+          block.removeChild(block.lastChild);
+        }
+
+        // If it had 2 or more trailing <br> tags, preserve the intentional empty lines
+        // (1 trailing <br> is normal line end; each extra <br> represents a blank line)
+        if (trailingBrCount >= 2) {
+          for (let i = 0; i < trailingBrCount - 1; i += 1) {
+            const br = document.createElement('br');
+            block.after(br);
+          }
+        }
+      }
+    }
+  });
+
+  // 7. Convert each empty block element (<div><br></div> or empty div/p) into a standalone <br>
+  // In Froala with ENTER_DIV, each intentional empty line is represented by <div><br></div>.
+  // Converting each one to a <br> preserves the
+  // exact number of blank lines the user created in the editor.
+  const children = Array.from(wrapper.children);
+  children.forEach((child) => {
+    const isBrOnly = child.children.length === 1 && child.children[0].tagName === 'BR' && !child.textContent.trim();
+    const isEmpty = !child.textContent.trim() && !child.querySelector('img, iframe, table');
+    const isEmptyBlock = ['DIV', 'P'].includes(child.tagName) && (isBrOnly || isEmpty);
+
+    if (isEmptyBlock) {
+      const br = document.createElement('br');
+      child.replaceWith(br);
+    }
+  });
+
+  // 8. Clean root boundaries (remove leading and trailing <br> from top/bottom of email)
+  while (wrapper.firstChild) {
+    if (wrapper.firstChild.tagName === 'BR') {
+      wrapper.firstChild.remove();
+    } else if (wrapper.firstChild.nodeType === 3 && !wrapper.firstChild.nodeValue.trim()) {
+      wrapper.firstChild.remove();
+    } else {
+      break;
+    }
+  }
+
+  while (wrapper.lastChild) {
+    if (wrapper.lastChild.tagName === 'BR') {
+      wrapper.lastChild.remove();
+    } else if (wrapper.lastChild.nodeType === 3 && !wrapper.lastChild.nodeValue.trim()) {
+      wrapper.lastChild.remove();
+    } else {
+      break;
+    }
+  }
+
   return wrapper.innerHTML;
 };
 
@@ -253,6 +371,11 @@ export const isSupportedThemeColor = (color = '') => Object.values(SUPPORTED_THE
   .some((theme) => theme.value.toLowerCase() === color.toLowerCase());
 
 export const getWorkspaceSlugFromUrl = () => {
+  // Whitelabel domains should never return workspace slug
+  if (!isPrimaryApp) {
+    return '';
+  }
+
   const { hostname } = window.location;
 
   const rootDomain = getRootDomain();

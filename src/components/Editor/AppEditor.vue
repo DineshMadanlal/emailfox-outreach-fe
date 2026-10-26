@@ -148,16 +148,9 @@ import { loadFroalaAssets } from 'src/utils/loadFroala';
 import { cleanEditorHtmlForSave } from 'src/utils/helperFunctions';
 
 import {
-  highlightVariablesAndSpintax,
-  bindTokenDelete,
   bindEditorCopy,
   bindPlainPasteShortcut,
-  wrapVariable,
-  wrapSpintax,
-  bindSpintaxTabHandler,
-  focusLatestSpintaxOption,
   removePreviousOpeningBrace,
-
   getCleanText,
   findTemplateIssues,
 } from 'src/utils/froalaHelper';
@@ -318,19 +311,6 @@ export default defineComponent({
       }
     }, 0);
 
-    const applyHighlighting = () => {
-      if (!state.editorInstance) return; // Don't highlight while cleaning/saving
-
-      const html = state.editorInstance.html.get();
-      const highlightedHtml = highlightVariablesAndSpintax(html);
-
-      if (html !== highlightedHtml) {
-        state.editorInstance.html.set(highlightedHtml);
-        state.editorInstance.selection.restore();
-        emitValueDebounced(highlightedHtml);
-      }
-    };
-
     const SYSTEM_FONTS = [
       '-apple-system',
       'BlinkMacSystemFont',
@@ -455,7 +435,7 @@ export default defineComponent({
 
     const setEditorContent = (html) => {
       if (state.editorInstance) {
-        state.editorInstance.html.set(html || '');
+        state.editorInstance.html.set(cleanEditorHtmlForSave(html) || '');
       }
     };
 
@@ -669,21 +649,6 @@ export default defineComponent({
             // set initial content
             setEditorContent(props.modelValue);
 
-            // only for sequence editor
-            if (props.sequenceEditor || props.subjectEditor || props.signatureEditor) {
-              /** for highlighting variables and spintaxes */
-              setTimeout(() => {
-                applyHighlighting();
-              }, 0);
-
-              // for deleting the whole token when backspace or delete is pressed
-              bindTokenDelete(this);
-
-              bindSpintaxTabHandler(this, () => {
-                emitValueDebounced(this.html.get());
-              });
-            }
-
             bindEditorCopy(this);
 
             // for allowing plain text paste with ctrl/cmd + shift + v
@@ -720,12 +685,9 @@ export default defineComponent({
             emitValueDebounced(this.html.get());
           },
 
-          blur() {
-            if (props.sequenceEditor || props.subjectEditor || props.signatureEditor) {
-              setTimeout(() => {
-                applyHighlighting();
-              }, 0);
-            }
+          'paste.afterCleanup': function (clipboardHtml) {
+            // Clean up pasted HTML immediately (strips data-pasted, webkit styles, double <br>)
+            return cleanEditorHtmlForSave(clipboardHtml);
           },
 
           'image.beforeUpload': function (images) {
@@ -811,25 +773,17 @@ export default defineComponent({
       }
     };
 
-    // Helper to insert the variable with UI highlight pill wrapper
+    // Helper to insert the variable as plain text
     const insertVariable = (variableValue) => {
       if (state.editorInstance) {
-        const wrappedVariable = wrapVariable(variableValue);
-
-        onInsertHtmlFromVariable(wrappedVariable);
+        onInsertHtmlFromVariable(variableValue);
       }
     };
 
     const onAddSpintax = () => {
       if (!state.editorInstance) return;
 
-      const spintaxHtml = wrapSpintax('{}');
-
-      onInsertHtmlFromVariable(spintaxHtml);
-
-      setTimeout(() => {
-        focusLatestSpintaxOption(state.editorInstance);
-      }, 0);
+      onInsertHtmlFromVariable('{option 1|option 2}');
     };
 
     onMounted(async () => {
