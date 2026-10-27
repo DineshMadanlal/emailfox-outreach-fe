@@ -118,7 +118,6 @@ export default defineComponent({
 
     // lifecycle hooks
     onMounted(() => {
-      console.log('LoginPage mounted');
       // Only send if we're actually running inside an iframe
       if (window.parent !== window) {
         sendMessageToParent();
