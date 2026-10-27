@@ -237,6 +237,7 @@ export default defineComponent({
 
     // Handles the EMAILFOX_CONFIG message sent by the parent in response to EMAILFOX_INIT
     const handleConfigMessage = (event) => {
+      console.log('Received config message:', event);
       if (event.data?.type !== 'EMAILFOX_CONFIG') {
         return;
       }
