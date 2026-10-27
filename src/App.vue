@@ -121,6 +121,7 @@ export default defineComponent({
       const workspaceSlug = getWorkspaceSlugFromUrl();
 
       try {
+        console.log('workspaceSlug:', workspaceSlug);
         if (workspaceSlug) {
           if (isEmpty(activeWorkspaceData.value)) {
             // fetch workspace details and set branding
@@ -145,6 +146,8 @@ export default defineComponent({
       } catch (error) {
         updateAppBranding();
         state.showRouterView = true;
+
+        console.log('the error is', error);
       } finally {
         applyBranding();
       }
