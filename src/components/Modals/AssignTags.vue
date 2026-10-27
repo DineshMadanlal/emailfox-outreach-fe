@@ -356,8 +356,6 @@ export default defineComponent({
 
         await bulkUpdateMailboxes(payload);
 
-        console.log('Bulk update payload:', payload);
-
         // Show a success toaster
         appContext.config.globalProperties.$toast({
           message: 'Mailboxes updated successfully',
