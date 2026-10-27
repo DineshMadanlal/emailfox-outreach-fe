@@ -122,7 +122,7 @@ export default defineComponent({
       const deliveredRate = findPercentage({ part: delivered, whole: emailSent });
       const openedRate = findPercentage({ part: emailOpens, whole: emailSent });
       const repliedRate = findPercentage({ part: emailReplies, whole: emailSent });
-      const positiveRate = findPercentage({ part: emailPositiveReplies, whole: emailSent });
+      const positiveRate = findPercentage({ part: emailPositiveReplies, whole: emailReplies });
       const bouncedRate = findPercentage({ part: emailBounces, whole: emailSent });
 
       const metrics = [
