@@ -24,6 +24,20 @@
           />
         </div>
 
+        <!-- SEG Provider -->
+        <div class="full-width">
+          <InputLabel
+            label="SEG Provider"
+          />
+          <SelectSegProvider
+            :clearable="true"
+            placeholderText=""
+            v-model="computedFilterSegProvider"
+
+            class="dead-small full-width"
+          />
+        </div>
+
         <!-- Status -->
         <div class="full-width">
           <InputLabel
@@ -67,6 +81,7 @@ import { defineComponent, computed } from 'vue';
 // Components
 import InputLabel from 'components/Form/InputLabel.vue';
 import SelectProvider from 'components/Dropdown/SelectProvider.vue';
+import SelectSegProvider from 'components/Dropdown/SelectSegProvider.vue';
 import SelectList from 'components/Dropdown/SelectList.vue';
 import SelectContactStatus from 'components/Dropdown/SelectContactStatus.vue';
 
@@ -75,6 +90,7 @@ export default defineComponent({
 
   emits: [
     'update:filterProvider',
+    'update:filterSegProvider',
     'update:filterStatus',
     'update:filterList',
   ],
@@ -83,11 +99,16 @@ export default defineComponent({
     InputLabel,
     SelectList,
     SelectProvider,
+    SelectSegProvider,
     SelectContactStatus,
   },
 
   props: {
     filterProvider: {
+      type: String,
+      default: '',
+    },
+    filterSegProvider: {
       type: String,
       default: '',
     },
@@ -114,6 +135,13 @@ export default defineComponent({
       },
     });
 
+    const computedFilterSegProvider = computed({
+      get: () => props.filterSegProvider,
+      set: (value) => {
+        emit('update:filterSegProvider', value);
+      },
+    });
+
     const computedFilterStatus = computed({
       get: () => props.filterStatus,
       set: (value) => {
@@ -132,6 +160,7 @@ export default defineComponent({
       // computed
       computedFilterStatus,
       computedFilterProvider,
+      computedFilterSegProvider,
       computedFilterList,
     };
   },

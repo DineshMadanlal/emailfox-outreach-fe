@@ -699,6 +699,7 @@ checkbox in the UI */
       &::before {
         font-size: 14px;
         color: $grey-300;
+        white-space: nowrap;
         content: attr(data-placeholder);
       }
     }

@@ -239,3 +239,86 @@ export const ENGAGEMENT_SCORE_STATUS = {
     color: 'grey',
   },
 };
+
+export const SEG_PROVIDERS = {
+  PROOFPOINT: 'PROOFPOINT',
+  MIMECAST: 'MIMECAST',
+  BARRACUDA: 'BARRACUDA',
+  CISCO: 'CISCO',
+  SOPHOS: 'SOPHOS',
+  FORTINET: 'FORTINET',
+  TREND_MICRO: 'TREND_MICRO',
+  SYMANTEC: 'SYMANTEC',
+  SPAMTITAN: 'SPAMTITAN',
+  HORNETSECURITY: 'HORNETSECURITY',
+  APPRIVER: 'APPRIVER',
+};
+
+export const SEG_SIGNATURES = [
+  {
+    provider: 'PROOFPOINT',
+    label: 'Proofpoint',
+    icon: 'https://www.google.com/s2/favicons?domain=proofpoint.com&sz=128',
+    patterns: ['pphosted.com', 'ppe-hosted.com', 'proofpoint.com'],
+  },
+  {
+    provider: 'MIMECAST',
+    label: 'Mimecast',
+    icon: 'https://www.google.com/s2/favicons?domain=mimecast.com&sz=128',
+    patterns: ['mimecast.com', 'mimecast-offshore.com', 'mimecast.co.za'],
+  },
+  {
+    provider: 'BARRACUDA',
+    label: 'Barracuda',
+    icon: 'https://www.google.com/s2/favicons?domain=barracuda.com&sz=128',
+    patterns: ['barracudanetworks.com', 'barracuda.com'],
+  },
+  {
+    provider: 'CISCO',
+    label: 'Cisco',
+    icon: 'https://www.google.com/s2/favicons?domain=cisco.com&sz=128',
+    patterns: ['iphmx.com', 'cisco.com'],
+  },
+  {
+    provider: 'SOPHOS',
+    label: 'Sophos',
+    icon: 'https://www.google.com/s2/favicons?domain=sophos.com&sz=128',
+    patterns: ['sophos.com', 'hydra.sophos.com'],
+  },
+  {
+    provider: 'FORTINET',
+    label: 'Fortinet',
+    icon: 'https://www.google.com/s2/favicons?domain=fortinet.com&sz=128',
+    patterns: ['fortimail.com'],
+  },
+  {
+    provider: 'TREND_MICRO',
+    label: 'Trend Micro',
+    icon: 'https://www.google.com/s2/favicons?domain=trendmicro.com&sz=128',
+    patterns: ['trendmicro.com', 'tmes.trendmicro.com', 'trendmicro.eu'],
+  },
+  {
+    provider: 'SYMANTEC',
+    label: 'Symantec',
+    icon: 'https://www.google.com/s2/favicons?domain=symantec.com&sz=128',
+    patterns: ['messagelabs.com', 'symantec.com'],
+  },
+  {
+    provider: 'SPAMTITAN',
+    label: 'SpamTitan',
+    icon: 'https://www.google.com/s2/favicons?domain=spamtitan.com&sz=128',
+    patterns: ['spamtitan.com', 'titanhq.com'],
+  },
+  {
+    provider: 'HORNETSECURITY',
+    label: 'Hornetsecurity',
+    icon: 'https://www.google.com/s2/favicons?domain=hornetsecurity.com&sz=128',
+    patterns: ['hornetsecurity.com', 'antispameurope.com'],
+  },
+  {
+    provider: 'APPRIVER',
+    label: 'AppRiver',
+    icon: 'https://www.google.com/s2/favicons?domain=appriver.com&sz=128',
+    patterns: ['appriver.com', 'zixcorp.com'],
+  },
+];

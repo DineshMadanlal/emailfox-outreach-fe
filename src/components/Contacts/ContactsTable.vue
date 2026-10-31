@@ -201,6 +201,16 @@
           @update:modelValue="onFetchAllContacts"
         />
 
+        <!-- SEG Provider -->
+        <SelectSegProvider
+          :clearable="true"
+          v-model="filters.segProvider"
+
+          class="dead-small dd-filter"
+
+          @update:modelValue="onFetchAllContacts"
+        />
+
         <!-- Contact Status -->
         <SelectContactStatus
           v-if="false"
@@ -233,11 +243,13 @@
             :canFilterList="!listId"
             v-model:filterStatus="filters.status"
             v-model:filterProvider="filters.provider"
+            v-model:filterSegProvider="filters.segProvider"
             v-model:filterList="filters.listJson"
 
             @update:filterStatus="onUpdateFiltersModelValue('status', $event)"
             @update:filterList="onUpdateFiltersModelValue('listJson', $event)"
             @update:filterProvider="onUpdateFiltersModelValue('provider', $event)"
+            @update:filterSegProvider="onUpdateFiltersModelValue('segProvider', $event)"
           />
         </MoreFilters>
 
@@ -391,6 +403,14 @@
             v-else-if="props.col.name === 'esp_provider'"
           >
             <MailboxEsp :esp="props.value" />
+          </q-td>
+
+          <!-- SEG -->
+          <q-td
+            :props="props"
+            v-else-if="props.col.name === 'seg_provider'"
+          >
+            <ContactSeg :seg="props.row.seg_provider || props.value" />
           </q-td>
 
           <!-- Campaigns Added -->
@@ -569,6 +589,7 @@ import {
 import ApiLoader from 'components/General/ApiLoader.vue';
 import AppTooltip from 'components/General/AppTooltip.vue';
 import MailboxEsp from 'components/Contacts/MailboxEsp.vue';
+import ContactSeg from 'components/Contacts/ContactSeg.vue';
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ContactCellCard from 'components/Contacts/ContactCellCard.vue';
 import ColumnsVisibility from 'src/components/Modals/ColumnsVisibility.vue';
@@ -581,6 +602,7 @@ import ContactsActionSummary from 'components/Contacts/ContactsActionSummary.vue
 import MoreFilters from 'components/Buttons/MoreFilters.vue';
 import SelectList from 'components/Dropdown/SelectList.vue';
 import SelectProvider from 'components/Dropdown/SelectProvider.vue';
+import SelectSegProvider from 'components/Dropdown/SelectSegProvider.vue';
 import SelectContactStatus from 'components/Dropdown/SelectContactStatus.vue';
 import ContactsMoreFilters from 'components/Menu/ContactsMoreFilters.vue';
 import DeleteContactsModal from 'components/Contacts/Modals/DeleteContacts.vue';
@@ -612,6 +634,7 @@ export default defineComponent({
     ApiLoader,
     AppTooltip,
     MailboxEsp,
+    ContactSeg,
 
     AppSearchInput,
     TableMultiSelect,
@@ -627,6 +650,7 @@ export default defineComponent({
     SelectList,
     MoreFilters,
     SelectProvider,
+    SelectSegProvider,
     ContactsMoreFilters,
     SelectContactStatus,
     ContactsActionSummary,
@@ -652,6 +676,7 @@ export default defineComponent({
     const contactFilters = {
       searchText: '',
       provider: '',
+      segProvider: '',
       listJson: null,
       status: '',
     };
@@ -781,7 +806,12 @@ export default defineComponent({
     const workspaceCustomFields = computed(() => userStore.workspaceCustomFields || []);
 
     const dynamicColumns = computed(() => {
-      const otherColumns = [];
+      const otherColumns = [{
+        name: 'seg_provider',
+        label: 'Email Authentication Gateway',
+        align: 'left',
+        field: (row) => row.seg_provider || '',
+      }];
 
       const customFieldColumns = workspaceCustomFields.value.map((field) => ({
         name: `custom_fields.${field.value}`,
@@ -884,6 +914,11 @@ export default defineComponent({
         // provider filter
         if (state.filters.provider) {
           params.esp_provider = state.filters.provider;
+        }
+
+        // seg provider filter
+        if (state.filters.segProvider) {
+          params.seg_provider = state.filters.segProvider;
         }
 
         // list filter
@@ -1053,7 +1088,7 @@ export default defineComponent({
         filters, pagination, tableData, visibleColumns,
       } = loadFromStoreJson || {};
 
-      state.filters = filters || contactFilters;
+      state.filters = { ...contactFilters, ...(filters || {}) };
       state.pagination = pagination || DEFAULT_TABLE_PAGINATION;
       state.tableData = tableData || [];
       state.visibleColumns = visibleColumns || [];
