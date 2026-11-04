@@ -3,6 +3,20 @@
     flat
     class="config-card"
   >
+    <!-- Select Schedule Modal Dialog -->
+    <q-dialog
+      v-model="modals.showSelectScheduleDialog"
+      class="app-modal-dialog"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <SelectSendingScheduleModal
+        :selectedScheduleId="ui.scheduleJson?.id"
+        @useSendingSchedule="onSelectScheduleFromModal"
+        @scheduleUpdated="onScheduleUpdatedInModal"
+      />
+    </q-dialog>
+
     <!-- Card Header -->
     <div class="config-card-header">
       <div class="config-card-icon-wrap">
@@ -18,7 +32,6 @@
     <div class="config-row">
       <!-- left -->
       <div class="config-row-left">
-        <!--  -->
         <p class="config-label-line">
           Schedule
         </p>
@@ -31,33 +44,32 @@
         </p>
       </div>
 
-      <!-- Right -->
+      <!-- Right: Opens Select Schedule Modal -->
       <div class="config-row-right">
-        <!--  -->
-        <SelectSendingSchedule
-          v-model="ui.scheduleJson"
+        <q-btn
+          flat
+          dense
+          no-caps
 
-          :borderless="true"
-          :outlined="false"
-          canCreateSchedule
+          color="primary"
+          class="btn-font-weight-500 schedule-select-btn"
 
-          class="campaign-settings-dd"
-
-          ref="sendingScheduleRef"
-
-          @update:modelValue="onUpdateScheduleJson"
-        />
+          @click="modals.showSelectScheduleDialog = true"
+        >
+          <div class="flex no-wrap items-center">
+            <span class="schedule-btn-label">
+              {{ currentScheduleName }}
+            </span>
+            <q-icon name="keyboard_arrow_down" size="16px" class="q-ml-xs" />
+          </div>
+        </q-btn>
       </div>
     </div>
 
     <!-- Row: Campaign Start Date -->
-    <div
-      class="config-row"
-    >
-      <!--  -->
+    <div class="config-row">
       <div class="config-row-left">
         <div class="flex no-wrap q-gutter-sm items-center">
-          <!--  -->
           <p class="config-label-line">
             Campaign Start Date
           </p>
@@ -78,43 +90,34 @@
           placeholder="Set Start Date"
           class="schedule-date-picker"
           :input-class="ui.scheduledDate ? 'schedule-date-picker-input' : ''"
-
           sendTimestamp
           v-model="ui.scheduledDate"
-
           @update:modelValue="onUpdateScheduleData"
         />
 
         <!-- Close Button -->
         <q-btn
           v-if="ui.scheduledDate"
-
           flat
           dense
           no-caps
           unelevated
-
           color="negative"
-          moreClass="dead-small"
           class="app-negative-button"
           title="Clear Start Date"
-
-          @click="ui.scheduledDate = null; onUpdateScheduleData()"
+          @click="onClearScheduledDate"
         >
           <LocalSvgIcon
             image="close"
             class="app-negative-icon"
           />
         </q-btn>
-
       </div>
     </div>
 
     <!-- Row: Daily Limit -->
     <div class="config-row">
-      <!--  -->
       <div class="config-row-left">
-        <!--  -->
         <p class="config-label-line">
           Daily New Contacts Limit
         </p>
@@ -125,13 +128,11 @@
           flat
           dense
           no-caps
-
           color="primary"
           class="btn-font-weight-500"
           :label="newContactPerDayText"
           @click="$emit('editDailyLimit')"
-        >
-        </q-btn>
+        />
       </div>
     </div>
   </q-card>
@@ -140,29 +141,34 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, onMounted, watch, computed,
+  defineComponent, reactive, toRefs, watch, computed,
 } from 'vue';
 
 // Components
 import DatePicker from 'src/components/Input/DatePicker.vue';
 import InfoTooltip from 'src/components/General/InfoTooltip.vue';
-import SelectSendingSchedule from 'src/components/Dropdown/SelectSendingSchedule.vue';
+import SelectSendingScheduleModal from 'src/components/SendingSchedule/Modals/SelectSendingSchedule.vue';
+
+// Composables
+import useAppHelpersApi from 'src/composables/app-helpers.js';
 
 // Utils
 import { getNumeralAmount } from 'src/utils/numbers';
+import { getApiCall } from 'src/utils/apiRequests';
+import { getTimezoneJson, getSendingDaysLabel } from 'src/utils/campaignApi';
 
-// constants
-import { SCHEDULE_DAYS_SHORT_LABEL, TIMEZONES_LIST } from 'boot/campaign-constants';
+// Constants
+import { DEFAULT_CAMPAIGN_SETTINGS } from 'boot/campaign-constants';
 
 export default defineComponent({
   name: 'SendingScheduleCard',
 
-  emits: ['editDailyLimit'],
+  emits: ['editDailyLimit', 'updateCampaignSettings'],
 
   components: {
     DatePicker,
     InfoTooltip,
-    SelectSendingSchedule,
+    SelectSendingScheduleModal,
   },
 
   props: {
@@ -173,53 +179,114 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    // Helpers and composables
+    const { isMobileDevice } = useAppHelpersApi();
+
     // state
     const state = reactive({
-      sendingScheduleRef: null,
-
       ui: {
         scheduleJson: {},
         scheduledDate: null,
       },
 
       loaders: {
-        isFetching: false,
+        isFetchingSchedule: false,
+      },
+
+      modals: {
+        showSelectScheduleDialog: false,
       },
     });
 
     // computed
-    const scheduleAtText = computed(() => {
-      if (state.ui.scheduleJson?.timezone) {
-        const { windows } = state.ui.scheduleJson;
-        const days = windows?.sort(
-          (a, b) => a.day_of_week - b.day_of_week,
-        )
-          .map((window) => SCHEDULE_DAYS_SHORT_LABEL[window.day_of_week])
-          .join(', ');
-
-        const selectedTimezone = TIMEZONES_LIST.find(
-          (tz) => tz.value === state.ui.scheduleJson.timezone,
-        );
-
-        return `Scheduled at ${selectedTimezone.label} on ${days}`;
+    const currentScheduleName = computed(() => {
+      if (state.ui.scheduleJson?.name) {
+        return state.ui.scheduleJson.name;
       }
-
-      return '';
+      if (state.loaders.isFetchingSchedule) {
+        return 'Loading schedule...';
+      }
+      return 'Select Schedule';
     });
 
-    const newContactPerDayText = computed(() => `${getNumeralAmount(props.campaignSettings.new_contacts_per_day)}/Day`);
+    const scheduleAtText = computed(() => {
+      const schedule = state.ui.scheduleJson;
+      if (!schedule?.timezone) return '';
 
-    // methods
-    const loadSettingsState = () => {
-      if (props.campaignSettings?.sending_schedule_id
-        !== state.ui.scheduleJson?.id
-      ) {
-        state.ui.scheduleJson = {
-          id: props.campaignSettings.sending_schedule_id,
-        };
+      const tzObj = getTimezoneJson(schedule.timezone);
+      const tzLabel = tzObj?.label || schedule.timezone;
+      const days = getSendingDaysLabel(schedule.windows);
+
+      // Get hours from the first window if available
+      let hoursText = '';
+      if (schedule.windows?.length) {
+        const firstWin = schedule.windows[0];
+        const startTime = (firstWin.start_time || firstWin.startTime)?.slice(0, 5);
+        const endTime = (firstWin.end_time || firstWin.endTime)?.slice(0, 5);
+        if (startTime && endTime) {
+          hoursText = ` • ${startTime} – ${endTime}`;
+        }
       }
 
-      state.ui.scheduledDate = props.campaignSettings.scheduled_date;
+      if (!days) return `Scheduled at ${tzLabel}${hoursText}`;
+      return `Scheduled at ${tzLabel} on ${days}${hoursText}`;
+    });
+
+    const newContactPerDayText = computed(() => {
+      const limit = props.campaignSettings?.new_contacts_per_day
+        ?? DEFAULT_CAMPAIGN_SETTINGS.new_contacts_per_day
+        ?? 1000;
+      return `${getNumeralAmount(limit)}/Day`;
+    });
+
+    // methods
+    const fetchScheduleDetailsById = async (scheduleId) => {
+      if (!scheduleId) return;
+      try {
+        state.loaders.isFetchingSchedule = true;
+        const response = await getApiCall({
+          includeWorkspace: true,
+          endpoint: `/sending-schedules/${scheduleId}`,
+        });
+
+        if (response?.id === scheduleId) {
+          state.ui.scheduleJson = response;
+        }
+      } catch (error) {
+        // Silently keep minimal id state if fetch fails
+      } finally {
+        state.loaders.isFetchingSchedule = false;
+      }
+    };
+
+    const loadSettingsState = () => {
+      const scheduleId = props.campaignSettings?.sending_schedule_id;
+
+      if (scheduleId) {
+        if (state.ui.scheduleJson?.id !== scheduleId) {
+          state.ui.scheduleJson = { id: scheduleId };
+          fetchScheduleDetailsById(scheduleId);
+        }
+      } else {
+        state.ui.scheduleJson = {};
+      }
+
+      state.ui.scheduledDate = props.campaignSettings?.scheduled_date || null;
+    };
+
+    const onSelectScheduleFromModal = (selectedSchedule) => {
+      state.ui.scheduleJson = selectedSchedule || {};
+      state.modals.showSelectScheduleDialog = false;
+
+      emit('updateCampaignSettings', {
+        sending_schedule_id: selectedSchedule?.id || null,
+      });
+    };
+
+    const onScheduleUpdatedInModal = (scheduleId) => {
+      if (scheduleId && scheduleId === state.ui.scheduleJson?.id) {
+        fetchScheduleDetailsById(scheduleId);
+      }
     };
 
     const onUpdateScheduleData = () => {
@@ -228,19 +295,10 @@ export default defineComponent({
       });
     };
 
-    const onUpdateScheduleJson = () => {
-      if (props.campaignSettings.sending_schedule_id === state.ui.scheduleJson?.id) {
-        return;
-      }
-      emit('updateCampaignSettings', {
-        sending_schedule_id: state.ui.scheduleJson?.id,
-      });
+    const onClearScheduledDate = () => {
+      state.ui.scheduledDate = null;
+      onUpdateScheduleData();
     };
-
-    // lifecycle hooks
-    onMounted(() => {
-      // loadSettinxwgsState();
-    });
 
     // watchers
     watch(
@@ -248,6 +306,7 @@ export default defineComponent({
       () => {
         loadSettingsState();
       },
+      { immediate: true, deep: true },
     );
 
     return {
@@ -255,12 +314,16 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
+      isMobileDevice,
+      currentScheduleName,
       scheduleAtText,
       newContactPerDayText,
 
       // methods
-      onUpdateScheduleJson,
+      onSelectScheduleFromModal,
+      onScheduleUpdatedInModal,
       onUpdateScheduleData,
+      onClearScheduledDate,
     };
   },
 });
@@ -268,6 +331,19 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .config-card {
+  .schedule-select-btn {
+    font-size: 14px;
+    font-weight: 500;
+    color: $primary;
+
+    .schedule-btn-label {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
   .schedule-date-picker {
     max-width: 120px;
 
