@@ -795,6 +795,12 @@ export default defineComponent({
         align: 'left',
         field: 'esp_provider',
       },
+      {
+        name: 'seg_provider',
+        label: 'Email Authentication Gateway',
+        align: 'left',
+        field: (row) => row.seg_provider || '',
+      },
       // {
       //   name: 'campaigns_added',
       //   label: 'Campaigns Added',
@@ -806,12 +812,7 @@ export default defineComponent({
     const workspaceCustomFields = computed(() => userStore.workspaceCustomFields || []);
 
     const dynamicColumns = computed(() => {
-      const otherColumns = [{
-        name: 'seg_provider',
-        label: 'Email Authentication Gateway',
-        align: 'left',
-        field: (row) => row.seg_provider || '',
-      }];
+      const otherColumns = [];
 
       const customFieldColumns = workspaceCustomFields.value.map((field) => ({
         name: `custom_fields.${field.value}`,
