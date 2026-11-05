@@ -105,7 +105,7 @@ export default defineComponent({
     const route = useRoute();
     const contactId = computed(() => route.params.contactId);
 
-    const campaignsRoute = computed(() => `/outreach/contacts/${contactId.value}/campaigns`);
+    const campaignsRoute = computed(() => `/outreach/contacts/${contactId.value}/inbox`);
 
     const outreachData = computed(() => props.currentOutreachJson || {});
 

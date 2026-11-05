@@ -8,6 +8,7 @@
 
     <!-- Top Action Toolbar -->
     <Toolbar
+      v-if="!hideToolbar"
       :hasPrev="hasPrevThread"
       :hasNext="hasNextThread"
       :threadJson="threadJson"
@@ -43,7 +44,27 @@
       <div
         v-else
         class="conversation-content-wrapper"
+        :class="{ 'is-empty': conversationMessages.length === 0 }"
       >
+        <!-- Empty Messages Placeholder -->
+        <div
+          v-if="conversationMessages.length === 0"
+          class="empty-conversation-state"
+        >
+          <div class="empty-icon-circle">
+            <LocalSvgIcon
+              image="sequence"
+              class="empty-icon"
+            />
+          </div>
+          <p class="conversation-empty-title">
+            Outreach hasn't started yet
+          </p>
+          <p class="conversation-empty-description">
+            Messages will appear here once the campaign begins sending to this contact.
+          </p>
+        </div>
+
         <template
           v-for="(message, index) in conversationMessages"
           :key="`conversation-preview-${index}-${message.id || message.message_id || ''}`"
@@ -209,6 +230,10 @@ export default defineComponent({
     threadTypeConfig: {
       type: Object,
       default: () => ({}),
+    },
+    hideToolbar: {
+      type: Boolean,
+      default: false,
     },
   },
 
@@ -460,6 +485,57 @@ export default defineComponent({
       display: flex;
       flex-direction: column;
       gap: 16px;
+
+      &.is-empty {
+        flex: 1;
+        padding: 40px 20px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .empty-conversation-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        // justify-content: center;
+        text-align: center;
+        max-width: 440px;
+
+        .empty-icon-circle {
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          background-color: rgba(var(--primary-rgb), 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 16px;
+
+          :deep(.empty-icon) {
+            width: 22px;
+            height: 22px;
+            @include svg-icon-stroke('path, circle, rect', $primary);
+          }
+        }
+
+        .conversation-empty-title {
+          font-size: 18px;
+          line-height: 26px;
+          font-weight: 600;
+          color: $black;
+          margin: 0 0 6px 0;
+        }
+
+        .conversation-empty-description {
+          font-size: 14px;
+          line-height: 20px;
+          color: $grey;
+          max-width: 380px;
+          margin: 0;
+        }
+      }
     }
   }
 }

@@ -362,3 +362,20 @@ export const bulkUpdateUniboxInboxCategory = async (payload = {}) => patchApiCal
   payload,
   includeWorkspace: true,
 });
+
+/**
+ * Fetches distinct campaigns with inbox messages for a contact
+ * @param {Object} options
+ * @param {number|string} options.contactId - ID of the contact
+ * @returns {Promise<Array>} List of campaigns
+ */
+export const fetchContactInboxCampaigns = async ({ contactId }) => {
+  if (!contactId) {
+    throw new Error('Contact ID is required to fetch contact inbox campaigns');
+  }
+
+  return getApiCall({
+    endpoint: `/contacts/${contactId}/inbox/campaigns`,
+    includeWorkspace: true,
+  });
+};

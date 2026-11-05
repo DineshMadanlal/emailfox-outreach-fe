@@ -281,10 +281,10 @@ export default defineComponent({
         label: 'Overview',
         route: `/outreach/contacts/${contactId.value}/overview`,
       },
-      // {
-      //   label: 'Inbox',
-      //   route: `/outreach/contacts/${contactId.value}/inbox`,
-      // },
+      {
+        label: 'Inbox',
+        route: `/outreach/contacts/${contactId.value}/inbox`,
+      },
       {
         label: 'Campaigns',
         route: `/outreach/contacts/${contactId.value}/campaigns`,
