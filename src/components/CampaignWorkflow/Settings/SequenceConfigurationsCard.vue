@@ -143,6 +143,39 @@
         />
       </div>
     </div>
+
+    <!-- Row 5: Auto-enroll new leads added to linked lists -->
+    <div class="config-row">
+      <!-- Left -->
+      <div class="config-row-left">
+        <div class="flex no-wrap q-gutter-sm items-center">
+          <p class="config-label-line">
+            Auto-enroll new leads added to linked lists
+          </p>
+
+          <InfoTooltip
+            iconName="circle-question"
+            tooltipText="Automatically enroll new leads added to linked lists into this campaign."
+          />
+        </div>
+
+        <p
+          v-if="showCompletedCampaignSubtext"
+          class="config-subtext max-width-added"
+        >
+          The campaign status is completed. Adding new
+          leads to linked lists will reactivate the campaign and start outreach.
+        </p>
+      </div>
+
+      <!-- Right -->
+      <div class="config-row-right">
+        <ToggleInput
+          v-model="sequenceSettings.autoEnroll"
+          @update:modelValue="onUpdateCampaignSettings"
+        />
+      </div>
+    </div>
   </q-card>
 </template>
 
@@ -159,7 +192,11 @@ import SelectContactStop from 'components/Dropdown/SelectContactStop.vue';
 import SelectSendingVolume from 'components/Dropdown/SelectSendingVolume.vue';
 
 // constants
-import { DEFAULT_CAMPAIGN_SETTINGS, VARIANT_SPINTAX_DISTRIBUTION } from 'src/boot/campaign-constants';
+import {
+  DEFAULT_CAMPAIGN_SETTINGS,
+  VARIANT_SPINTAX_DISTRIBUTION,
+  CAMPAIGN_STATUS,
+} from 'src/boot/campaign-constants';
 
 export default defineComponent({
   name: 'SequenceConfigurationsCard',
@@ -178,6 +215,10 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    campaignStatus: {
+      type: String,
+      default: '',
+    },
   },
 
   setup(props, { emit }) {
@@ -188,11 +229,22 @@ export default defineComponent({
         stopSameCompany: true,
         stopContactWhen: DEFAULT_CAMPAIGN_SETTINGS.stop_contact_when,
         spintaxMode: DEFAULT_CAMPAIGN_SETTINGS.variant_spintax_distribution,
+        autoEnroll: DEFAULT_CAMPAIGN_SETTINGS.auto_enroll ?? true,
       },
     });
 
     // computed
     const variantSpintaxOptions = computed(() => Object.values(VARIANT_SPINTAX_DISTRIBUTION));
+
+    const isCompletedCampaign = computed(() => {
+      const status = props.campaignStatus;
+
+      return status === CAMPAIGN_STATUS.COMPLETED.value;
+    });
+
+    const showCompletedCampaignSubtext = computed(() => (
+      Boolean(state.sequenceSettings.autoEnroll && isCompletedCampaign.value)
+    ));
 
     // methods
     const onUpdateCampaignSettings = () => {
@@ -201,6 +253,7 @@ export default defineComponent({
         stop_contact_on_company_level_reply: state.sequenceSettings.stopSameCompany,
         variant_spintax_distribution: state.sequenceSettings.spintaxMode,
         follow_up_percent: state.sequenceSettings.followUpRatio,
+        auto_enroll: state.sequenceSettings.autoEnroll,
       });
     };
 
@@ -216,6 +269,9 @@ export default defineComponent({
         || DEFAULT_CAMPAIGN_SETTINGS.variant_spintax_distribution;
       state.sequenceSettings.followUpRatio = campaignSettings.follow_up_percent
         ?? DEFAULT_CAMPAIGN_SETTINGS.follow_up_percent;
+      state.sequenceSettings.autoEnroll = campaignSettings.auto_enroll
+        ?? DEFAULT_CAMPAIGN_SETTINGS.auto_enroll
+        ?? true;
     };
 
     // lifecycle hooks
@@ -237,6 +293,8 @@ export default defineComponent({
 
       // computed
       variantSpintaxOptions,
+      isCompletedCampaign,
+      showCompletedCampaignSubtext,
 
       // methods
       onUpdateCampaignSettings,

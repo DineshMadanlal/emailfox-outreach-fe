@@ -75,6 +75,8 @@
       <!-- sequence configuration -->
       <SequenceConfigurationsCard
         :campaignSettings="campaignSettings"
+        :campaignStatus="campaignByIdJson?.status"
+
         @updateCampaignSettings="updateCampaignSettings"
       />
 
@@ -630,6 +632,10 @@ export default defineComponent({
             font-size: 14px;
             color: $black;
             line-height: 16px;
+
+            &.max-width-added {
+              max-width: 440px;
+            }
           }
         }
 

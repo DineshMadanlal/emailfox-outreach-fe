@@ -989,6 +989,7 @@ export const DEFAULT_CAMPAIGN_SETTINGS = {
   variant_spintax_distribution: VARIANT_SPINTAX_DISTRIBUTION.RANDOM.value,
   stop_contact_on_company_level_reply: true,
   follow_up_percent: 100,
+  auto_enroll: true,
 
   // linkedin outreach configuration
   linkedin_failure_behavior: LINKEDIN_FAILURE_BEHAVIOR.PAUSE_LEAD.value,

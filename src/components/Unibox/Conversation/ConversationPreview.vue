@@ -8,7 +8,7 @@
 
     <!-- Top Action Toolbar -->
     <Toolbar
-      v-if="!hideToolbar"
+      v-if="shouldShowToolbar"
       :hasPrev="hasPrevThread"
       :hasNext="hasNextThread"
       :threadJson="threadJson"
@@ -351,6 +351,18 @@ export default defineComponent({
       return [state.fetchedData];
     });
 
+    // Determines if toolbar should be visible
+    const shouldShowToolbar = computed(() => {
+      if (props.hideToolbar) return false;
+      if (props.hideToolbarForContactView) {
+        if (props.isLoading || state.isFetchingMessages) {
+          return false;
+        }
+        return conversationMessages.value.length > 0;
+      }
+      return true;
+    });
+
     // Helper condition checks for message channels
     const isEmailMessage = (message) => (
       !message?.step_type
@@ -439,6 +451,7 @@ export default defineComponent({
       // computed
       isMobileDevice,
       conversationMessages,
+      shouldShowToolbar,
 
       // methods
       isEmailMessage,
@@ -540,6 +553,7 @@ export default defineComponent({
           line-height: 20px;
           color: $grey;
           max-width: 380px;
+          margin: 0;
         }
       }
     }
