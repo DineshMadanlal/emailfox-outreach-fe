@@ -13,6 +13,7 @@
       :hasNext="hasNextThread"
       :threadJson="threadJson"
       :fetchedData="fetchedData"
+      :hideToolbarForContactView="hideToolbarForContactView"
       :threadTypeConfig="threadTypeConfig"
 
       :class="{ 'page-scrolled': isPageScrolled }"
@@ -235,6 +236,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    hideToolbarForContactView: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   setup(props, { emit }) {
@@ -326,6 +331,8 @@ export default defineComponent({
     const handleReplyCategoryUpdate = async (newValue) => {
       if (state.fetchedData) {
         state.fetchedData.reply_category_id = newValue;
+        state.fetchedData.is_ai_auto_categorised = false;
+        state.fetchedData.ai_auto_categorised_result = null;
       }
       emit('update:replyCategory', newValue);
     };
@@ -533,7 +540,6 @@ export default defineComponent({
           line-height: 20px;
           color: $grey;
           max-width: 380px;
-          margin: 0;
         }
       }
     }

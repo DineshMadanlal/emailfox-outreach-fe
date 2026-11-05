@@ -12,7 +12,7 @@
 
     option-value="id"
     clear-icon="clear"
-    option-label="label"
+    option-label="name"
     dropdown-icon="keyboard_arrow_down"
     class="app-filter-dropdown unibox-filter-dropdown"
     :class="{
@@ -26,12 +26,12 @@
         v-if="scope.opt"
         class="flex no-wrap items-center q-gutter-sm selected-item-container"
 
-        :title="scope.opt.name"
+        :title="selectedCategoryJson?.name"
       >
         <div
           :style="{
             height: '8px', minWidth: '8px', borderRadius: '50%',
-            backgroundColor: getCategoryColor(scope.opt.sentiment),
+            backgroundColor: getCategoryColor(selectedCategoryJson?.sentiment),
           }"
         >
         </div>
@@ -39,7 +39,7 @@
         <div
           class="selected-item-text ellipsis"
         >
-          {{ scope.opt.name }}
+          {{ selectedCategoryJson?.name }}
         </div>
       </div>
     </template>
@@ -128,10 +128,15 @@ export default defineComponent({
       return 'var(--warning-color)';
     };
 
+    const selectedCategoryJson = computed(() => props.options?.find(
+      (opt) => Number(opt.id) === Number(props.modelValue),
+    ) || null);
+
     return {
       // computed
       internalValue,
       categoryOptions,
+      selectedCategoryJson,
 
       // methods
       getCategoryColor,

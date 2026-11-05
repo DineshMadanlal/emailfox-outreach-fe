@@ -156,21 +156,12 @@
           class="compact-badges-row"
         >
           <!-- Category pill -->
-          <div
-            v-if="replyCategoryName"
-            class="pill-reply-category flex items-center no-wrap"
-          >
-            <span
-              class="category-status-dot"
-              :style="{ backgroundColor: replyCategoryDotColor }"
-            />
-            <span
-              class="category-text ellipsis"
-              :title="replyCategoryName"
-            >
-              {{ replyCategoryName }}
-            </span>
-          </div>
+          <ReplyCategoryPill
+            v-if="emailJson.reply_category_id"
+            :categoryId="emailJson.reply_category_id"
+            :isAiCategorised="isAiCategorized"
+            :confidence="aiConfidence"
+          />
 
           <!-- Campaign pill -->
           <CampaignPill
@@ -240,34 +231,14 @@
 
           <!-- Right metadata: AI Pill + Reply Category + Campaign + Time -->
           <div class="item-metadata-pills-row">
-            <!-- AI Categorized Pill -->
-            <div
-              v-if="isAiCategorized"
-              class="pill-ai-categorized flex items-center no-wrap"
-            >
-              <LocalSvgIcon
-                image="stars"
-                class="ai-stars-icon"
-              />
-              <span class="ai-text">AI Categorized</span>
-            </div>
+            <!-- Reply Category Pill (With AI stars if auto-categorised) -->
+            <ReplyCategoryPill
+              v-if="emailJson.reply_category_id"
 
-            <!-- Reply Category Sentiment Pill -->
-            <div
-              v-if="replyCategoryName"
-              class="pill-reply-category flex items-center no-wrap"
-            >
-              <span
-                class="category-status-dot"
-                :style="{ backgroundColor: replyCategoryDotColor }"
-              />
-              <span
-                class="category-text ellipsis"
-                :title="replyCategoryName"
-              >
-                {{ replyCategoryName }}
-              </span>
-            </div>
+              :confidence="aiConfidence"
+              :isAiCategorised="isAiCategorized"
+              :categoryId="emailJson.reply_category_id"
+            />
 
             <!-- Campaign Badge -->
             <CampaignPill
@@ -294,6 +265,7 @@ import { defineComponent, computed } from 'vue';
 // components
 import AppTooltip from 'components/General/AppTooltip.vue';
 import CampaignPill from 'components/Unibox/Components/CampaignPill.vue';
+import ReplyCategoryPill from 'components/Unibox/Components/ReplyCategoryPill.vue';
 
 // utils
 import { formateDateInAgo } from 'src/utils/dates';
@@ -318,6 +290,7 @@ export default defineComponent({
   components: {
     AppTooltip,
     CampaignPill,
+    ReplyCategoryPill,
   },
 
   emits: ['click', 'toggle-star', 'toggle-select'],
@@ -366,7 +339,25 @@ export default defineComponent({
     // AI Categorized state
     const isAiCategorized = computed(() => {
       const e = props.emailJson;
-      return !!(e.is_ai_categorized || e.ai_categorized);
+      return Boolean(
+        e.is_ai_auto_categorised,
+      );
+    });
+
+    const aiTooltip = computed(() => {
+      const result = props.emailJson?.ai_auto_categorised_result;
+
+      if (result?.confidence) {
+        const percent = Math.round(result.confidence * 100);
+        return `Categorised automatically by AI (${percent}% confidence)`;
+      }
+
+      return 'Categorised automatically by AI';
+    });
+
+    const aiConfidence = computed(() => {
+      const result = props.emailJson?.ai_auto_categorised_result;
+      return typeof result?.confidence === 'number' ? result.confidence : null;
     });
 
     // Contact Email (Primary identifier)
@@ -495,6 +486,8 @@ export default defineComponent({
       messagePreview,
       hasEmailChannel,
       isAiCategorized,
+      aiConfidence,
+      aiTooltip,
       replyCategoryName,
       avatarPaletteStyle,
       formattedTimestamp,
@@ -646,13 +639,6 @@ export default defineComponent({
 
         :deep(.unibox-campaign-pill) {
           .campaign-text {
-            max-width: 120px;
-            font-size: 11px;
-          }
-        }
-
-        .pill-reply-category {
-          .category-text {
             max-width: 120px;
             font-size: 11px;
           }
@@ -809,56 +795,10 @@ export default defineComponent({
     }
   }
 
-  // Metadata pills
-  .pill-ai-categorized {
-    padding: 4px 10px;
-    border-radius: 50px;
-    background: #EFF6FF;
-    border: 1px solid #DBEAFE;
-    gap: 5px;
-    flex-shrink: 0;
-
-    .ai-stars-icon {
-      width: 13px;
-      height: 13px;
-      @include svg-icon-fill('path', #3B82F6);
-    }
-
-    .ai-text {
-      font-size: 12px;
-      font-weight: 500;
-      color: #1D4ED8;
-      white-space: nowrap;
-    }
-  }
-
   :deep(.unibox-campaign-pill) {
     .campaign-text {
       max-width: 160px;
       font-size: 11px;
-    }
-  }
-
-  .pill-reply-category {
-    padding: 2px 8px;
-    border-radius: 34px;
-    background: $white;
-    border: 1px solid $grey-50;
-    gap: 6px;
-    flex-shrink: 0;
-
-    .category-status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .category-text {
-      font-size: 13px;
-      color: $black;
-      max-width: 140px;
-      white-space: nowrap;
     }
   }
 

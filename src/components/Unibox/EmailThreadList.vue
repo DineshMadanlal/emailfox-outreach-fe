@@ -928,11 +928,15 @@ export default defineComponent({
       if (!mappingId) return;
 
       const previousCategoryId = activeItem.reply_category_id;
+      const previousAiCategorised = activeItem.is_ai_auto_categorised;
+      const previousAiResult = activeItem.ai_auto_categorised_result;
       const clearCategory = !newCategoryId;
 
       // Optimistic local update in thread list
       updateThreadInListById(mappingId, {
         reply_category_id: newCategoryId || null,
+        is_ai_auto_categorised: false,
+        ai_auto_categorised_result: null,
       });
 
       try {
@@ -943,12 +947,18 @@ export default defineComponent({
         });
 
         if (response?.data) {
-          updateThreadInListById(mappingId, response.data);
+          updateThreadInListById(mappingId, {
+            ...response.data,
+            is_ai_auto_categorised: false,
+            ai_auto_categorised_result: null,
+          });
         }
       } catch (error) {
         // Revert local update on error
         updateThreadInListById(mappingId, {
           reply_category_id: previousCategoryId,
+          is_ai_auto_categorised: previousAiCategorised,
+          ai_auto_categorised_result: previousAiResult,
         });
 
         appContext.config.globalProperties.$toast?.({

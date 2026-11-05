@@ -1,7 +1,10 @@
 <template>
   <div class="unibox-conversation-toolbar">
     <!-- Toolbar for conversation actions -->
-    <div class="unibox-toolbar-top">
+    <div
+      v-if="!hideToolbarForContactView"
+      class="unibox-toolbar-top"
+    >
       <!-- Left Action Group -->
       <div class="toolbar-left-actions">
         <!-- Star / Important Button -->
@@ -172,7 +175,10 @@
       class="unibox-toolbar-end"
     >
       <!-- Name -->
-      <div class="contact-header-text ellipsis">
+      <div
+        v-if="!hideToolbarForContactView"
+        class="contact-header-text ellipsis"
+      >
         {{ contactDisplayName }}
       </div>
 
@@ -187,22 +193,34 @@
           />
         </div>
 
-        <!-- Reply Category -->
-        <div class="relative-position">
-          <SelectReplyCategory
-            :options="replyCategoriesList"
-            :modelValue="threadJson.reply_category_id"
-            :disable="isReadOnly"
+        <!-- Right Side: AI Pill + Reply Category -->
+        <div class="flex items-center no-wrap reply-category-action-wrapper">
+          <!-- AI Categorised Pill -->
+          <AiCategorisedPill
+            v-if="isAiCategorised"
+            :tooltip="aiTooltip"
 
-            placeholderText="Select Reply Category"
-            class="medium-height reply-category-dd"
+            height="32px"
+            class="q-mr-sm"
+          />
 
-            @update:modelValue="handleReplyCategoryUpdate"
-          />
-          <AppTooltip
-            v-if="isReadOnly"
-            content="You have read-only access in this workspace"
-          />
+          <!-- Reply Category -->
+          <div class="relative-position">
+            <SelectReplyCategory
+              :options="replyCategoriesList"
+              :modelValue="currentReplyCategoryId"
+              :disable="isReadOnly"
+
+              placeholderText="Select Reply Category"
+              class="medium-height reply-category-dd"
+
+              @update:modelValue="handleReplyCategoryUpdate"
+            />
+            <AppTooltip
+              v-if="isReadOnly"
+              content="You have read-only access in this workspace"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -211,7 +229,7 @@
 
 <script>
 // vue
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, onMounted } from 'vue';
 
 // composables
 import { usePermissions } from 'src/composables/usePermissions';
@@ -220,6 +238,7 @@ import { usePermissions } from 'src/composables/usePermissions';
 import AppTooltip from 'components/General/AppTooltip.vue';
 import CampaignPill from 'components/Unibox/Components/CampaignPill.vue';
 import SelectReplyCategory from 'src/components/Dropdown/Unibox/SelectReplyCategory.vue';
+import AiCategorisedPill from 'components/Unibox/Components/AiCategorisedPill.vue';
 
 // pinia
 import { useUniboxStore } from 'src/stores/unibox';
@@ -243,6 +262,7 @@ export default defineComponent({
     AppTooltip,
     CampaignPill,
     SelectReplyCategory,
+    AiCategorisedPill,
   },
 
   props: {
@@ -265,6 +285,10 @@ export default defineComponent({
     fetchedData: {
       type: Object,
       default: () => ({}),
+    },
+    hideToolbarForContactView: {
+      type: Boolean,
+      default: false,
     },
   },
 
@@ -299,10 +323,43 @@ export default defineComponent({
       return data.contact_email || '';
     });
 
+    // Check if the current conversation is AI auto-categorised
+    const isAiCategorised = computed(() => {
+      if (props.fetchedData && typeof props.fetchedData.is_ai_auto_categorised === 'boolean') {
+        return props.fetchedData.is_ai_auto_categorised;
+      }
+      return Boolean(props.threadJson?.is_ai_auto_categorised);
+    });
+
+    // Dynamic AI tooltip with confidence score if available
+    const aiTooltip = computed(() => {
+      const result = props.fetchedData?.ai_auto_categorised_result
+        || props.threadJson?.ai_auto_categorised_result;
+
+      if (result?.confidence) {
+        const percent = Math.round(result.confidence * 100);
+        return `Categorised automatically by AI (${percent}% confidence)`;
+      }
+
+      return 'Categorised automatically by AI';
+    });
+
+    const currentReplyCategoryId = computed(() => (
+      props.threadJson?.reply_category_id
+      || props.fetchedData?.reply_category_id
+      || null
+    ));
+
+    // Ensure reply categories are available in store
+    onMounted(() => {
+      if (!uniboxPinia.getReplyCategoriesList?.length) {
+        uniboxPinia.fetchReplyCategories();
+      }
+    });
+
     // methods
     const handleReplyCategoryUpdate = (newValue) => {
       if (isReadOnly.value) return;
-      // Emit the update event to the parent component
       emit('update:replyCategory', newValue);
     };
 
@@ -316,6 +373,9 @@ export default defineComponent({
       isUntrackedReply,
       contactDisplayName,
       replyCategoriesList,
+      currentReplyCategoryId,
+      isAiCategorised,
+      aiTooltip,
 
       // methods
       handleReplyCategoryUpdate,
@@ -438,6 +498,13 @@ export default defineComponent({
 
       flex-wrap: wrap;
       gap: 12px;
+
+      .reply-category-action-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
 
       :deep(.reply-category-dd) {
         min-width: 200px;

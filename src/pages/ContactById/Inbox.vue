@@ -98,8 +98,11 @@
         <!-- Conversation Messages Component -->
         <UniboxConversationPreview
           v-if="selectedCampaign"
+
+          :hideToolbarForContactView="true"
           :threadJson="selectedCampaign"
-          :hideToolbar="true"
+
+          @update:reply-category="handleReplyCategoryUpdate"
         />
 
         <div
@@ -131,8 +134,11 @@ import useAppHelpersApi from 'src/composables/app-helpers.js';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import UniboxConversationPreview from 'components/Unibox/Conversation/ConversationPreview.vue';
 
+// store pinia
+import { useUniboxStore } from 'src/stores/unibox.js';
+
 // utils
-import { fetchContactInboxCampaigns } from 'src/utils/unibox';
+import { fetchContactInboxCampaigns, updateUniboxThreadReplyCategory } from 'src/utils/unibox';
 
 export default defineComponent({
   name: 'ContactInbox',
@@ -154,8 +160,14 @@ export default defineComponent({
   },
 
   setup(props) {
+    // store
+    const uniboxPinia = useUniboxStore();
+
+    // app context and route
     const { appContext } = getCurrentInstance();
     const route = useRoute();
+
+    // app helpers composable
     const { isMobileDevice } = useAppHelpersApi();
 
     // Contact ID extracted from prop or route
@@ -229,6 +241,71 @@ export default defineComponent({
       }
     };
 
+    // Handle manual reply category updates from conversation toolbar
+    const handleReplyCategoryUpdate = async (newValue) => {
+      if (!state.selectedCampaign) return;
+
+      const targetId = state.selectedCampaign.contact_mapping_id;
+      const previousCategoryId = state.selectedCampaign.reply_category_id;
+      const previousAiCategorised = state.selectedCampaign.is_ai_auto_categorised;
+      const previousAiResult = state.selectedCampaign.ai_auto_categorised_result;
+      const clearCategory = !newValue;
+
+      // Optimistic update of selectedCampaign
+      state.selectedCampaign = {
+        ...state.selectedCampaign,
+        reply_category_id: newValue || null,
+        is_ai_auto_categorised: false,
+        ai_auto_categorised_result: null,
+      };
+
+      // Also update matching campaign in list
+      const idx = state.campaigns.findIndex((c) => (
+        (c.contact_mapping_id && c.contact_mapping_id === targetId)
+        || (c.seq_id && String(c.seq_id) === String(state.selectedCampaign?.seq_id))
+      ));
+      if (idx !== -1) {
+        state.campaigns[idx] = {
+          ...state.campaigns[idx],
+          reply_category_id: newValue || null,
+          is_ai_auto_categorised: false,
+          ai_auto_categorised_result: null,
+        };
+      }
+
+      if (targetId) {
+        try {
+          await updateUniboxThreadReplyCategory({
+            contactMappingId: targetId,
+            replyCategoryId: newValue || null,
+            clearReplyCategory: clearCategory,
+          });
+        } catch (error) {
+          // Revert optimistic update on failure
+          if (state.selectedCampaign) {
+            state.selectedCampaign = {
+              ...state.selectedCampaign,
+              reply_category_id: previousCategoryId,
+              is_ai_auto_categorised: previousAiCategorised,
+              ai_auto_categorised_result: previousAiResult,
+            };
+          }
+          if (idx !== -1) {
+            state.campaigns[idx] = {
+              ...state.campaigns[idx],
+              reply_category_id: previousCategoryId,
+              is_ai_auto_categorised: previousAiCategorised,
+              ai_auto_categorised_result: previousAiResult,
+            };
+          }
+          appContext.config.globalProperties.$toast?.({
+            warning: true,
+            message: error.message || 'Failed to update reply category',
+          });
+        }
+      }
+    };
+
     // Reload when contact ID changes
     watch(contactId, (newId, oldId) => {
       if (newId && newId !== oldId) {
@@ -238,6 +315,8 @@ export default defineComponent({
 
     onMounted(() => {
       fetchCampaigns();
+
+      uniboxPinia.fetchReplyCategories({ force: true });
     });
 
     return {
@@ -252,6 +331,7 @@ export default defineComponent({
       isCampaignActive,
       selectCampaign,
       fetchCampaigns,
+      handleReplyCategoryUpdate,
     };
   },
 });
