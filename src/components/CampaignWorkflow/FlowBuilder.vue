@@ -706,13 +706,15 @@ export default defineComponent({
 
     const getNodeMeta = (step) => {
       if (step?.step_type === WORKFLOW_STEP_TYPES.CONDITION) {
-        const conditionCatalog = WORKFLOW_CONDITION_CATALOG[step.condition_type];
+        const conditionCatalog = WORKFLOW_CONDITION_CATALOG[step?.condition_type];
+
+        const safeCatalog = conditionCatalog || {};
 
         return {
-          icon: 'condition',
-          theme: 'tertiary',
-          title: 'Condition',
-          description: conditionCatalog.description,
+          icon: safeCatalog.icon || 'condition',
+          theme: safeCatalog.theme || 'tertiary',
+          title: safeCatalog.title || 'Condition',
+          description: safeCatalog.description || '',
         };
       }
 
