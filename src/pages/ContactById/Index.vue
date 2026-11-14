@@ -1,5 +1,11 @@
 <template>
-  <div class="contact-by-id-page">
+  <q-card
+    flat
+    :class="[
+      'contact-by-id-page',
+      { 'contact-by-id-drawer-mode app-modal-card custom-scrollbar': isModal },
+    ]"
+  >
     <!-- API Loader -->
     <ApiLoader
       :show="isApiLoading && !hasContactData"
@@ -28,8 +34,7 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <DeleteContactById
-        :contactId="contactId"
-
+        :contactId="effectiveContactId"
         :contactName="contactDisplayName"
         @onSuccessfulDelete="onContactDeleted"
       />
@@ -37,20 +42,91 @@
 
     <!-- Header -->
     <ContactByIdHeader
-      v-if="hasContactData"
+      v-if="hasContactData || isModal"
 
-      :contactJson="contactOverviewData"
+      :isModal="isModal"
+      v-model:activeTab="activeTab"
+      :contactJson="headerContactJson"
+      :contactId="effectiveContactId"
+      :hideCampaignsTab="hideCampaignsTab"
+
       @editContact="onEditContact"
       @deleteContact="modals.showDeleteContact = true"
+
+      @closeModal="$emit('closeModal')"
     />
 
-    <!-- Child Views (Overview, Inbox, Campaigns) -->
+    <!-- Modal View: In-Memory Tab Panels -->
+    <div
+      v-if="isModal"
+      class="app-modal-content drawer-body-container custom-scrollbar"
+    >
+      <!-- Loading indicator while loading in drawer without cached row -->
+      <div
+        v-if="isApiLoading && !contactOverviewData"
+        class="drawer-loading-box flex flex-center full-height full-width q-pa-xl"
+      >
+        <ApiLoader show />
+      </div>
+
+      <q-tab-panels
+        v-else
+        v-model="activeTab"
+        animated
+        keep-alive
+        class="drawer-tab-panels"
+      >
+        <!-- Overview Tab -->
+        <q-tab-panel
+          name="overview"
+          class="q-pa-none drawer-tab-panel"
+        >
+          <ContactOverview
+            :contactId="effectiveContactId"
+            :contactOverviewData="contactOverviewData"
+          />
+        </q-tab-panel>
+
+        <!-- Inbox Tab -->
+        <q-tab-panel
+          name="inbox"
+          class="q-pa-none drawer-tab-panel"
+        >
+          <ContactInbox
+            :contactId="effectiveContactId"
+            :campaignId="effectiveCampaignId"
+            :contactJson="contactOverviewData"
+            :initialCampaignId="effectiveCampaignId"
+            :contactOverviewData="contactOverviewData"
+
+            @update:replyCategory="handleReplyCategoryUpdate"
+          />
+        </q-tab-panel>
+
+        <!-- Campaigns Tab -->
+        <q-tab-panel
+          v-if="!hideCampaignsTab"
+          name="campaigns"
+          class="q-pa-none drawer-tab-panel"
+        >
+          <ContactCampaigns
+            :contactId="effectiveContactId"
+            :contactJson="contactOverviewData"
+            :contactOverviewData="contactOverviewData"
+          />
+        </q-tab-panel>
+      </q-tab-panels>
+    </div>
+
+    <!-- Full-Page View: Child Views (Overview, Inbox, Campaigns) -->
     <router-view
-      v-if="hasContactData"
+      v-else-if="hasContactData"
+
+      :contactId="effectiveContactId"
       :contactJson="contactOverviewData"
       :contactOverviewData="contactOverviewData"
     />
-  </div>
+  </q-card>
 </template>
 
 <script>
@@ -59,7 +135,8 @@ import isEmpty from 'lodash/isEmpty';
 
 // vue
 import {
-  defineComponent, reactive, toRefs, computed, onMounted, getCurrentInstance, provide,
+  defineComponent, reactive, toRefs, computed, onMounted,
+  getCurrentInstance, provide, watch,
 } from 'vue';
 
 // router
@@ -73,6 +150,9 @@ import ApiLoader from 'components/General/ApiLoader.vue';
 import ContactByIdHeader from 'components/ContactById/Header.vue';
 import SaveContact from 'components/Contacts/Modals/SaveContact.vue';
 import DeleteContactById from 'components/Contacts/Modals/DeleteContactById.vue';
+import ContactOverview from 'src/pages/ContactById/Overview.vue';
+import ContactInbox from 'src/pages/ContactById/Inbox.vue';
+import ContactCampaigns from 'src/pages/ContactById/Campaigns.vue';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
@@ -88,9 +168,46 @@ export default defineComponent({
     SaveContact,
     ContactByIdHeader,
     DeleteContactById,
+    ContactOverview,
+    ContactInbox,
+    ContactCampaigns,
   },
 
-  setup() {
+  props: {
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
+    campaignId: {
+      type: [String, Number],
+      default: null,
+    },
+    isModal: {
+      type: Boolean,
+      default: false,
+    },
+    hideCampaignsTab: {
+      type: Boolean,
+      default: false,
+    },
+    defaultTab: {
+      type: String,
+      default: 'overview',
+    },
+    contactRow: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  emits: [
+    'closeModal',
+    'update:replyCategory',
+    'contactDeleted',
+    'contactUpdated',
+  ],
+
+  setup(props, { emit }) {
     // app context
     const { appContext } = getCurrentInstance();
 
@@ -104,8 +221,8 @@ export default defineComponent({
     // state
     const state = reactive({
       contactOverviewData: null,
-
       isApiLoading: false,
+      activeTab: props.defaultTab || 'overview',
 
       modals: {
         showEditContact: false,
@@ -114,17 +231,65 @@ export default defineComponent({
     });
 
     // computed
-    const contactId = computed(() => route.params.contactId);
+    const effectiveContactId = computed(() => (
+      props.contactId
+      || props.contactRow?.contact_id
+      || props.contactRow?.id
+      || route.params.contactId
+      || null
+    ));
 
-    const hasContactData = computed(() => !isEmpty(state.contactOverviewData?.contact));
+    const effectiveCampaignId = computed(() => (
+      props.campaignId
+      || route.params.campaignId
+      || null
+    ));
+
+    const rawContact = computed(() => (
+      state.contactOverviewData?.contact || props.contactRow || {}
+    ));
+
+    const hasContactData = computed(() => (
+      !isEmpty(state.contactOverviewData?.contact) || !isEmpty(props.contactRow)
+    ));
 
     const contactDisplayName = computed(() => {
-      const c = state.contactOverviewData?.contact;
-      return `${c?.first_name || ''} ${c?.last_name || ''}`.trim() || c?.email || '';
+      const c = rawContact.value;
+      const firstName = (c.first_name || '').trim();
+      const lastName = (c.last_name || '').trim();
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      return fullName || c.contact_email || c.email || '';
+    });
+
+    const headerContactJson = computed(() => {
+      if (state.contactOverviewData) {
+        return {
+          ...state.contactOverviewData,
+          status: props.contactRow?.status || state.contactOverviewData?.status,
+        };
+      }
+      if (!isEmpty(props.contactRow)) {
+        return {
+          contact: props.contactRow,
+          status: props.contactRow?.status,
+        };
+      }
+      return null;
     });
 
     // methods
     const redirectToNotFound = (message = 'Contact not found') => {
+      if (props.isModal) {
+        appContext.config.globalProperties.$toast?.({
+          warning: true,
+          message,
+        });
+
+        emit('closeModal');
+        return;
+      }
+
       appContext.config.globalProperties.$toast({
         warning: true,
         message,
@@ -140,8 +305,11 @@ export default defineComponent({
     };
 
     const fetchContactOverview = async () => {
-      if (!contactId.value) {
-        redirectToNotFound();
+      if (!effectiveContactId.value) {
+        if (!props.isModal) {
+          redirectToNotFound();
+        }
+
         return;
       }
 
@@ -149,7 +317,7 @@ export default defineComponent({
         state.isApiLoading = true;
 
         const response = await getApiCall({
-          endpoint: `/contacts/${contactId.value}/overview`,
+          endpoint: `/contacts/${effectiveContactId.value}/overview`,
           includeWorkspace: true,
         });
 
@@ -160,11 +328,16 @@ export default defineComponent({
 
         state.contactOverviewData = response;
 
-        const contactName = `${response.contact.first_name || ''} ${response.contact.last_name || ''}`.trim()
-          || response.contact.email
-          || 'Contact Details';
+        if (!props.isModal) {
+          const first = response.contact.first_name || '';
+          const last = response.contact.last_name || '';
 
-        useMeta(generateMetadata(`Contact: ${contactName}`));
+          const contactName = `${first} ${last}`.trim()
+            || response.contact.email
+            || 'Contact Details';
+
+          useMeta(generateMetadata(`Contact: ${contactName}`));
+        }
       } catch (error) {
         //
         redirectToNotFound(error.message || 'Contact not found');
@@ -181,37 +354,83 @@ export default defineComponent({
       state.modals.showEditContact = false;
 
       fetchContactOverview();
+
+      if (props.isModal) {
+        emit('contactUpdated');
+      }
     };
 
     const onContactDeleted = () => {
       state.modals.showDeleteContact = false;
 
-      // navigate back to all contacts page
-      router.push('/outreach/contacts/all');
+      if (props.isModal) {
+        emit('closeModal');
+        emit('contactDeleted', effectiveContactId.value);
+      } else {
+        router.push('/outreach/contacts/all');
+      }
     };
 
-    // Provide contact overview data to child views
-    provide('contactOverviewData', computed(() => state.contactOverviewData));
+    const handleReplyCategoryUpdate = (newCategoryId) => {
+      emit('update:replyCategory', newCategoryId);
+    };
+
+    // Provide contact overview data and contact ID to child views
+    provide('contactId', effectiveContactId);
+    provide('campaignId', effectiveCampaignId);
     provide('fetchContactOverview', fetchContactOverview);
+    provide('contactOverviewData', computed(() => state.contactOverviewData));
 
     onMounted(() => {
       fetchContactOverview();
     });
+
+    // Watchers
+    watch(
+      () => props.defaultTab,
+      (newTab) => {
+        if (newTab) {
+          state.activeTab = newTab;
+        }
+      },
+    );
+
+    watch(
+      effectiveContactId,
+      (newId, oldId) => {
+        if (newId && newId !== oldId) {
+          fetchContactOverview();
+        }
+      },
+    );
+
+    watch(
+      () => props.contactRow,
+      (newRow) => {
+        if (newRow && (newRow.id || newRow.contact_id)) {
+          fetchContactOverview();
+        }
+      },
+      { deep: true },
+    );
 
     return {
       // state
       ...toRefs(state),
 
       // computed
-      contactId,
+      effectiveContactId,
+      effectiveCampaignId,
       hasContactData,
       isMobileDevice,
       contactDisplayName,
+      headerContactJson,
 
       // methods
       onEditContact,
       onContactUpdated,
       onContactDeleted,
+      handleReplyCategoryUpdate,
     };
   },
 });
@@ -226,5 +445,46 @@ export default defineComponent({
   flex-direction: column;
   position: relative;
   overflow-y: scroll;
+
+  &.contact-by-id-drawer-mode {
+    max-width: 1080px;
+    height: 100%;
+    max-height: 100vh;
+    overflow: hidden;
+    background-color: $white;
+
+    @media (min-width: $breakpoint-sm-min) {
+      width: 1080px;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 601px) {
+      border-radius: 8px 0px 0px 8px !important;
+    }
+
+    @media (min-width: 601px) and (max-width: 1100px) {
+      width: calc(100vw - 32px);
+    }
+
+    .drawer-body-container {
+      padding: 0px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .drawer-tab-panels {
+      background: transparent;
+      height: 100%;
+
+      .drawer-tab-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+    }
+  }
 }
 </style>

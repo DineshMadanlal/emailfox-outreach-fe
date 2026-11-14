@@ -1,15 +1,15 @@
 <template>
   <div class="contact-campaigns-page">
     <CampaignsTable
-      v-if="contactId"
-      :contactId="contactId"
+      v-if="effectiveContactId"
+      :contactId="effectiveContactId"
     />
   </div>
 </template>
 
 <script>
 // vue
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, inject } from 'vue';
 
 // router
 import { useRoute } from 'vue-router';
@@ -25,6 +25,10 @@ export default defineComponent({
   },
 
   props: {
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
     contactJson: {
       type: Object,
       default: () => ({}),
@@ -38,13 +42,21 @@ export default defineComponent({
   setup(props) {
     // route
     const route = useRoute();
+    const injectedContactId = inject('contactId', null);
 
     // computed
-    const contactId = computed(() => props.contactJson?.id || route.params.contactId);
+    const effectiveContactId = computed(() => (
+      props.contactId
+      || injectedContactId?.value
+      || props.contactJson?.contact?.id
+      || props.contactJson?.id
+      || props.contactOverviewData?.contact?.id
+      || route.params.contactId
+    ));
 
     return {
       // computed
-      contactId,
+      effectiveContactId,
     };
   },
 });

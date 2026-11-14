@@ -134,7 +134,10 @@
         <template v-slot:body-cell-email="props">
           <q-td :props="props">
             <div class="email-and-action-cell">
-              <div class="email-cell-text ellipsis">
+              <div
+                class="email-cell-text ellipsis cursor-pointer"
+                @click="openContactDrawer(props.row)"
+              >
                 {{ props.row.contact_email || '-' }}
               </div>
 
@@ -192,7 +195,10 @@
         <!-- Full Name Cell -->
         <template v-slot:body-cell-full_name="props">
           <q-td :props="props">
-            <div class="flex items-center no-wrap contact-name-cell">
+            <div
+              class="flex items-center no-wrap contact-name-cell cursor-pointer"
+              @click="openContactDrawer(props.row)"
+            >
               <div class="contact-avatar-box">
                 {{ getContactInitial(props.row) }}
               </div>
@@ -208,8 +214,8 @@
           <q-td :props="props">
             <div class="step-cell-text">
               {{ props.row.current_step_number !== null
-  && props.row.current_step_number !== undefined
-  ? props.row.current_step_number : '-' }}
+                && props.row.current_step_number !== undefined
+                ? props.row.current_step_number : '-' }}
             </div>
           </q-td>
         </template>
@@ -235,12 +241,37 @@
 
         <!-- Replies Cell -->
         <template v-slot:body-cell-replies="props">
-          <q-td :props="props">
+          <q-td
+            :props="props"
+            :class="{ 'cursor-pointer table-reply-cell-link': props.row.last_reply_at }"
+            @click="props.row.last_reply_at ? openContactDrawer(props.row, 'inbox') : null"
+          >
             {{ formatLastReply(props.row) }}
           </q-td>
         </template>
       </q-table>
     </div>
+
+    <!-- Contact Details Modal -->
+    <q-dialog
+      v-model="contactDrawer.show"
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ContactById
+        isModal
+        :contactId="contactDrawer.contactId"
+        :campaignId="campaignId"
+        :hideCampaignsTab="true"
+        :defaultTab="contactDrawer.activeTab"
+        :contactRow="contactDrawer.contactRow"
+        @closeModal="contactDrawer.show = false"
+        @update:replyCategory="onDrawerReplyCategoryUpdate"
+      />
+    </q-dialog>
   </div>
 </template>
 
@@ -251,7 +282,7 @@ import isEmpty from 'lodash/isEmpty';
 
 // vue
 import {
-  defineComponent, reactive, toRefs, computed,
+  defineComponent, reactive, toRefs, computed, watch,
   onMounted, getCurrentInstance, inject,
 } from 'vue';
 
@@ -261,6 +292,7 @@ import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ContactsMoreOptions from 'components/Menu/ContactsMoreOptions.vue';
 import AllContactsIllustration from 'components/Illustrations/AllContacts.vue';
 import SelectCampaignContactStatus from 'components/Dropdown/SelectCampaignContactStatus.vue';
+import ContactById from 'pages/ContactById/Index.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -287,11 +319,16 @@ export default defineComponent({
     ContactsMoreOptions,
     AllContactsIllustration,
     SelectCampaignContactStatus,
+    ContactById,
   },
 
   props: {
     campaignId: {
-      type: Number,
+      type: [Number, String],
+      default: null,
+    },
+    contactId: {
+      type: [Number, String],
       default: null,
     },
   },
@@ -335,6 +372,14 @@ export default defineComponent({
 
       visibleColumns: [],
       showColumnsVisibilityModal: false,
+
+      // contact details drawer
+      contactDrawer: {
+        show: false,
+        contactId: null,
+        activeTab: 'inbox',
+        contactRow: {},
+      },
     });
 
     const showApiLoader = computed(() => {
@@ -464,6 +509,21 @@ export default defineComponent({
       const date = row.last_reply_at;
       if (!date) return '-';
       return formatDateWithTime(date);
+    };
+
+    const openContactDrawer = (row, tab = 'inbox') => {
+      state.contactDrawer.contactId = row.contact_id || row.id;
+      state.contactDrawer.contactRow = row;
+      state.contactDrawer.activeTab = tab || 'inbox';
+      state.contactDrawer.show = true;
+    };
+
+    const onDrawerReplyCategoryUpdate = (newCategoryId) => {
+      if (state.contactDrawer.contactRow) {
+        state.contactDrawer.contactRow.reply_category_id = newCategoryId;
+        state.contactDrawer.contactRow.is_ai_auto_categorised = false;
+        state.contactDrawer.contactRow.ai_auto_categorised_result = null;
+      }
     };
 
     const updateMultiSelect = (multiSelectOptionJson) => {
@@ -639,6 +699,16 @@ export default defineComponent({
       makeApiCallOnMounted();
     });
 
+    watch(
+      () => props.contactId,
+      (newContactId) => {
+        if (newContactId) {
+          openContactDrawer({ contact_id: newContactId, id: newContactId });
+        }
+      },
+      { immediate: true },
+    );
+
     return {
       // state
       ...toRefs(state),
@@ -673,6 +743,8 @@ export default defineComponent({
       clearAllFilters,
       onUpdateVisibleColumns,
       onUpdateFiltersModelValue,
+      openContactDrawer,
+      onDrawerReplyCategoryUpdate,
     };
   },
 });
@@ -753,6 +825,13 @@ export default defineComponent({
           font-weight: 500;
           margin: 0;
         }
+
+        &.cursor-pointer:hover {
+          .contact-name-text {
+            color: $primary;
+            text-decoration: underline;
+          }
+        }
       }
 
       .email-and-action-cell {
@@ -765,6 +844,11 @@ export default defineComponent({
           font-size: 13px;
           font-weight: 400;
           line-height: 16px;
+
+          &.cursor-pointer:hover {
+            color: $primary;
+            text-decoration: underline;
+          }
         }
 
         .actions-cell {
@@ -784,6 +868,13 @@ export default defineComponent({
         max-width: 240px;
 
         &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .table-reply-cell-link {
+        &:hover {
+          color: $primary;
           text-decoration: underline;
         }
       }

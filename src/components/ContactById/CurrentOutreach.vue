@@ -83,7 +83,7 @@
 
 <script>
 // vue
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, inject } from 'vue';
 
 // vue router
 import { useRoute } from 'vue-router';
@@ -95,6 +95,10 @@ export default defineComponent({
   name: 'CurrentOutreach',
 
   props: {
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
     currentOutreachJson: {
       type: Object,
       default: () => ({}),
@@ -103,9 +107,16 @@ export default defineComponent({
 
   setup(props) {
     const route = useRoute();
-    const contactId = computed(() => route.params.contactId);
+    const injectedContactId = inject('contactId', null);
 
-    const campaignsRoute = computed(() => `/outreach/contacts/${contactId.value}/inbox`);
+    const effectiveContactId = computed(() => (
+      props.contactId
+      || injectedContactId?.value
+      || props.currentOutreachJson?.contact_id
+      || route.params.contactId
+    ));
+
+    const campaignsRoute = computed(() => `/outreach/contacts/${effectiveContactId.value}/inbox`);
 
     const outreachData = computed(() => props.currentOutreachJson || {});
 

@@ -18,6 +18,7 @@
             </div>
 
             <CurrentOutreach
+              :contactId="effectiveContactId"
               :currentOutreachJson="overviewData.current_outreach"
             />
           </div>
@@ -45,6 +46,9 @@ import {
   defineComponent, computed, inject,
 } from 'vue';
 
+// vue router
+import { useRoute } from 'vue-router';
+
 // components
 import EngagementScore from 'components/ContactById/EngagementScore.vue';
 import ContactLists from 'components/ContactById/ContactLists.vue';
@@ -64,6 +68,10 @@ export default defineComponent({
   },
 
   props: {
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
     contactOverviewData: {
       type: Object,
       default: () => ({}),
@@ -71,7 +79,9 @@ export default defineComponent({
   },
 
   setup(props) {
+    const route = useRoute();
     const injectedOverviewData = inject('contactOverviewData', null);
+    const injectedContactId = inject('contactId', null);
 
     const overviewData = computed(() => {
       if (props.contactOverviewData && Object.keys(props.contactOverviewData).length > 0) {
@@ -80,8 +90,16 @@ export default defineComponent({
       return injectedOverviewData?.value || {};
     });
 
+    const effectiveContactId = computed(() => (
+      props.contactId
+      || injectedContactId?.value
+      || overviewData.value?.contact?.id
+      || route.params.contactId
+    ));
+
     return {
       overviewData,
+      effectiveContactId,
     };
   },
 });
@@ -108,7 +126,7 @@ export default defineComponent({
       gap: 20px;
       align-items: flex-start;
 
-      @media (max-width: $breakpoint-md-max) {
+      @media (max-width: $breakpoint-sm-max) {
         flex-direction: column;
       }
 
@@ -118,11 +136,11 @@ export default defineComponent({
         flex-direction: column;
         gap: 20px;
         min-width: 0;
-        width: 100%;
+        container-type: inline-size;
 
         .contact-overview-top-row {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           gap: 20px;
 
           @media (max-width: $breakpoint-sm-max) {
@@ -133,6 +151,7 @@ export default defineComponent({
             display: flex;
             flex-direction: column;
             gap: 20px;
+            min-width: 0;
           }
         }
       }
@@ -141,7 +160,7 @@ export default defineComponent({
         width: 320px;
         flex-shrink: 0;
 
-        @media (max-width: $breakpoint-md-max) {
+        @media (max-width: $breakpoint-sm-max) {
           width: 100%;
         }
       }

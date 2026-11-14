@@ -370,16 +370,17 @@
             :props="props"
             v-if="props.col.name === 'email'"
           >
-            <router-link
-              :to="`/outreach/contacts/${props.row.id}`"
-              class="table-route-link"
+            <a
+              :href="`/outreach/contacts/${props.row.id}`"
+              class="table-route-link cursor-pointer"
+              @click.prevent="openContactDrawer(props.row)"
             >
               <div class="email-and-action-cell">
                 <div class="email-cell-text">
                   {{ props.value || '-' }}
                 </div>
               </div>
-            </router-link>
+            </a>
           </q-td>
 
           <!-- Base Columns: First Name, Last Name, Email -->
@@ -387,14 +388,15 @@
             :props="props"
             v-else-if="['first_name', 'last_name'].includes(props.col.name)"
           >
-            <router-link
-              :to="`/outreach/contacts/${props.row.id}`"
-              class="table-route-link"
+            <a
+              :href="`/outreach/contacts/${props.row.id}`"
+              class="table-route-link cursor-pointer"
+              @click.prevent="openContactDrawer(props.row)"
             >
               <div class="text-black">
                 {{ props.value || '-' }}
               </div>
-            </router-link>
+            </a>
           </q-td>
 
           <!-- ESP -->
@@ -571,6 +573,26 @@
         <ContactCellCard :contact="tableDataMenu" />
       </q-menu>
     </div>
+
+    <!-- Contact Details Modal -->
+    <q-dialog
+      v-model="contactDrawer.show"
+      :class="isMobileDevice
+        ? 'app-modal-dialog' : 'app-modal-dialog--right-positioned'"
+      :position="isMobileDevice ? 'standard' : 'right'"
+      :transition-show="isMobileDevice ? 'slide-up' : ''"
+      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    >
+      <ContactById
+        isModal
+        :contactId="contactDrawer.contactId"
+        :campaignId="campaignId"
+        :hideCampaignsTab="false"
+        :defaultTab="contactDrawer.activeTab"
+        :contactRow="contactDrawer.contactRow"
+        @closeModal="contactDrawer.show = false"
+      />
+    </q-dialog>
   </div>
 </template>
 
@@ -607,6 +629,7 @@ import SelectContactStatus from 'components/Dropdown/SelectContactStatus.vue';
 import ContactsMoreFilters from 'components/Menu/ContactsMoreFilters.vue';
 import DeleteContactsModal from 'components/Contacts/Modals/DeleteContacts.vue';
 import SaveContactModal from 'components/Contacts/Modals/SaveContact.vue';
+import ContactById from 'pages/ContactById/Index.vue';
 
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
@@ -654,6 +677,7 @@ export default defineComponent({
     ContactsMoreFilters,
     SelectContactStatus,
     ContactsActionSummary,
+    ContactById,
   },
 
   props: {
@@ -722,6 +746,14 @@ export default defineComponent({
         showAddContact: false,
         showEditContact: false,
         showDeleteContact: false,
+      },
+
+      // contact details drawer
+      contactDrawer: {
+        show: false,
+        contactId: null,
+        activeTab: 'inbox',
+        contactRow: {},
       },
     });
 
@@ -1124,6 +1156,13 @@ export default defineComponent({
       }
     };
 
+    const openContactDrawer = (row, tab = 'inbox') => {
+      state.contactDrawer.contactId = row.id || row.contact_id;
+      state.contactDrawer.contactRow = row;
+      state.contactDrawer.activeTab = tab;
+      state.contactDrawer.show = true;
+    };
+
     // lifecycle hooks
     onMounted(() => {
       getWorkspaceCustomFields();
@@ -1168,6 +1207,7 @@ export default defineComponent({
       onUpdateVisibleColumns,
       onUpdateFiltersModelValue,
       onAddNewContact,
+      openContactDrawer,
     };
   },
 });
@@ -1277,6 +1317,14 @@ export default defineComponent({
         text-decoration: unset;
 
         justify-content: center;
+
+        &:hover {
+          .email-cell-text,
+          .text-black {
+            text-decoration: underline;
+            color: $primary;
+          }
+        }
       }
 
       .email-and-action-cell {

@@ -5,24 +5,51 @@
   >
     <!-- Top header: Breadcrumbs & Close -->
     <div class="contact-id-top-header">
-      <!-- Breadcrumb Link to Contacts -->
-      <router-link
-        to="/outreach/contacts/all"
-        class="contact-route-link-text"
-      >
-        Contacts
-      </router-link>
+      <!-- Breadcrumb Link to Contacts (Page Mode) -->
+      <template v-if="!isModal">
+        <router-link
+          to="/outreach/contacts/all"
+          class="contact-route-link-text"
+        >
+          Contacts
+        </router-link>
 
-      <LocalSvgIcon
-        image="plain-down-arrow"
-        classes="plain-down-arrow-icon"
-      />
+        <LocalSvgIcon
+          image="plain-down-arrow"
+          classes="plain-down-arrow-icon"
+        />
 
-      <p class="contact-current-name-text">
-        {{ contactDisplayName }}
-      </p>
+        <p class="contact-current-name-text">
+          {{ contactDisplayName }}
+        </p>
+      </template>
+
+      <!-- Drawer Title (Modal Mode) -->
+      <template v-else>
+        <span class="contact-drawer-title-text">
+          Contact Details
+        </span>
+      </template>
 
       <q-space />
+
+      <!-- Open in full page button (Modal Mode) -->
+      <q-btn
+        v-if="isModal"
+        flat
+        round
+        dense
+        color="grey-7"
+        class="drawer-open-page-btn q-mr-xs"
+        :to="fullPageRoute"
+        target="_blank"
+      >
+        <q-icon
+          name="open_in_new"
+          size="18px"
+        />
+        <AppTooltip content="Open in full page" />
+      </q-btn>
 
       <!-- Close button -->
       <q-btn
@@ -31,11 +58,15 @@
         dense
         color="negative"
         class="app-negative-button"
-        @click="closePage"
+        @click="handleClose"
       >
         <LocalSvgIcon
           image="close"
           classes="app-negative-icon"
+        />
+        <AppTooltip
+          v-if="isModal"
+          content="Close (Esc)"
         />
       </q-btn>
     </div>
@@ -60,14 +91,14 @@
             </h6>
 
             <div
-              v-if="engagementStatusLabel"
+              v-if="statusBadge"
               class="contact-badge-group"
             >
               <span
                 class="contact-pill-badge"
-                :class="engagementBadgeClass"
+                :class="statusBadge.badgeClass"
               >
-                {{ engagementStatusLabel }}
+                {{ statusBadge.label }}
               </span>
             </div>
           </div>
@@ -137,8 +168,33 @@
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
+    <!-- Navigation Tabs (Modal Mode: In-Memory Tabs) -->
     <q-tabs
+      v-if="isModal"
+      dense
+      mobile-arrows
+      narrow-indicator
+      :breakpoint="0"
+      align="left"
+      class="app-tabs"
+      active-color="primary"
+      indicator-color="primary"
+      :model-value="activeTab"
+      @update:model-value="$emit('update:activeTab', $event)"
+    >
+      <q-tab
+        no-caps
+        v-for="page in modalTabs"
+        :key="`modal-tab-${page.name}`"
+        :name="page.name"
+        :label="page.label"
+        class="app-route-tab"
+      />
+    </q-tabs>
+
+    <!-- Navigation Tabs (Page Mode: Router Tabs) -->
+    <q-tabs
+      v-else
       dense
       mobile-arrows
       narrow-indicator
@@ -172,10 +228,12 @@ import { useRoute, useRouter } from 'vue-router';
 
 // components
 import ContactByIdMoreOptions from 'components/Menu/ContactByIdMoreOptions.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 // constants
 import { ENGAGEMENT_SCORE_STATUS } from 'boot/workspace-constants';
 import { ESP_PROVIDERS } from 'boot/mailbox-constants';
+import { CAMPAIGN_CONTACT_STATUS } from 'boot/campaign-constants';
 
 // utils
 import { formatLinkedinDisplayUrl, formatLinkedinHref } from 'src/utils/helperFunctions';
@@ -183,10 +241,9 @@ import { formatLinkedinDisplayUrl, formatLinkedinHref } from 'src/utils/helperFu
 export default defineComponent({
   name: 'ContactByIdHeader',
 
-  emits: ['editContact', 'deleteContact'],
-
   components: {
     ContactByIdMoreOptions,
+    AppTooltip,
   },
 
   props: {
@@ -194,15 +251,39 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
+    isModal: {
+      type: Boolean,
+      default: false,
+    },
+    hideCampaignsTab: {
+      type: Boolean,
+      default: false,
+    },
+    activeTab: {
+      type: String,
+      default: 'overview',
+    },
   },
 
-  setup(props) {
+  emits: ['editContact', 'deleteContact', 'closeModal', 'update:activeTab'],
+
+  setup(props, { emit }) {
     // route
     const route = useRoute();
     const router = useRouter();
 
     // computed
-    const contactId = computed(() => route.params.contactId);
+    const effectiveContactId = computed(() => (
+      props.contactId
+      || route.params.contactId
+      || props.contactJson?.contact?.id
+      || props.contactJson?.id
+      || null
+    ));
 
     // Computed Contact Info
     const contactData = computed(() => {
@@ -211,10 +292,16 @@ export default defineComponent({
       return {
         firstName: c.first_name || '',
         lastName: c.last_name || '',
-        email: c.email || '',
+        email: c.email || c.contact_email || '',
         esp: c.esp_provider || '',
         linkedin: c.linkedin_url || '',
-        engagementStatus: props.contactJson?.engagement_score?.status || c.engagement_status || c.sentiment || '',
+        engagementStatus: (
+          props.contactJson?.engagement_score?.status
+          || c.engagement_status
+          || c.sentiment
+          || ''
+        ),
+        status: props.contactJson?.status || c.status || '',
       };
     });
 
@@ -237,22 +324,40 @@ export default defineComponent({
     const contactEmail = computed(() => contactData.value.email);
     const contactLinkedIn = computed(() => contactData.value.linkedin);
 
-    const linkedinDisplayUrl = computed(() => formatLinkedinDisplayUrl(contactLinkedIn.value, ''));
+    const linkedinDisplayUrl = computed(() => formatLinkedinDisplayUrl(
+      contactLinkedIn.value,
+      '',
+    ));
 
     const linkedinHref = computed(() => formatLinkedinHref(contactLinkedIn.value));
 
-    const engagementScoreStatus = computed(() => {
-      const status = (contactData.value.engagementStatus || '').toUpperCase();
-      return ENGAGEMENT_SCORE_STATUS[status] || null;
-    });
+    const statusBadge = computed(() => {
+      if (contactData.value.status) {
+        const key = String(contactData.value.status).toUpperCase();
+        const config = CAMPAIGN_CONTACT_STATUS[key];
+        return {
+          label: config?.label?.toUpperCase() || key,
+          badgeClass: `badge-status-${key.toLowerCase()}`,
+        };
+      }
 
-    const engagementStatusLabel = computed(() => (
-      engagementScoreStatus.value?.label?.toUpperCase() || contactData.value.engagementStatus
-    ));
+      const engStatus = (contactData.value.engagementStatus || '').toUpperCase();
+      if (engStatus && ENGAGEMENT_SCORE_STATUS[engStatus]) {
+        const config = ENGAGEMENT_SCORE_STATUS[engStatus];
+        return {
+          label: config.label.toUpperCase(),
+          badgeClass: `badge-${config.color || 'information'}`,
+        };
+      }
 
-    const engagementBadgeClass = computed(() => {
-      const color = engagementScoreStatus.value?.color || 'information';
-      return `badge-${color}`;
+      if (contactData.value.engagementStatus) {
+        return {
+          label: String(contactData.value.engagementStatus).toUpperCase(),
+          badgeClass: 'badge-information',
+        };
+      }
+
+      return null;
     });
 
     const espLogo = computed(() => {
@@ -275,33 +380,54 @@ export default defineComponent({
       }
     });
 
-    // Tab routes
+    const fullPageRoute = computed(() => {
+      const tab = props.activeTab || 'overview';
+      return `/outreach/contacts/${effectiveContactId.value}/${tab}`;
+    });
+
+    // Tab routes for page mode
     const contactTabs = computed(() => [
       {
         label: 'Overview',
-        route: `/outreach/contacts/${contactId.value}/overview`,
+        route: `/outreach/contacts/${effectiveContactId.value}/overview`,
       },
       {
         label: 'Inbox',
-        route: `/outreach/contacts/${contactId.value}/inbox`,
+        route: `/outreach/contacts/${effectiveContactId.value}/inbox`,
       },
       {
         label: 'Campaigns',
-        route: `/outreach/contacts/${contactId.value}/campaigns`,
+        route: `/outreach/contacts/${effectiveContactId.value}/campaigns`,
       },
     ]);
 
-    const closePage = () => {
-      try {
-        router.go(-1);
-      } catch (e) {
-        router.push('/outreach/contacts/all');
+    // Tab items for modal mode
+    const modalTabs = computed(() => {
+      const tabs = [
+        { name: 'overview', label: 'Overview' },
+        { name: 'inbox', label: 'Inbox' },
+      ];
+      if (!props.hideCampaignsTab) {
+        tabs.push({ name: 'campaigns', label: 'Campaigns' });
+      }
+      return tabs;
+    });
+
+    const handleClose = () => {
+      if (props.isModal) {
+        emit('closeModal');
+      } else {
+        try {
+          router.go(-1);
+        } catch (e) {
+          router.push('/outreach/contacts/all');
+        }
       }
     };
 
     return {
       // computed
-      contactId,
+      effectiveContactId,
       contactDisplayName,
       contactInitial,
       contactEmail,
@@ -309,12 +435,13 @@ export default defineComponent({
       linkedinDisplayUrl,
       linkedinHref,
       contactTabs,
+      modalTabs,
+      fullPageRoute,
       espLogo,
-      engagementStatusLabel,
-      engagementBadgeClass,
+      statusBadge,
 
       // methods
-      closePage,
+      handleClose,
     };
   },
 });
@@ -339,6 +466,17 @@ export default defineComponent({
 
     @media (max-width: $breakpoint-xs-max) {
       padding: 12px 16px 4px 16px;
+    }
+
+    .contact-drawer-title-text {
+      color: $black;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .drawer-open-page-btn {
+      width: 32px;
+      height: 32px;
     }
 
     .contact-route-link-text {
@@ -401,7 +539,6 @@ export default defineComponent({
           font-size: 20px;
           font-weight: 600;
           line-height: 1;
-          font-size: 20px;
         }
       }
 
@@ -442,24 +579,37 @@ export default defineComponent({
               display: inline-flex;
               align-items: center;
 
-              &.badge-positive {
+              &.badge-positive,
+              &.badge-status-replied,
+              &.badge-status-active {
                 background-color: rgba(var(--positive-rgb), 0.1);
                 color: $positive;
               }
 
-              &.badge-warning {
+              &.badge-warning,
+              &.badge-status-paused,
+              &.badge-status-stopped {
                 background-color: rgba(var(--warning-rgb), 0.1);
                 color: $warning;
               }
 
-              &.badge-information {
+              &.badge-information,
+              &.badge-status-completed {
                 background-color: rgba(var(--information-rgb), 0.1);
                 color: $information;
               }
 
-              &.badge-negative {
+              &.badge-negative,
+              &.badge-status-failed,
+              &.badge-status-bounced,
+              &.badge-status-unsubscribed {
                 background-color: rgba(var(--negative-rgb), 0.1);
                 color: $negative;
+              }
+
+              &.badge-status-not_started {
+                background-color: $grey-50;
+                color: $grey-7;
               }
 
               &.badge-grey {

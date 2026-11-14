@@ -130,12 +130,12 @@ export default defineComponent({
 
   .engagement-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(var(--metrics-count, 4), 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     width: 100%;
 
-    @media (max-width: $breakpoint-md-max) {
-      grid-template-columns: repeat(2, 1fr);
+    @container (min-width: 860px) {
+      grid-template-columns: repeat(var(--metrics-count, 4), minmax(0, 1fr));
     }
 
     @media (max-width: $breakpoint-xs-max) {
@@ -146,10 +146,11 @@ export default defineComponent({
       background-color: $white;
       border: 1px solid $grey-50;
       border-radius: 8px;
-      padding: 16px 20px;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
+      min-width: 0;
 
       .metric-icon-circle {
         width: 36px;
@@ -198,6 +199,7 @@ export default defineComponent({
         display: flex;
         flex-direction: column;
         min-width: 0;
+        overflow: hidden;
 
         .metric-label {
           color: $grey;
@@ -205,7 +207,8 @@ export default defineComponent({
           font-weight: 400;
           line-height: 16px;
           margin: 0 0 4px 0;
-          white-space: nowrap;
+          white-space: normal;
+          word-break: break-word;
         }
 
         .metric-value {

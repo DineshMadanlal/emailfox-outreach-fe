@@ -121,7 +121,7 @@
 <script>
 // vue
 import {
-  defineComponent, reactive, toRefs, computed, watch, onMounted, getCurrentInstance,
+  defineComponent, reactive, toRefs, computed, watch, onMounted, getCurrentInstance, inject,
 } from 'vue';
 
 // router
@@ -149,6 +149,14 @@ export default defineComponent({
   },
 
   props: {
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
+    initialCampaignId: {
+      type: [String, Number],
+      default: null,
+    },
     contactJson: {
       type: Object,
       default: () => ({}),
@@ -159,7 +167,9 @@ export default defineComponent({
     },
   },
 
-  setup(props) {
+  emits: ['update:replyCategory'],
+
+  setup(props, { emit }) {
     // store
     const uniboxPinia = useUniboxStore();
 
@@ -169,10 +179,14 @@ export default defineComponent({
 
     // app helpers composable
     const { isMobileDevice } = useAppHelpersApi();
+    const injectedContactId = inject('contactId', null);
 
-    // Contact ID extracted from prop or route
+    // Contact ID extracted from prop, injected, data objects, or route
     const contactId = computed(() => (
-      props.contactJson?.id
+      props.contactId
+      || injectedContactId?.value
+      || props.contactJson?.contact?.id
+      || props.contactJson?.id
       || props.contactOverviewData?.contact?.id
       || route.params.contactId
     ));
@@ -217,10 +231,11 @@ export default defineComponent({
         const list = Array.isArray(response) ? response : (response?.data || []);
         state.campaigns = list;
 
-        // Auto-select first campaign or maintain previous match
+        // Auto-select initial campaign, maintain previous match, or select first campaign
         if (list.length > 0) {
           const matchedItem = list.find((c) => (
-            (c.contact_mapping_id
+            (props.initialCampaignId && String(c.seq_id) === String(props.initialCampaignId))
+            || (c.contact_mapping_id
               && c.contact_mapping_id === state.selectedCampaign?.contact_mapping_id)
             || (c.seq_id && String(c.seq_id) === String(state.selectedCampaign?.seq_id))
           ));
@@ -273,6 +288,8 @@ export default defineComponent({
         };
       }
 
+      emit('update:replyCategory', newValue || null);
+
       if (targetId) {
         try {
           await updateUniboxThreadReplyCategory({
@@ -281,6 +298,7 @@ export default defineComponent({
             clearReplyCategory: clearCategory,
           });
         } catch (error) {
+          emit('update:replyCategory', previousCategoryId);
           // Revert optimistic update on failure
           if (state.selectedCampaign) {
             state.selectedCampaign = {
@@ -313,6 +331,15 @@ export default defineComponent({
       }
     });
 
+    watch(() => props.initialCampaignId, (newSeqId) => {
+      if (newSeqId && state.campaigns.length > 0) {
+        const found = state.campaigns.find((c) => String(c.seq_id) === String(newSeqId));
+        if (found) {
+          state.selectedCampaign = found;
+        }
+      }
+    });
+
     onMounted(() => {
       fetchCampaigns();
 
@@ -324,7 +351,6 @@ export default defineComponent({
       ...toRefs(state),
 
       // computed
-      contactId,
       isMobileDevice,
 
       // methods

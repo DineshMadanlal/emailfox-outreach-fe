@@ -2,21 +2,25 @@
   <div class="sequence-by-id-contacts">
     <!-- contact delivery stats -->
     <ContactDeliveryStats
-      :campaignId="campaignByIdJson.id"
+      :campaignId="campaignId"
 
       v-if="false"
     />
 
     <!-- table -->
     <CampaignContactsTable
-      :campaignId="campaignByIdJson.id"
+      :campaignId="campaignId"
+      :contactId="effectiveContactId"
     />
   </div>
 </template>
 
 <script>
 // vue
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
+
+// vue router
+import { useRoute } from 'vue-router';
 
 // Components
 import CampaignContactsTable from 'components/Contacts/CampaignContactsTable.vue';
@@ -35,6 +39,30 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    contactId: {
+      type: [String, Number],
+      default: null,
+    },
+  },
+
+  setup(props) {
+    const route = useRoute();
+
+    const campaignId = computed(() => (
+      props.campaignByIdJson?.id
+      || route.params.campaignId
+    ));
+
+    const effectiveContactId = computed(() => (
+      props.contactId
+      || route.query.contactId
+      || null
+    ));
+
+    return {
+      campaignId,
+      effectiveContactId,
+    };
   },
 });
 </script>
