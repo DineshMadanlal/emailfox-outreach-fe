@@ -17,11 +17,11 @@
     <div
       class="app-area-chart"
     >
-      <BarChart
-        :dataSeries="dataSeries"
+      <EngagementAreaChart
+        :dataSeries="formattedDataSeries"
         :xAxisCategories="xAxisCategories"
 
-        v-if="dataSeries.length > 0"
+        v-if="formattedDataSeries.length > 0"
       />
     </div>
   </q-card>
@@ -32,9 +32,8 @@
 import { defineComponent, computed } from 'vue';
 
 // Components
-import BarChart from 'components/Charts/BarChart.vue';
+import EngagementAreaChart from 'components/Charts/EngagementAreaChart.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
-
 import DateRangeInput from 'components/Input/DateRangeInput.vue';
 
 export default defineComponent({
@@ -43,7 +42,7 @@ export default defineComponent({
   emits: ['update:dateRangeInputJson'],
 
   components: {
-    BarChart,
+    EngagementAreaChart,
     ApiLoader,
     DateRangeInput,
   },
@@ -70,6 +69,21 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
+    const SERIES_COLOR_MAP = {
+      'Emails Sent': 'primary',
+      Replies: 'tertiary',
+      'Hard Bounced': 'negative',
+      'Soft Bounced': 'warning',
+    };
+
+    const formattedDataSeries = computed(() => {
+      if (!props.dataSeries || !Array.isArray(props.dataSeries)) return [];
+      return props.dataSeries.map((s) => ({
+        ...s,
+        colorName: s.colorName || SERIES_COLOR_MAP[s.name] || 'primary',
+      }));
+    });
+
     // Local state to manage the selected options
     const internalDateRangeInputJson = computed({
       get: () => props.dateRangeInputJson,
@@ -81,6 +95,7 @@ export default defineComponent({
     return {
       // computed
       internalDateRangeInputJson,
+      formattedDataSeries,
     };
   },
 });

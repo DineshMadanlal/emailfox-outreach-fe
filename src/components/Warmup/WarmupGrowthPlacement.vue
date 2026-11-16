@@ -42,7 +42,7 @@
         v-if="isMounted"
 
         height="340"
-        type="line"
+        type="area"
         :series="placementSeries"
         :options="placementChartOptions"
       />
@@ -135,6 +135,15 @@ export default defineComponent({
       return [];
     });
 
+    const isSeriesActive = (series) => {
+      if (!series || !Array.isArray(series.data) || series.data.length === 0) return false;
+      return series.data.some((val) => Number(val) > 0);
+    };
+
+    const placementStrokeWidths = computed(() => placementSeries.value.map((s) => (
+      isSeriesActive(s) ? 2.2 : 0
+    )));
+
     const commonOptions = computed(() => {
       const grey50Color = getBrandColorByName('grey-50');
       const greyColor = getBrandColorByName('grey');
@@ -164,16 +173,18 @@ export default defineComponent({
         },
 
         stroke: {
-          curve: 'straight',
-          width: 3,
+          curve: 'smooth',
+          width: 2.2,
         },
 
         grid: {
           borderColor: grey50Color,
-          strokeDashArray: 5,
+          strokeDashArray: 4,
           padding: {
-            left: 10,
-            right: 10,
+            top: 10,
+            right: 16,
+            bottom: 0,
+            left: 12,
           },
         },
 
@@ -189,6 +200,7 @@ export default defineComponent({
           },
 
           labels: {
+            hideOverlappingLabels: true,
             style: {
               colors: greyColor,
               fontSize: '12px',
@@ -213,7 +225,18 @@ export default defineComponent({
 
         legend: {
           position: 'bottom',
-
+          horizontalAlign: 'center',
+          fontSize: '13px',
+          fontWeight: 500,
+          markers: {
+            width: 8,
+            height: 8,
+            radius: 12,
+          },
+          itemMargin: {
+            horizontal: 14,
+            vertical: 10,
+          },
           labels: {
             colors: greyColor,
           },
@@ -235,16 +258,24 @@ export default defineComponent({
         chart: {
           ...commonOptions.value.chart,
           type: 'area',
+          animations: {
+            enabled: true,
+            easing: 'easeinout',
+            speed: 600,
+          },
+        },
+
+        stroke: {
+          curve: 'smooth',
+          width: 2.2,
+          lineCap: 'round',
         },
 
         markers: {
-          size: 6,
-          colors: ['#fff'],
-          strokeColors: colors,
+          size: 0,
           strokeWidth: 2,
-
           hover: {
-            size: 8,
+            size: 5,
           },
         },
 
@@ -252,10 +283,9 @@ export default defineComponent({
 
         fill: {
           type: 'gradient',
-
           gradient: {
             shadeIntensity: 1,
-            opacityFrom: 0.18,
+            opacityFrom: 0.28,
             opacityTo: 0.02,
             stops: [0, 90, 100],
           },
@@ -274,25 +304,57 @@ export default defineComponent({
 
         chart: {
           ...commonOptions.value.chart,
-          type: 'line',
+          type: 'area',
+          animations: {
+            enabled: true,
+            easing: 'easeinout',
+            speed: 600,
+          },
+        },
+
+        stroke: {
+          curve: 'smooth',
+          width: placementStrokeWidths.value,
+          lineCap: 'round',
+        },
+
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shade: 'light',
+            type: 'vertical',
+            shadeIntensity: 0.4,
+            inverseColors: false,
+            opacityFrom: 0.28,
+            opacityTo: 0.02,
+            stops: [0, 85, 100],
+          },
         },
 
         markers: {
-          size: 6,
-          colors: ['#fff'],
-          strokeColors: colors,
+          size: 0,
           strokeWidth: 2,
-
           hover: {
-            size: 8,
+            size: 5,
+            sizeOffset: 1,
           },
         },
 
         colors,
 
+        tooltip: {
+          shared: true,
+          intersect: false,
+          theme: 'light',
+          y: {
+            formatter: (val) => `${val || 0}%`,
+          },
+        },
+
         yaxis: {
           min: 0,
           max: 100,
+          tickAmount: 5,
 
           labels: {
             formatter: (val) => `${val}%`,

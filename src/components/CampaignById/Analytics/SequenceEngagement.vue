@@ -19,7 +19,7 @@
 
     <!-- Content -->
     <div class="sequence-chart">
-      <EngagementChart
+      <EngagementAreaChart
         v-if="xAxisCategories.length > 0 && dataSeries.length > 0"
         :dataSeries="dataSeries"
         :xAxisCategories="xAxisCategories"
@@ -35,7 +35,7 @@ import {
 } from 'vue';
 
 // Components
-import EngagementChart from 'components/Charts/EngagementChart.vue';
+import EngagementAreaChart from 'components/Charts/EngagementAreaChart.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import DateRangeInput from 'components/Input/DateRangeInput.vue';
 
@@ -47,7 +47,7 @@ export default defineComponent({
   name: 'SequenceEngagement',
 
   components: {
-    EngagementChart,
+    EngagementAreaChart,
     ApiLoader,
     DateRangeInput,
   },

@@ -19,7 +19,7 @@
 
     <!-- Chart -->
     <div class="daily-activity-chart-wrapper">
-      <EngagementChart
+      <EngagementAreaChart
         v-if="xAxisCategories.length > 0 && dataSeries.length > 0"
         :dataSeries="dataSeries"
         :xAxisCategories="xAxisCategories"
@@ -46,7 +46,7 @@ import {
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 import DateRangeInput from 'components/Input/DateRangeInput.vue';
-import EngagementChart from 'components/Charts/EngagementChart.vue';
+import EngagementAreaChart from 'components/Charts/EngagementAreaChart.vue';
 
 // utils
 import {
@@ -59,7 +59,7 @@ export default defineComponent({
   name: 'LinkedInDailyActivity',
 
   components: {
-    EngagementChart,
+    EngagementAreaChart,
     ApiLoader,
     DateRangeInput,
   },
@@ -155,7 +155,6 @@ export default defineComponent({
       const series = [
         {
           name: 'Invites sent',
-          type: 'column',
           colorName: 'primary',
           data: invitesSent,
         },
@@ -164,7 +163,6 @@ export default defineComponent({
       if (totalAccepted > 0) {
         series.push({
           name: 'Invites accepted',
-          type: 'line',
           colorName: 'secondary',
           data: invitesAccepted,
         });
@@ -172,7 +170,6 @@ export default defineComponent({
 
       series.push({
         name: 'Messages sent',
-        type: 'column',
         colorName: 'positive',
         data: messagesSent,
       });
@@ -180,7 +177,6 @@ export default defineComponent({
       if (totalInMails > 0) {
         series.push({
           name: 'InMails sent',
-          type: 'line',
           colorName: 'warning',
           data: inmailsSent,
         });
@@ -188,8 +184,6 @@ export default defineComponent({
 
       series.push({
         name: 'Replies received',
-        type: 'line',
-        dashArray: 4,
         colorName: 'tertiary',
         data: repliesReceived,
       });

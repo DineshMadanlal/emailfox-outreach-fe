@@ -345,7 +345,7 @@
                 showSparkline
 
                 icon="seq-replied"
-                trendColor="positive"
+                trendColor="tertiary"
                 statClass="replied-stat"
 
                 :value="getRepliesStats(props.row).value"

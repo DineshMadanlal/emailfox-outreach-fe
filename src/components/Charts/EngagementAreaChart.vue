@@ -2,7 +2,7 @@
   <apex-chart
     ref="apexChartRef"
     :height="height"
-    :series="dataSeries"
+    :series="normalizedSeries"
     :options="chartOptions"
     v-if="isMounted"
   />
@@ -26,7 +26,7 @@ import { getBrandColorByName } from 'src/utils/quasarHelpers';
 import { useUserPreferencesStore } from 'src/stores/userPreferences.js';
 
 export default defineComponent({
-  name: 'EngagementChart',
+  name: 'EngagementAreaChart',
 
   props: {
     height: {
@@ -65,17 +65,19 @@ export default defineComponent({
       warning: getBrandColorByName('warning'),
       information: getBrandColorByName('information'),
       tertiary: getBrandColorByName('tertiary'),
+      secondary: getBrandColorByName('secondary'),
       yellow: getBrandColorByName('yellow'),
     }));
 
     const computedSeriesColors = computed(() => {
       const paletteList = [
         colorPaletteMap.value.primary,
+        colorPaletteMap.value.tertiary,
         colorPaletteMap.value.positive,
         colorPaletteMap.value.negative,
         colorPaletteMap.value.warning,
         colorPaletteMap.value.information,
-        colorPaletteMap.value.tertiary,
+        colorPaletteMap.value.secondary,
         colorPaletteMap.value.yellow,
       ];
 
@@ -90,23 +92,37 @@ export default defineComponent({
       });
     });
 
-    const strokeDashArray = computed(() => props.dataSeries.map(
-      (s) => (s.dashArray !== undefined ? s.dashArray : 0),
-    ));
+    // Ensure all series render as smooth area curves
+    const normalizedSeries = computed(() => props.dataSeries.map((s) => ({
+      name: s.name,
+      type: 'area',
+      data: s.data || [],
+    })));
 
-    const strokeWidths = computed(() => props.dataSeries.map((s) => {
-      if (s.type === 'column' || s.type === 'bar') return 0;
-      return s.strokeWidth || 2;
-    }));
+    // Check if a series has non-zero activity across the period
+    const isSeriesActive = (series) => {
+      if (!series || !Array.isArray(series.data) || series.data.length === 0) return false;
+      return series.data.some((val) => Number(val) > 0);
+    };
+
+    // Hide stroke for all-zero series so flat lines don't clutter the baseline
+    const strokeWidths = computed(() => props.dataSeries.map((s) => (
+      isSeriesActive(s) ? 2.2 : 0
+    )));
 
     const chartOptions = computed(() => ({
       chart: {
-        type: 'line',
+        type: 'area',
         toolbar: {
           show: false,
         },
         zoom: {
           enabled: false,
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 600,
         },
         events: {
           mounted: (chart) => {
@@ -118,23 +134,29 @@ export default defineComponent({
       stroke: {
         curve: 'smooth',
         width: strokeWidths.value,
-        dashArray: strokeDashArray.value,
+        lineCap: 'round',
       },
-      plotOptions: {
-        bar: {
-          borderRadius: 3,
-          columnWidth: '24%',
-          horizontal: false,
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shade: 'light',
+          type: 'vertical',
+          shadeIntensity: 0.4,
+          inverseColors: false,
+          opacityFrom: 0.32,
+          opacityTo: 0.02,
+          stops: [0, 85, 100],
         },
       },
       dataLabels: {
         enabled: false,
       },
       markers: {
-        size: props.dataSeries.map((s) => (s.type === 'line' ? 3.5 : 0)),
+        size: 0,
         strokeWidth: 2,
         hover: {
-          size: 6,
+          size: 5,
+          sizeOffset: 1,
         },
       },
       grid: {
@@ -150,6 +172,12 @@ export default defineComponent({
             show: true,
           },
         },
+        padding: {
+          top: 10,
+          right: 16,
+          bottom: 0,
+          left: 12,
+        },
       },
       xaxis: {
         categories: props.xAxisCategories,
@@ -157,6 +185,8 @@ export default defineComponent({
           hideOverlappingLabels: true,
           style: {
             fontSize: '12px',
+            fontFamily: 'inherit',
+            fontWeight: 400,
             colors: $q.dark.isActive ? '#94A3B8' : '#64748B',
           },
         },
@@ -168,6 +198,8 @@ export default defineComponent({
         },
       },
       yaxis: {
+        min: 0,
+        forceNiceScale: true,
         labels: {
           formatter: (val) => {
             if (val >= 1000) {
@@ -177,6 +209,8 @@ export default defineComponent({
           },
           style: {
             fontSize: '12px',
+            fontFamily: 'inherit',
+            fontWeight: 400,
             colors: $q.dark.isActive ? '#94A3B8' : '#64748B',
           },
         },
@@ -185,6 +219,7 @@ export default defineComponent({
         position: 'bottom',
         horizontalAlign: 'center',
         fontSize: '13px',
+        fontFamily: 'inherit',
         fontWeight: 500,
         markers: {
           width: 8,
@@ -202,6 +237,7 @@ export default defineComponent({
       tooltip: {
         shared: true,
         intersect: false,
+        theme: $q.dark.isActive ? 'dark' : 'light',
         y: {
           formatter: (val) => getNumeralAmount(val || 0),
         },
@@ -221,6 +257,7 @@ export default defineComponent({
 
     return {
       ...toRefs(state),
+      normalizedSeries,
       chartOptions,
     };
   },
