@@ -1,147 +1,30 @@
 <template>
   <div class="campaign-details">
-    <!-- Dialog -->
-    <q-dialog
-      v-model="showSaveCampaignDetailsModal"
-      class="app-modal-dialog"
-
-      :transition-show="isMobileDevice ? 'slide-up' : ''"
-      :transition-hide="isMobileDevice ? 'slide-down' : ''"
+    <div
+      class="campaign-icon-container"
+      :class="channelIconMeta.wrapperClass"
     >
-      <SaveCampaignDetails
-        :isUpdateName="isUpdateName"
-        :campaignJson="tableRowJson"
-
-        @onUpdateCampaign="onUpdateCampaign"
-      />
-    </q-dialog>
-
-    <div class="campaign-icon-container">
       <LocalSvgIcon
-        image="sequence"
-        classes="campaign-icon"
+        :image="channelIconMeta.image"
+        classes="campaign-channel-icon"
       />
     </div>
 
-    <!--  -->
-    <div>
-      <div class="seq-name-text">
-        {{ tableRowJson.name }}
-      </div>
-
-      <div class="seq-details-flex">
-        <!-- Email Sequence -->
-        <div
-          class="each-detail-block"
-        >
-          <LocalSvgIcon
-            v-for="(iconData, index) in campaignChannelJson.icons"
-            :key="`${tableRowJson.id}-channel-icon-${index}`"
-
-            :image="iconData.image"
-            classes="each-detail-icon"
-          />
-
-          <div class="stat-value-text">
-            {{ campaignChannelJson.label }}
-          </div>
-        </div>
-
-        <LocalSvgIcon
-          v-if="tableRowJson.created_at"
-          image="circle-dot"
-          classes="circle-dot-icon"
-        />
-
-        <!-- Campaign Created At -->
-        <div
-          v-if="tableRowJson.created_at"
-          class="each-detail-block"
-        >
-          <LocalSvgIcon
-            image="time"
-            classes="each-detail-icon"
-          />
-
-          <div class="stat-value-text">
-            Created on {{ campaignCreatedAt }}
-          </div>
-        </div>
-      </div>
-
+    <div class="seq-name-text">
+      {{ tableRowJson.name }}
     </div>
-
-    <q-space />
-
-    <!-- more options -->
-    <q-btn
-      dense
-      outlined
-      unelevated
-      :disable="isReadOnly"
-      @click.stop.prevent
-
-      class="more-action-btn"
-    >
-      <!-- more -->
-      <LocalSvgIcon
-        image="more"
-        classes="more-menu-icon"
-      />
-
-      <CampaignMoreOptions
-        v-if="!isReadOnly"
-        :campaignStatus="tableRowJson.status"
-
-        @cloneCampaign="onCloneCampaign"
-        @renameCampaign="onRenameCampaign"
-        @pauseCampaign="onPauseCampaign"
-        @resumeCampaign="handleResumeCampaign"
-        @archiveCampaign="$emit('archiveCampaign')"
-      />
-      <AppTooltip
-        v-if="isReadOnly"
-        content="You have read-only access in this workspace"
-      />
-    </q-btn>
   </div>
 </template>
 
 <script>
 // vue
-import {
-  defineComponent, computed, reactive, toRefs, getCurrentInstance,
-} from 'vue';
-
-// router
-import { useRouter } from 'vue-router';
-
-// composables
-import { usePermissions } from 'src/composables/usePermissions';
-import useAppHelpersApi from 'src/composables/app-helpers.js';
-
-// Components
-import CampaignMoreOptions from 'components/Menu/CampaignMoreOptions.vue';
-import SaveCampaignDetails from 'components/Campaigns/Modals/SaveCampaignDetails.vue';
-import AppTooltip from 'components/General/AppTooltip.vue';
-
-// utils
-import { formatDate2 } from 'src/utils/dates';
-import { pauseCampaignById, cloneCampaignById, startCampaignById } from 'src/utils/campaignApi.js';
+import { defineComponent, computed } from 'vue';
 
 // constants
-import { CAMPAIGN_TYPES, CAMPAIGN_STATUS } from 'src/boot/campaign-constants';
+import { CAMPAIGN_TYPES } from 'src/boot/campaign-constants';
 
 export default defineComponent({
   name: 'CampaignDetails',
-
-  emits: ['onUpdateCampaign', 'archiveCampaign'],
-
-  components: {
-    CampaignMoreOptions,
-    SaveCampaignDetails,
-    AppTooltip,
-  },
 
   props: {
     tableRowJson: {
@@ -150,147 +33,36 @@ export default defineComponent({
     },
   },
 
-  setup(props, { emit }) {
-    // composables
-    const { isReadOnly } = usePermissions();
+  setup(props) {
+    const isEmailOnly = computed(
+      () => props.tableRowJson.type === CAMPAIGN_TYPES.EMAIL.value,
+    );
 
-    // router
-    const $router = useRouter();
+    const isLinkedInOnly = computed(
+      () => props.tableRowJson.type === CAMPAIGN_TYPES.LINKEDIN.value,
+    );
 
-    // instance
-    const { appContext } = getCurrentInstance();
-
-    // composition API
-    const { isMobileDevice, showQuasarLoader, hideQuasarLoader } = useAppHelpersApi();
-
-    // state
-    const state = reactive({
-      isUpdateName: false,
-      showSaveCampaignDetailsModal: false,
-    });
-
-    // computed
-    const campaignCreatedAt = computed(() => formatDate2(props.tableRowJson.created_at));
-
-    const isEmailOnlyCampaign = computed(() => props.tableRowJson.type
-      === CAMPAIGN_TYPES.EMAIL.value);
-
-    const isLinkedInOnlyCampaign = computed(() => props.tableRowJson.type
-      === CAMPAIGN_TYPES.LINKEDIN.value);
-
-    const campaignChannelJson = computed(() => {
-      if (isEmailOnlyCampaign.value) {
+    const channelIconMeta = computed(() => {
+      if (isEmailOnly.value) {
         return {
-          label: 'Single Channel',
-          icons: CAMPAIGN_TYPES.EMAIL.icons,
+          image: 'mail',
+          wrapperClass: 'channel-icon--email',
         };
       }
-      if (isLinkedInOnlyCampaign.value) {
+      if (isLinkedInOnly.value) {
         return {
-          label: 'Single Channel',
-          icons: CAMPAIGN_TYPES.LINKEDIN.icons,
+          image: 'linkedin',
+          wrapperClass: 'channel-icon--linkedin',
         };
       }
-
       return {
-        label: 'Multi Channel',
-        icons: CAMPAIGN_TYPES.MULTI_CHANNEL.icons,
+        image: 'channel',
+        wrapperClass: 'channel-icon--multi',
       };
     });
 
-    // methods
-    const onUpdateCampaign = (updatedCampaignJson) => {
-      state.showSaveCampaignDetailsModal = false;
-
-      emit('onUpdateCampaign', updatedCampaignJson);
-    };
-
-    const onRenameCampaign = () => {
-      state.isUpdateName = true;
-      state.showSaveCampaignDetailsModal = true;
-    };
-
-    const onPauseCampaign = async () => {
-      const oldStatus = props.tableRowJson.status;
-
-      // update the campaign status in the parent component
-      emit('onUpdateCampaign', {
-        ...props.tableRowJson,
-        status: CAMPAIGN_STATUS.PAUSED.value,
-      });
-
-      // try catch is handled in the api function
-      const response = await pauseCampaignById({
-        campaignId: props.tableRowJson.id,
-        $toast: appContext.config.globalProperties.$toast,
-      });
-
-      if (!response) {
-        // update the campaign status in the parent component
-        emit('onUpdateCampaign', {
-          ...props.tableRowJson,
-          status: oldStatus,
-        });
-      }
-    };
-
-    const handleResumeCampaign = async () => {
-      const oldStatus = props.tableRowJson.status;
-
-      // update the campaign status in the parent component
-      emit('onUpdateCampaign', {
-        ...props.tableRowJson,
-        status: CAMPAIGN_STATUS.ACTIVE.value,
-      });
-
-      // try catch is handled in the api function
-      const response = await startCampaignById({
-        campaignId: props.tableRowJson.id,
-        $toast: appContext.config.globalProperties.$toast,
-      });
-
-      if (!response) {
-        // update the campaign status in the parent component
-        emit('onUpdateCampaign', {
-          ...props.tableRowJson,
-          status: oldStatus,
-        });
-      }
-    };
-
-    const onCloneCampaign = async () => {
-      showQuasarLoader();
-
-      const response = await cloneCampaignById({
-        campaignId: props.tableRowJson.id,
-        $toast: appContext.config.globalProperties.$toast,
-      });
-
-      if (response) {
-        // move to campaign by ID
-        const campaignId = response.id;
-        $router.push(`/outreach/campaigns/${campaignId}/edit`);
-      }
-
-      hideQuasarLoader();
-    };
-
     return {
-      // state
-      ...toRefs(state),
-
-      // computed
-      isReadOnly,
-      isMobileDevice,
-      campaignCreatedAt,
-      campaignChannelJson,
-
-      // methods
-      onUpdateCampaign,
-      onRenameCampaign,
-      onCloneCampaign,
-      onPauseCampaign,
-      handleResumeCampaign,
+      channelIconMeta,
     };
   },
 });
@@ -299,67 +71,51 @@ export default defineComponent({
 <style lang="scss" scoped>
 .campaign-details {
   display: flex;
+  align-items: center;
   gap: 12px;
 
-  .more-action-btn {
-    height: fit-content;
-    width: fit-content;
-  }
-
   .campaign-icon-container {
-    padding: 9px;
-    border-radius: 8px;
-    border: 1px solid $grey-50;
-    height: fit-content;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 5px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+
+    :deep(.campaign-channel-icon) {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &.channel-icon--email {
+      border: 1px solid rgba(var(--warning-rgb), 0.2);
+    }
+
+    &.channel-icon--linkedin {
+      border: 1px solid rgba(var(--primary-rgb), 0.2);
+    }
+
+    &.channel-icon--multi {
+      border: 1px solid rgba(var(--tertiary-rgb), 0.2);
+    }
   }
 
   .seq-name-text {
     color: $black;
     font-size: 14px;
     font-weight: 500;
-    line-height: 16px; /* 114.286% */
-    max-width: 325px;
-
-    margin-bottom: 8px;
-  }
-
-  .seq-details-flex {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    :deep(.circle-dot-icon) {
-      width: 4px;
-      height: 4px;
-
-      circle {
-        fill: $grey-300;
-      }
-    }
-
-    .each-detail-block {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-
-      :deep(.each-detail-icon) {
-        min-height: 14px;
-        min-width: 14px;
-
-        max-height: 14px;
-        max-width: 14px;
-
-        .stat-value-text {
-          color: $grey-700;
-          font-size: 13px;
-          font-weight: 400;
-          line-height: 16px; /* 123.077% */
-        }
-      }
-    }
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
   }
 }
 </style>

@@ -225,3 +225,13 @@ export const getSequenceLinkedinStats = async (campaignId) => getApiCall({
   includeWorkspace: true,
   endpoint: `/stats/sequences/${campaignId}/linkedin-stats`,
 });
+
+// 9. Get date-wise sequence / campaign stats for multiple sequences
+// GET /api/v1/workspace/{workspace_id}/stats/sequences/date-stats
+export const getMultipleSequencesDateStats = async (seqIds) => getApiCall({
+  includeWorkspace: true,
+  endpoint: '/stats/sequences/date-stats',
+  params: {
+    seq_ids: seqIds,
+  },
+});

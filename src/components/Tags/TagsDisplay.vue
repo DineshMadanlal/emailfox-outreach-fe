@@ -39,7 +39,7 @@
     </template>
 
     <!-- Empty State -->
-    <span v-else class="text-grey-5">-</span>
+    <span v-else-if="!hideEmpty" class="text-grey-5">-</span>
   </div>
 </template>
 
@@ -68,6 +68,10 @@ export default defineComponent({
     maxVisible: {
       type: Number,
       default: 2,
+    },
+    hideEmpty: {
+      type: Boolean,
+      default: false,
     },
   },
 

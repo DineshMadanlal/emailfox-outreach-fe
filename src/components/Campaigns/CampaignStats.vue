@@ -1,37 +1,37 @@
 <template>
   <div
-    v-if="isCampaignDrafted"
-    class="campaign-stats items-center full-height"
+    class="campaign-metric-cell"
+    :class="statClass || 'default-stat'"
   >
-    <div
-      v-if="showDraftedMessage"
-      class="drafted-label-text"
-    >
-      This campaign is yet to start to show the analytics
-    </div>
-  </div>
-
-  <div
-    v-else
-    :class="[`${statsJson.class} campaign-stats`,{
-      paused: isCampaignPaused,
-    }]"
-  >
+    <!-- Metric Icon near value -->
     <LocalSvgIcon
-      :image="statsJson.icon"
-      classes="seq-type-icon"
-
-      v-if="statsJson.icon"
+      v-if="icon"
+      :image="icon"
+      class="metric-icon"
     />
 
-    <div>
-      <div class="stat-value-text">
-        {{ statsJson.value }}
-      </div>
-      <div class="stat-label-text">
-        {{ statsJson.label }}
-      </div>
-    </div>
+    <!-- Metric Value -->
+    <span class="metric-value-text">
+      {{ displayValue }}
+    </span>
+
+    <!-- Subtext percentage (e.g. (44.7%)), inline when count and rate > 0 -->
+    <span
+      v-if="hasSubtext"
+      class="metric-subtext"
+    >
+      ({{ formattedSubValue }})
+    </span>
+
+    <!-- Sparkline (Only shown inline when there is real non-zero data) -->
+    <SparklineTrend
+      v-if="hasTrendData"
+      :data="trendData"
+      :color="trendColor"
+      :width="44"
+      :height="16"
+      class="metric-sparkline"
+    />
   </div>
 </template>
 
@@ -39,92 +39,173 @@
 // vue
 import { defineComponent, computed } from 'vue';
 
-// constants
-import { CAMPAIGN_STATUS } from 'boot/campaign-constants';
+// components
+import SparklineTrend from 'components/Charts/SparklineTrend.vue';
 
 export default defineComponent({
   name: 'CampaignStats',
 
+  components: {
+    SparklineTrend,
+  },
+
   props: {
-    statsJson: {
-      type: Object,
-      required: true,
+    icon: {
+      type: String,
+      default: '',
     },
-    showDraftedMessage: {
+    statClass: {
+      type: String,
+      default: '',
+    },
+    value: {
+      type: [String, Number],
+      default: 0,
+    },
+    subValue: {
+      type: [String, Number],
+      default: '',
+    },
+    showSparkline: {
       type: Boolean,
       default: false,
     },
-    campaignStatus: {
+    trendData: {
+      type: Array,
+      default: () => [],
+    },
+    trendColor: {
       type: String,
-      default: '',
+      default: 'primary',
+    },
+    isDrafted: {
+      type: Boolean,
+      default: false,
     },
   },
 
   setup(props) {
-    // computed
-    const isCampaignDrafted = computed(
-      () => props.campaignStatus === CAMPAIGN_STATUS.DRAFTED.value,
-    );
+    const displayValue = computed(() => {
+      if (props.isDrafted) return '0';
+      if (props.value === null || props.value === undefined) return '0';
+      return props.value;
+    });
 
-    const isCampaignPaused = computed(() => {
-      const { campaignStatus } = props;
-
-      // paused statuses
-      if (campaignStatus === CAMPAIGN_STATUS.PAUSED.value
-        || campaignStatus === CAMPAIGN_STATUS.AUTO_PAUSED.value
-        || campaignStatus === CAMPAIGN_STATUS.PAUSED_SUB_FAILED.value
-      ) {
-        return true;
+    const hasTrendData = computed(() => {
+      if (props.isDrafted || !props.showSparkline) return false;
+      if (!props.trendData || !Array.isArray(props.trendData) || props.trendData.length < 2) {
+        return false;
       }
+      return props.trendData.some((v) => Number(v) > 0);
+    });
 
-      return false;
+    const hasSubtext = computed(() => {
+      if (props.isDrafted) return false;
+      // Do not show percentage if the count itself is 0
+      if (Number(props.value) === 0) return false;
+      if (props.subValue === null || props.subValue === undefined || props.subValue === '') {
+        return false;
+      }
+      const num = Number(String(props.subValue).replace(/[%()]/g, ''));
+      if (Number.isNaN(num) || num <= 0) return false;
+      return true;
+    });
+
+    const formattedSubValue = computed(() => {
+      if (props.subValue === null || props.subValue === undefined || props.subValue === '') {
+        return '';
+      }
+      const str = String(props.subValue).trim();
+      const clean = str.replace(/[()%]/g, '').trim();
+      if (!clean) return '';
+      return `${clean}%`;
     });
 
     return {
-      // computed
-      isCampaignDrafted,
-      isCampaignPaused,
+      displayValue,
+      hasTrendData,
+      hasSubtext,
+      formattedSubValue,
     };
   },
 });
 </script>
 
 <style lang="scss" scoped>
-.campaign-stats {
-  display: flex;
-  gap: 8px;
+.campaign-metric-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 
-  &.information {
-    :deep(.seq-type-icon) {
-      @include svg-icon-stroke('path', $information);
-    }
+  .metric-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
-  .drafted-label-text {
-    color: $grey;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 16px;
-
-    width: 30px;
-    white-space: nowrap;
-  }
-
-  .stat-value-text {
+  .metric-value-text {
     color: $black;
     font-size: 14px;
     font-weight: 500;
     line-height: 16px;
-
-    margin-bottom: 8px;
   }
 
-  .stat-label-text {
-    color: $grey;
+  .metric-subtext {
     font-size: 13px;
-    font-style: normal;
     font-weight: 400;
-    line-height: 16px; /* 123.077% */
+    line-height: 16px;
+    color: $grey;
+  }
+
+  .metric-sparkline {
+    margin-left: 2px;
+  }
+
+  &.default-stat {
+    :deep(.metric-icon) {
+      @include svg-icon-stroke('path', $grey);
+    }
+
+    .metric-value-text {
+      font-weight: 400;
+    }
+  }
+
+  &.replied-stat {
+    :deep(.metric-icon) {
+      @include svg-icon-stroke('path', $grey);
+    }
+  }
+
+  &.positive-reply-stat {
+    :deep(.metric-icon) {
+      @include svg-icon-stroke('path', $positive);
+    }
+
+    .metric-value-text {
+      color: $positive;
+      font-weight: 600;
+    }
+  }
+
+  &.bounced-stat {
+    :deep(.metric-icon) {
+      @include svg-icon-fill('path', $grey);
+
+      circle {
+        &:first-child {
+          stroke: $grey;
+        }
+
+        &:last-child {
+          fill: $grey;
+        }
+      }
+    }
   }
 }
 </style>

@@ -1,37 +1,31 @@
 <template>
   <div
     class="campaign-status"
-
     :style="{
-      '--s-progress-color': campaignStatusJson.color,
+      '--s-status-color': campaignStatusColor,
     }"
   >
-    <!-- linear progress -->
-    <q-linear-progress
-      rounded
-      :value="campaignProgress / 100"
+    <span class="status-dot"></span>
+    <span class="status-label-text">
+      {{ campaignStatusJson.label }}
+    </span>
 
-      class="status-usage-progress"
+    <span
+      v-if="!isCampaignStatusDrafted"
+      class="status-subtext"
     >
-    </q-linear-progress>
+      ({{ campaignProgress }}%)
+    </span>
 
-    <div class="status-data-flex">
-      <div class="status-label-text">
-        {{ campaignStatusJson.label }}
-      </div>
-
-      <!-- dot -->
-      <LocalSvgIcon
-        image="circle-dot"
-        classes="circle-dot-icon"
-      />
-
-      <!--  -->
-
-      <div class="progress-text">
-        {{ isCampaignStatusDrafted ? '-' : campaignProgress + '%' }}
-      </div>
-    </div>
+    <!-- Tooltip for Auto Paused details -->
+    <q-tooltip
+      v-if="tableRowJson.last_status_details"
+      anchor="top middle"
+      self="bottom middle"
+      class="bg-dark text-white"
+    >
+      {{ tableRowJson.last_status_details }}
+    </q-tooltip>
   </div>
 </template>
 
@@ -53,16 +47,23 @@ export default defineComponent({
   },
 
   setup(props) {
-    // computed
     const campaignStatusJson = computed(() => {
       const { status } = props.tableRowJson;
-
       return CAMPAIGN_STATUS[status] || CAMPAIGN_STATUS.DRAFTED;
     });
 
     const isCampaignStatusDrafted = computed(
       () => props.tableRowJson.status === CAMPAIGN_STATUS.DRAFTED.value,
     );
+
+    const campaignStatusColor = computed(() => {
+      const { status } = props.tableRowJson;
+      if (status === CAMPAIGN_STATUS.ACTIVE.value) return 'var(--positive-color)';
+      if (status === CAMPAIGN_STATUS.COMPLETED.value) return 'var(--primary-color)';
+      if (status === CAMPAIGN_STATUS.PAUSED.value || status === CAMPAIGN_STATUS.AUTO_PAUSED.value) return 'var(--warning-color)';
+      if (status === 'STOPPED' || status === CAMPAIGN_STATUS.PAUSED_SUB_FAILED.value) return 'var(--negative-color)';
+      return 'var(--grey-color)';
+    });
 
     const campaignProgress = computed(() => {
       if (isCampaignStatusDrafted.value) {
@@ -75,9 +76,9 @@ export default defineComponent({
     });
 
     return {
-      // computed
       campaignProgress,
       campaignStatusJson,
+      campaignStatusColor,
       isCampaignStatusDrafted,
     };
   },
@@ -86,44 +87,31 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .campaign-status {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 
-  :deep(.status-usage-progress) {
+  .status-dot {
+    width: 6px;
     height: 6px;
-
-    .q-linear-progress__track {
-      background: $grey-50;
-    }
-
-    .q-linear-progress__model {
-      background: rgba(var(--s-progress-color), 1);
-    }
+    border-radius: 50%;
+    background-color: var(--s-status-color);
+    flex-shrink: 0;
   }
 
-  .status-data-flex {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .status-label-text {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 18px;
+    color: var(--s-status-color);
+  }
 
-    .status-label-text {
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(var(--s-progress-color), 1);
-    }
-
-    :deep(.circle-dot-icon) {
-      width: 4px;
-      height: 4px;
-
-      @include svg-icon-fill('circle', $grey-300);
-    }
-
-    .progress-text {
-      font-size: 14px;
-      color: $black;
-    }
+  .status-subtext {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    color: $grey;
   }
 }
 </style>

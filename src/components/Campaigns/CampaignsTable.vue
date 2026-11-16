@@ -44,7 +44,10 @@
       :transition-hide="isMobileDevice ? 'slide-down' : ''"
     >
       <SaveCampaignDetails
+        :isUpdateName="isUpdateName"
         :campaignJson="selectedCampaignJson"
+
+        @onUpdateCampaign="onUpdateCampaign"
       />
     </q-dialog>
 
@@ -171,8 +174,7 @@
         v-model:pagination="pagination"
 
         separator="cell"
-        class="app-table app-table-rows-fixed
-        all-campaigns-table app-paginated-table no-border-left"
+        class="app-table all-campaigns-table app-paginated-table no-border-left"
 
         :rows="tableData"
         :columns="tableColumns"
@@ -270,7 +272,7 @@
         </template>
 
         <!-- Content -->
-        <!-- Name & Details -->
+        <!-- Name -->
         <template v-slot:body-cell-name="props">
           <q-td :props="props">
             <router-link
@@ -279,9 +281,6 @@
             >
               <CampaignDetails
                 :tableRowJson="props.row"
-
-                @onUpdateCampaign="onUpdateCampaign"
-                @archiveCampaign="onArchiveCampaign(props.row)"
               />
             </router-link>
           </q-td>
@@ -290,7 +289,6 @@
         <!-- Status -->
         <template v-slot:body-cell-status="props">
           <q-td :props="props">
-            <!--  -->
             <router-link
               :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
@@ -302,34 +300,58 @@
           </q-td>
         </template>
 
-        <!-- Contacts -->
-        <template v-slot:body-cell-contacts="props">
+        <!-- Leads -->
+        <template v-slot:body-cell-leads="props">
+          <q-td :props="props">
+            <router-link
+              :to="getRouterLinkForCampaign(props.row)"
+              class="campaigns-route-link"
+            >
+              <span class="contacts-count-text">
+                {{ getLeadsCount(props.row) }}
+              </span>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Sent -->
+        <template v-slot:body-cell-sent="props">
           <q-td :props="props">
             <router-link
               :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignStats
-                :statsJson="getContactsStats(props.row)"
+                showSparkline
+                trendColor="primary"
+                icon="sequences"
 
-                showDraftedMessage
-                :campaignStatus="props.row.status"
+                :value="getSentStats(props.row).value"
+                :trendData="getTrendData(props.row, 'sent')"
+                :isDrafted="props.row.status === CAMPAIGN_STATUS.DRAFTED.value"
               />
             </router-link>
           </q-td>
         </template>
 
-        <!-- Replies -->
-        <template v-slot:body-cell-replies="props">
+        <!-- Replied -->
+        <template v-slot:body-cell-replied="props">
           <q-td :props="props">
             <router-link
               :to="getRouterLinkForCampaign(props.row)"
               class="campaigns-route-link"
             >
               <CampaignStats
-                :statsJson="getRepliesStats(props.row)"
+                showSparkline
 
-                :campaignStatus="props.row.status"
+                icon="seq-replied"
+                trendColor="positive"
+                statClass="replied-stat"
+
+                :value="getRepliesStats(props.row).value"
+                :subValue="getRepliesStats(props.row).rate"
+                :trendData="getTrendData(props.row, 'replied')"
+                :isDrafted="props.row.status === CAMPAIGN_STATUS.DRAFTED.value"
               />
             </router-link>
           </q-td>
@@ -343,12 +365,88 @@
               class="campaigns-route-link"
             >
               <CampaignStats
-                :statsJson="getPositiveRepliesStats(props.row)"
+                icon="positive-reply"
+                :statClass="getPositiveRepliesStats(props.row).value > 0
+                  ? 'positive-reply-stat' : ''"
 
-                :campaignStatus="props.row.status"
+                :value="getPositiveRepliesStats(props.row).value"
+                :subValue="getPositiveRepliesStats(props.row).rate"
+                :isDrafted="props.row.status === CAMPAIGN_STATUS.DRAFTED.value"
               />
             </router-link>
           </q-td>
+        </template>
+
+        <!-- Bounced -->
+        <template v-slot:body-cell-bounced="props">
+          <q-td :props="props">
+            <router-link
+              :to="getRouterLinkForCampaign(props.row)"
+              class="campaigns-route-link"
+            >
+              <CampaignStats
+                showSparkline
+
+                icon="seq-bounced"
+                statClass="bounced-stat"
+
+                trendColor="negative"
+                :value="getBouncedStats(props.row).value"
+                :subValue="getBouncedStats(props.row).rate"
+                :trendData="getTrendData(props.row, 'bounced')"
+
+                :isDrafted="props.row.status === CAMPAIGN_STATUS.DRAFTED.value"
+              />
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Tags -->
+        <template v-slot:body-cell-tags="props">
+          <q-td :props="props">
+            <TagsDisplay
+              :tagIds="props.row.tags || []"
+              :maxVisible="1"
+            />
+          </q-td>
+        </template>
+
+        <!-- Actions -->
+        <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="actions-cell">
+              <div class="campaigns-route-link">
+                <q-btn
+                  dense
+                  outlined
+                  unelevated
+                  :disable="isReadOnly"
+                  @click.stop.prevent
+                  class="more-action-btn"
+                >
+                  <LocalSvgIcon
+                    image="more"
+                    classes="more-menu-icon"
+                  />
+
+                  <CampaignMoreOptions
+                    v-if="!isReadOnly"
+
+                    :campaignStatus="props.row.status"
+
+                    @cloneCampaign="onCloneCampaign(props.row)"
+                    @renameCampaign="onRenameCampaign(props.row)"
+                    @pauseCampaign="onPauseCampaign(props.row)"
+                    @resumeCampaign="handleResumeCampaign(props.row)"
+                    @archiveCampaign="onArchiveCampaign(props.row)"
+                  />
+
+                  <AppTooltip
+                    v-if="isReadOnly"
+                    content="You have read-only access in this workspace"
+                  />
+                </q-btn>
+              </div>
+            </q-td>
         </template>
       </q-table>
     </div>
@@ -365,6 +463,9 @@ import {
   onMounted, getCurrentInstance,
 } from 'vue';
 
+// router
+import { useRouter } from 'vue-router';
+
 // Components
 import AppHeader from 'components/Headers/AppHeader.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
@@ -372,6 +473,7 @@ import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
 import AllSequencesIllustration from 'components/Illustrations/AllSequences.vue';
 import MailboxSequenceIllustration from 'components/Illustrations/MailboxSequence.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 import ArchiveCampaign from 'components/Campaigns/Modals/ArchiveCampaign.vue';
 import SaveCampaignDetails from 'components/Campaigns/Modals/SaveCampaignDetails.vue';
@@ -380,6 +482,8 @@ import CampaignStats from 'components/Campaigns/CampaignStats.vue';
 import CampaignFilters from 'components/Campaigns/CampaignFilters.vue';
 import CampaignDetails from 'components/Campaigns/CampaignDetails.vue';
 import CampaignStatus from 'components/Campaigns/CampaignStatus.vue';
+import CampaignMoreOptions from 'components/Menu/CampaignMoreOptions.vue';
+import TagsDisplay from 'components/Tags/TagsDisplay.vue';
 
 import SelectCampaignStatus from 'components/Dropdown/SelectCampaignStatus.vue';
 import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
@@ -388,12 +492,20 @@ import ResetFiltersButton from 'components/Buttons/ResetFilters.vue';
 // utils
 import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount, findPercentage } from 'src/utils/numbers';
+import {
+  pauseCampaignById,
+  cloneCampaignById,
+  startCampaignById,
+  getMultipleSequencesDateStats,
+} from 'src/utils/campaignApi.js';
 
 // store
 import { useUserPreferencesStore } from 'src/stores/userPreferences';
+import { useTagsStore } from 'src/stores/tags';
 
 // composables
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // constants
 import { DEFAULT_TABLE_PAGINATION } from 'boot/constants';
@@ -411,12 +523,15 @@ export default defineComponent({
     ColumnsVisibility,
     AllSequencesIllustration,
     MailboxSequenceIllustration,
+    AppTooltip,
 
     CampaignStats,
     CampaignDetails,
     CampaignFilters,
     SelectCampaignStatus,
     CampaignStatus,
+    CampaignMoreOptions,
+    TagsDisplay,
     ColumnsVisibilityButton,
     ResetFiltersButton,
   },
@@ -442,17 +557,23 @@ export default defineComponent({
     // instance
     const { appContext } = getCurrentInstance();
 
-    // store
-    const userPreferencesStore = useUserPreferencesStore();
+    // router
+    const $router = useRouter();
 
-    // composition API
-    const { isMobileDevice } = useAppHelpersApi();
+    // composables
+    const { isReadOnly } = usePermissions();
+    const { isMobileDevice, showQuasarLoader, hideQuasarLoader } = useAppHelpersApi();
+
+    // stores
+    const userPreferencesStore = useUserPreferencesStore();
+    const tagsStore = useTagsStore();
 
     // state
     const state = reactive({
       // booleans
       isApiProcessing: false,
       areResultsFetchedOnce: false,
+      isUpdateName: false,
 
       // modal booleans
       showArchiveCampaignModal: false,
@@ -462,6 +583,7 @@ export default defineComponent({
       // data
       visibleColumns: [],
       tableData: [],
+      dateStatsBySeqId: {},
       pagination: { ...DEFAULT_TABLE_PAGINATION },
       selectedCampaignJson: {},
 
@@ -490,7 +612,6 @@ export default defineComponent({
     });
 
     const isFilterApplied = computed(() => {
-      // take the keys of filters and check if all are values are empty
       const filterKeys = Object.keys(state.filters);
       const areAllFiltersEmpty = filterKeys.every((key) => isEmpty(state.filters[key]));
 
@@ -525,37 +646,48 @@ export default defineComponent({
     const baseColumns = [
       {
         name: 'name',
-        label: 'Name',
+        label: 'NAME',
         align: 'left',
       },
       {
         name: 'status',
-        label: 'Status',
+        label: 'STATUS',
         align: 'left',
       },
     ];
 
-    const dynamicColumns = computed(() => {
-      const columns = [
-        {
-          name: 'contacts',
-          label: 'Contacts',
-          align: 'left',
-        },
-        {
-          name: 'replies',
-          label: 'Replies',
-          align: 'left',
-        },
-        {
-          name: 'positiveReplies',
-          label: 'Positive Replies',
-          align: 'left',
-        },
-      ];
-
-      return columns;
-    });
+    const dynamicColumns = computed(() => [
+      {
+        name: 'leads',
+        label: 'LEADS',
+        align: 'left',
+      },
+      {
+        name: 'sent',
+        label: 'SENT',
+        align: 'left',
+      },
+      {
+        name: 'replied',
+        label: 'REPLIED',
+        align: 'left',
+      },
+      {
+        name: 'positiveReplies',
+        label: 'POSITIVE REPLIES',
+        align: 'left',
+      },
+      {
+        name: 'bounced',
+        label: 'BOUNCED',
+        align: 'left',
+      },
+      // {
+      //   name: 'tags',
+      //   label: 'TAGS',
+      //   align: 'left',
+      // },
+    ]);
 
     const tableColumns = computed(() => {
       const filteredColumns = dynamicColumns.value.filter(
@@ -565,11 +697,11 @@ export default defineComponent({
       return [
         ...baseColumns,
         ...filteredColumns,
-        // {
-        //   name: 'actions',
-        //   label: '',
-        //   align: 'left',
-        // },
+        {
+          name: 'actions',
+          label: 'ACTIONS',
+          align: 'center',
+        },
       ];
     });
 
@@ -587,7 +719,6 @@ export default defineComponent({
 
     const onArchiveCampaign = (propsRow) => {
       state.selectedCampaignJson = propsRow;
-
       state.showArchiveCampaignModal = true;
     };
 
@@ -608,79 +739,145 @@ export default defineComponent({
       });
     };
 
-    const getContactsStats = (row) => {
-      const contactStats = row?.contact_stats || {};
+    const onRenameCampaign = (row) => {
+      state.selectedCampaignJson = row;
+      state.isUpdateName = true;
+      state.showSaveCampaignDetailsModal = true;
+    };
 
+    const onUpdateCampaign = (updatedCampaignJson) => {
+      state.showSaveCampaignDetailsModal = false;
+
+      // update the table data
+      state.tableData = state.tableData.map((campaign) => {
+        if (campaign.id === updatedCampaignJson.id) {
+          return {
+            ...campaign,
+            ...updatedCampaignJson,
+          };
+        }
+
+        return campaign;
+      });
+
+      // update the store
+      updateDataToStore({
+        tableData: state.tableData,
+      });
+    };
+
+    const onPauseCampaign = async (row) => {
+      const oldStatus = row.status;
+
+      onUpdateCampaign({
+        ...row,
+        status: CAMPAIGN_STATUS.PAUSED.value,
+      });
+
+      const response = await pauseCampaignById({
+        campaignId: row.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (!response) {
+        onUpdateCampaign({
+          ...row,
+          status: oldStatus,
+        });
+      }
+    };
+
+    const handleResumeCampaign = async (row) => {
+      const oldStatus = row.status;
+
+      onUpdateCampaign({
+        ...row,
+        status: CAMPAIGN_STATUS.ACTIVE.value,
+      });
+
+      const response = await startCampaignById({
+        campaignId: row.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (!response) {
+        onUpdateCampaign({
+          ...row,
+          status: oldStatus,
+        });
+      }
+    };
+
+    const onCloneCampaign = async (row) => {
+      showQuasarLoader();
+
+      const response = await cloneCampaignById({
+        campaignId: row.id,
+        $toast: appContext.config.globalProperties.$toast,
+      });
+
+      if (response) {
+        $router.push(`/outreach/campaigns/${response.id}/edit`);
+      }
+
+      hideQuasarLoader();
+    };
+
+    const getLeadsCount = (row) => {
+      const contactStats = row?.contact_stats || {};
       const total = contactStats.total_contacts ?? row.total_no_contacts ?? 0;
-      const active = contactStats.active_count ?? row.active_contacts ?? 0;
+      return getNumeralAmount(total);
+    };
+
+    const getSentStats = (row) => {
+      const stats = row?.stats || {};
+      const emailSent = stats.email_sent || 0;
+      const liSent = (stats.li_messages_sent || 0)
+        + (stats.li_inmails_sent || 0);
+      const totalSent = emailSent + liSent;
 
       return {
-        value: getNumeralAmount(total),
-        label: `${getNumeralAmount(active)} Active`,
+        value: getNumeralAmount(totalSent),
       };
     };
 
     const getRepliesStats = (row) => {
       if (row?.reply_rate !== undefined) {
         return {
-          icon: 'seq-replied',
-          class: 'information',
-          value: `${row.reply_rate || 0}%`,
-          label: `${getNumeralAmount(row.replies || 0)} Response Rate`,
+          value: getNumeralAmount(row.replies || 0),
+          rate: row.reply_rate || 0,
         };
       }
 
       const stats = row?.stats || {};
-
-      // email replies
-      const emailReplies = stats.email_replies || 0;
-
-      // linkedin replies
-      const liReplies = stats.li_replies || 0;
-
-      // total replies
-      const totalReplies = emailReplies + liReplies;
-
-      // email sent
-      const emailSent = stats.email_sent || 0;
-
-      // linkedin sent
-      const liSent = (stats.li_messages_sent || 0)
+      const totalReplies = (stats.email_replies || 0) + (stats.li_replies || 0);
+      const totalSent = (stats.email_sent || 0)
+        + (stats.li_messages_sent || 0)
         + (stats.li_inmails_sent || 0);
-      const totalSent = emailSent + liSent;
 
-      //
       const rate = totalSent > 0 ? findPercentage({
         part: totalReplies,
         whole: totalSent,
       }) : 0;
 
       return {
-        icon: 'seq-replied',
-        class: 'information',
-        value: `${rate}%`,
-        label: `${getNumeralAmount(totalReplies)} Response Rate`,
+        value: getNumeralAmount(totalReplies),
+        rate,
       };
     };
 
     const getPositiveRepliesStats = (row) => {
       if (row?.positive_reply_rate !== undefined) {
         return {
-          icon: 'positive-reply',
-          value: `${row.positive_reply_rate || 0}%`,
-          label: `${getNumeralAmount(row.positive_replies || 0)} Qualified`,
+          value: getNumeralAmount(row.positive_replies || 0),
+          rate: row.positive_reply_rate || 0,
         };
       }
 
       const stats = row?.stats || {};
-
-      const emailPositive = stats.email_positive_replies || 0;
-      const liPositive = stats.li_positive_replies || 0;
-      const totalPositive = emailPositive + liPositive;
-
-      const emailReplies = stats.email_replies || 0;
-      const liReplies = stats.li_replies || 0;
-      const totalReplies = emailReplies + liReplies;
+      const totalPositive = (stats.email_positive_replies || 0)
+        + (stats.li_positive_replies || 0);
+      const totalReplies = (stats.email_replies || 0) + (stats.li_replies || 0);
 
       const rate = totalReplies > 0 ? findPercentage({
         part: totalPositive,
@@ -688,10 +885,59 @@ export default defineComponent({
       }) : 0;
 
       return {
-        icon: 'positive-reply',
-        value: `${rate}%`,
-        label: `${getNumeralAmount(totalPositive)} Qualified`,
+        value: getNumeralAmount(totalPositive),
+        rate,
       };
+    };
+
+    const getBouncedStats = (row) => {
+      const stats = row?.stats || {};
+      const bounces = stats.email_bounces || 0;
+      const emailSent = stats.email_sent || 0;
+
+      const rate = emailSent > 0 ? findPercentage({
+        part: bounces,
+        whole: emailSent,
+      }) : 0;
+
+      return {
+        value: getNumeralAmount(bounces),
+        rate,
+      };
+    };
+
+    const getTrendData = (row, metric) => {
+      const list = state.dateStatsBySeqId?.[row.id]
+        || state.dateStatsBySeqId?.[String(row.id)]
+        || [];
+
+      if (!Array.isArray(list) || list.length === 0) return [];
+
+      if (metric === 'sent') {
+        return list.map((item) => (item.email_sent || 0) + (item.li_messages_sent || 0));
+      }
+      if (metric === 'replied') {
+        return list.map((item) => (item.email_replies || 0) + (item.li_replies || 0));
+      }
+      if (metric === 'bounced') {
+        return list.map((item) => item.email_bounces || 0);
+      }
+
+      return [];
+    };
+
+    const fetchDateStats = async (seqIds) => {
+      if (!Array.isArray(seqIds) || seqIds.length === 0) {
+        state.dateStatsBySeqId = {};
+        return;
+      }
+
+      try {
+        const response = await getMultipleSequencesDateStats(seqIds);
+        state.dateStatsBySeqId = response || {};
+      } catch (error) {
+        state.dateStatsBySeqId = {};
+      }
     };
 
     const fetchData = async (page = 1, perPage = 10) => {
@@ -703,17 +949,14 @@ export default defineComponent({
           limit: perPage,
         };
 
-        // search text
         if (state.filters.searchText) {
           params.search_text = state.filters.searchText;
         }
 
-        // status
         if (state.filters.status) {
           params.status = state.filters.status;
         }
 
-        // API Call
         const endpoint = props.contactId
           ? `/contacts/${props.contactId}/campaigns`
           : '/sequences';
@@ -729,6 +972,14 @@ export default defineComponent({
         state.tableData = data || [];
         state.pagination.rowsNumber = count;
 
+        // Fetch sparklines data for sequences on this page
+        if (state.tableData.length > 0) {
+          const ids = state.tableData.map((seq) => seq.id);
+          fetchDateStats(ids);
+        } else {
+          state.dateStatsBySeqId = {};
+        }
+
         // store in pinia
         updateDataToStore({
           filters: state.filters,
@@ -736,7 +987,6 @@ export default defineComponent({
           tableData: state.tableData,
         });
       } catch (error) {
-        // Show a toaster that domain have been setup successfully
         appContext.config.globalProperties.$toast({
           warning: true,
           message: error.message || 'Unexpected error occured. Unable to fetch sequences.',
@@ -758,7 +1008,6 @@ export default defineComponent({
       );
 
       if (!state.areResultsFetchedOnce) {
-        // make it true
         state.areResultsFetchedOnce = true;
       }
     };
@@ -771,7 +1020,6 @@ export default defineComponent({
 
     const clearAllFilters = () => {
       state.filters = { ...campaignFilters };
-
       onFetchAllData();
     };
 
@@ -787,7 +1035,7 @@ export default defineComponent({
 
     const onCreateNewSequence = () => {
       state.selectedCampaignJson = null;
-
+      state.isUpdateName = false;
       state.showSaveCampaignDetailsModal = true;
     };
 
@@ -801,22 +1049,6 @@ export default defineComponent({
       }
 
       return `/outreach/campaigns/${campaignJson.id}`;
-    };
-
-    const onUpdateCampaign = (updatedCampaignJson) => {
-      // update the table data
-      state.tableData = state.tableData.map((campaign) => {
-        if (campaign.id === updatedCampaignJson.id) {
-          return updatedCampaignJson;
-        }
-
-        return campaign;
-      });
-
-      // update the store
-      updateDataToStore({
-        tableData: state.tableData,
-      });
     };
 
     const makeApiCallOnMounted = async () => {
@@ -842,14 +1074,29 @@ export default defineComponent({
         ];
         state.visibleColumns = columns.map((col) => col.name);
       } else {
-        state.visibleColumns = [...visibleColumns];
+        let updatedColumns = [...visibleColumns];
+        // Handle transition from 'contacts' to 'leads'
+        if (updatedColumns.includes('contacts')) {
+          updatedColumns = updatedColumns.map((col) => (col === 'contacts' ? 'leads' : col));
+        }
+        if (!updatedColumns.includes('leads')) updatedColumns.push('leads');
+        if (!updatedColumns.includes('sent')) updatedColumns.push('sent');
+        if (!updatedColumns.includes('replied')) updatedColumns.push('replied');
+        if (!updatedColumns.includes('positiveReplies')) updatedColumns.push('positiveReplies');
+        if (!updatedColumns.includes('bounced')) updatedColumns.push('bounced');
+        if (!updatedColumns.includes('tags')) updatedColumns.push('tags');
+
+        state.visibleColumns = updatedColumns;
 
         updateDataToStore({
-          visibleColumns: [...visibleColumns],
+          visibleColumns: [...state.visibleColumns],
         });
       }
 
       state.areResultsFetchedOnce = !isEmpty(state.tableData);
+
+      // Pre-fetch tags for resolving campaign tag IDs into badges
+      tagsStore.fetchTags();
 
       onRequest({
         pagination: state.pagination,
@@ -871,12 +1118,14 @@ export default defineComponent({
       baseColumns,
       dynamicColumns,
       isMobileDevice,
+      isReadOnly,
 
       tablePaginationLabel,
       headerTitle,
       showAllCampaignsIllustration,
       showCampaignFilters,
       isFilterApplied,
+      CAMPAIGN_STATUS,
 
       // methods
       onRequest,
@@ -887,13 +1136,20 @@ export default defineComponent({
       onUpdateVisibleColumns,
       onSuccessfulArchiveCampaign,
       onCreateNewSequence,
+      onRenameCampaign,
+      onPauseCampaign,
+      handleResumeCampaign,
+      onCloneCampaign,
 
       getNumeralAmount,
       onUpdateCampaign,
 
-      getContactsStats,
+      getLeadsCount,
+      getSentStats,
       getRepliesStats,
       getPositiveRepliesStats,
+      getBouncedStats,
+      getTrendData,
       getRouterLinkForCampaign,
     };
   },
@@ -1010,21 +1266,62 @@ export default defineComponent({
         overflow-y: auto;
       }
 
+      :deep(.q-table thead tr th) {
+        font-size: 12px;
+        font-weight: 600;
+        color: $grey-700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
       .campaigns-route-link {
         display: flex;
-        flex-direction: column;
+        align-items: center;
         height: 100%;
         width: 100%;
         text-decoration: unset;
 
         color: $black;
-        padding: 8px 0px;
+        padding: 6px 0px;
+      }
+
+      .contacts-count-text {
+        font-size: 14px;
+        color: $black;
       }
 
       .actions-cell {
         display: flex;
         align-items: center;
-        gap: 20px;
+        justify-content: center;
+        height: 100%;
+
+        .more-action-btn {
+          width: 28px;
+          height: 28px;
+          min-height: 28px;
+          border-radius: 6px;
+
+          border: 1px solid $blue-grey;
+          background: $white;
+          padding: 0;
+
+          .more-menu-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transform: rotate(90deg);
+          }
+
+          &:hover {
+            background: $grey-50;
+          }
+        }
       }
     }
   }
