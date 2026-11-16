@@ -413,40 +413,39 @@
 
         <!-- Actions -->
         <template v-slot:body-cell-actions="props">
-            <q-td :props="props" class="actions-cell">
-              <div class="campaigns-route-link">
-                <q-btn
-                  dense
-                  outlined
-                  unelevated
-                  :disable="isReadOnly"
-                  @click.stop.prevent
-                  class="more-action-btn"
-                >
-                  <LocalSvgIcon
-                    image="more"
-                    classes="more-menu-icon"
-                  />
+          <q-td :props="props">
+            <div class="actions-cell">
+              <q-btn
+                dense
+                outlined
+                unelevated
+                :disable="isReadOnly"
+                class="more-action-btn"
+              >
+                <LocalSvgIcon
+                  image="more"
+                  classes="more-menu-icon"
+                />
 
-                  <CampaignMoreOptions
-                    v-if="!isReadOnly"
+                <CampaignMoreOptions
+                  v-if="!isReadOnly"
 
-                    :campaignStatus="props.row.status"
+                  :campaignStatus="props.row.status"
 
-                    @cloneCampaign="onCloneCampaign(props.row)"
-                    @renameCampaign="onRenameCampaign(props.row)"
-                    @pauseCampaign="onPauseCampaign(props.row)"
-                    @resumeCampaign="handleResumeCampaign(props.row)"
-                    @archiveCampaign="onArchiveCampaign(props.row)"
-                  />
+                  @cloneCampaign="onCloneCampaign(props.row)"
+                  @renameCampaign="onRenameCampaign(props.row)"
+                  @pauseCampaign="onPauseCampaign(props.row)"
+                  @resumeCampaign="handleResumeCampaign(props.row)"
+                  @archiveCampaign="onArchiveCampaign(props.row)"
+                />
 
-                  <AppTooltip
-                    v-if="isReadOnly"
-                    content="You have read-only access in this workspace"
-                  />
-                </q-btn>
-              </div>
-            </q-td>
+                <AppTooltip
+                  v-if="isReadOnly"
+                  content="You have read-only access in this workspace"
+                />
+              </q-btn>
+            </div>
+          </q-td>
         </template>
       </q-table>
     </div>
@@ -648,11 +647,13 @@ export default defineComponent({
         name: 'name',
         label: 'NAME',
         align: 'left',
+        field: 'name',
       },
       {
         name: 'status',
         label: 'STATUS',
         align: 'left',
+        field: 'status',
       },
     ];
 
@@ -661,31 +662,37 @@ export default defineComponent({
         name: 'leads',
         label: 'LEADS',
         align: 'left',
+        field: 'leads',
       },
       {
         name: 'sent',
         label: 'SENT',
         align: 'left',
+        field: 'sent',
       },
       {
         name: 'replied',
         label: 'REPLIED',
         align: 'left',
+        field: 'replied',
       },
       {
         name: 'positiveReplies',
         label: 'POSITIVE REPLIES',
         align: 'left',
+        field: 'positiveReplies',
       },
       {
         name: 'bounced',
         label: 'BOUNCED',
         align: 'left',
+        field: 'bounced',
       },
       // {
       //   name: 'tags',
       //   label: 'TAGS',
       //   align: 'left',
+      //   field: 'tags',
       // },
     ]);
 
@@ -701,6 +708,7 @@ export default defineComponent({
           name: 'actions',
           label: 'ACTIONS',
           align: 'center',
+          field: 'actions',
         },
       ];
     });
@@ -1067,26 +1075,16 @@ export default defineComponent({
       }
 
       // set from store
-      if (isEmpty(visibleColumns)) {
-        const columns = [
-          ...baseColumns,
-          ...dynamicColumns.value,
-        ];
-        state.visibleColumns = columns.map((col) => col.name);
-      } else {
-        let updatedColumns = [...visibleColumns];
-        // Handle transition from 'contacts' to 'leads'
-        if (updatedColumns.includes('contacts')) {
-          updatedColumns = updatedColumns.map((col) => (col === 'contacts' ? 'leads' : col));
-        }
-        if (!updatedColumns.includes('leads')) updatedColumns.push('leads');
-        if (!updatedColumns.includes('sent')) updatedColumns.push('sent');
-        if (!updatedColumns.includes('replied')) updatedColumns.push('replied');
-        if (!updatedColumns.includes('positiveReplies')) updatedColumns.push('positiveReplies');
-        if (!updatedColumns.includes('bounced')) updatedColumns.push('bounced');
-        if (!updatedColumns.includes('tags')) updatedColumns.push('tags');
+      const validDynamicKeys = dynamicColumns.value.map((col) => col.name);
 
-        state.visibleColumns = updatedColumns;
+      if (isEmpty(visibleColumns)) {
+        state.visibleColumns = [...validDynamicKeys];
+      } else {
+        let updatedColumns = visibleColumns.map((col) => (col === 'contacts' ? 'leads' : col));
+        // Keep only valid dynamic column keys (never include baseColumns or obsolete keys)
+        updatedColumns = updatedColumns.filter((col) => validDynamicKeys.includes(col));
+
+        state.visibleColumns = isEmpty(updatedColumns) ? [...validDynamicKeys] : updatedColumns;
 
         updateDataToStore({
           visibleColumns: [...state.visibleColumns],
@@ -1296,7 +1294,7 @@ export default defineComponent({
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 100%;
+        width: 100%;
 
         .more-action-btn {
           width: 28px;
@@ -1314,6 +1312,7 @@ export default defineComponent({
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: none;
 
             transform: rotate(90deg);
           }

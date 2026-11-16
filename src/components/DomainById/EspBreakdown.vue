@@ -138,6 +138,22 @@ import { defineComponent, computed } from 'vue';
 // Components
 import ApiLoader from 'components/General/ApiLoader.vue';
 
+const ESP_COUNT_KEYS = [
+  'gmail_count',
+  'outlook_count',
+  'zoho_count',
+  'yahoo_count',
+  'other_count',
+];
+
+const DEFAULT_ESP_METRICS = {
+  gmail_count: 0,
+  outlook_count: 0,
+  zoho_count: 0,
+  yahoo_count: 0,
+  other_count: 0,
+};
+
 export default defineComponent({
   name: 'EspBreakdown',
 
@@ -160,32 +176,38 @@ export default defineComponent({
     // computed
     const hideEspBreakdown = computed(() => isEmpty(props.espPerformanceMetrics));
 
-    const numericEspPerformanceMetrics = computed(() => Object.fromEntries(
-      Object.entries(props.espPerformanceMetrics).filter(
-        ([, value]) => typeof value === 'number',
-      ),
-    ));
+    const numericEspPerformanceMetrics = computed(() => {
+      const metrics = props.espPerformanceMetrics || {};
+      const result = {};
 
-    const totalCount = computed(() => Object.values(
-      numericEspPerformanceMetrics.value,
-    ).reduce((a, b) => a + b, 0));
+      ESP_COUNT_KEYS.forEach((key) => {
+        result[key] = typeof metrics[key] === 'number' ? metrics[key] : 0;
+      });
+
+      return result;
+    });
+
+    const totalCount = computed(() => ESP_COUNT_KEYS.reduce(
+      (sum, key) => sum + (numericEspPerformanceMetrics.value[key] || 0),
+      0,
+    ));
 
     const percentages = computed(() => {
       if (!totalCount.value) {
-        return {
-          gmail_count: 0, outlook_count: 0, zoho_count: 0, yahoo_count: 0, other_count: 0,
-        };
+        return { ...DEFAULT_ESP_METRICS };
       }
 
-      return Object.fromEntries(
-        Object.entries(numericEspPerformanceMetrics.value).map(([key, val]) => {
-          const percent = (val / totalCount.value) * 100;
-          const rounded = percent.toFixed(1);
+      const result = {};
+      ESP_COUNT_KEYS.forEach((key) => {
+        const val = numericEspPerformanceMetrics.value[key] || 0;
+        const percent = (val / totalCount.value) * 100;
+        const rounded = percent.toFixed(1);
 
-          // return integer if zero, else keep 1 decimal
-          return [key, percent === 0 ? 0 : parseFloat(rounded)];
-        }),
-      );
+        // return integer if zero, else keep 1 decimal
+        result[key] = percent === 0 ? 0 : parseFloat(rounded);
+      });
+
+      return result;
     });
 
     return {
