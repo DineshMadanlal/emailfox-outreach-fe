@@ -135,7 +135,7 @@
     >
       <!-- Show loader when the API is processing -->
       <ApiLoader
-        :show="showApiLoader"
+        :show="isApiProcessing"
 
         v-if="!showAllMailboxesIllustration"
       />
@@ -425,7 +425,7 @@
         </template>
 
         <!-- Content -->
-        <!-- Full Name -->
+        <!-- Full Name with ESP Logo -->
         <template v-slot:body-cell-nameAndEmail="props">
           <q-td
             :props="props"
@@ -434,21 +434,27 @@
               :to="`/outreach/mailbox/${props.row.id}`"
               class="mailbox-route-link"
             >
-              <div>
-                <div class="mailbox-name-text">
-                  {{ props.row.name }}
-                </div>
+              <div class="name-email-cell">
+                <LocalSvgIcon
+                  :image="getProviderIcon(props.row.provider)"
+                  classes="mailbox-provider-logo"
+                />
+                <div>
+                  <div class="mailbox-name-text">
+                    {{ props.row.name }}
+                  </div>
 
-                <div class="mailbox-email-text">
-                  {{ props.row.email }}
+                  <div class="mailbox-email-text">
+                    {{ props.row.email }}
+                  </div>
                 </div>
               </div>
             </router-link>
           </q-td>
         </template>
 
-        <!-- Provider -->
-        <template v-slot:body-cell-provider="props">
+        <!-- Status -->
+        <template v-slot:body-cell-status="props">
           <q-td
             :props="props"
           >
@@ -456,8 +462,67 @@
               :to="`/outreach/mailbox/${props.row.id}`"
               class="mailbox-route-link"
             >
-              <EspProvider
-                :provider="props.row.provider || 'GMAIL'"
+              <div
+                class="mailbox-status-cell"
+                :class="props.row.status
+                  === MAILBOX_STATUS.ACTIVE ? 'status-active' : 'status-disconnected'"
+              >
+                <span class="status-dot"></span>
+                <span class="status-text">
+                  {{ props.row.status === MAILBOX_STATUS.ACTIVE ? 'Active' : 'Disconnected' }}
+                </span>
+
+                <!-- app tooltip -->
+                <AppTooltip
+                  v-if="props.row.status !== MAILBOX_STATUS.ACTIVE && !!props.row.disconnect_reason"
+
+                  anchor="top middle"
+                  self="bottom middle"
+                  :content="props.row.disconnect_reason"
+                />
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Sent -->
+        <template v-slot:body-cell-sent="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/mailbox/${props.row.id}/settings`"
+              class="mailbox-route-link"
+            >
+              <div class="flex no-wrap items-center mailbox-sent-cell">
+                <LocalSvgIcon
+                  image="sent"
+                  classes="mailbox-icon"
+                />
+
+                <span class="sent-counts-text">
+                  {{ getNumeralAmount(props.row.emails_sent_today || 0) }}
+                  /{{ props.row.sending_limit_per_day || 0 }}
+                </span>
+              </div>
+            </router-link>
+          </q-td>
+        </template>
+
+        <!-- Warmup Status -->
+        <template v-slot:body-cell-warmupStatus="props">
+          <q-td
+            :props="props"
+          >
+            <router-link
+              :to="`/outreach/mailbox/${props.row.id}/warmup`"
+              class="mailbox-route-link"
+            >
+              <WarmupStatus
+                :mailboxJson="props.row"
+                :dailyStats="warmupDailyStatsByMailboxId[props.row.id]"
+
+                @onEnableWarmup="onEnableWarmupByMailboxId(props.row)"
               />
             </router-link>
           </q-td>
@@ -479,93 +544,36 @@
           </q-td>
         </template>
 
-        <!-- Deliverability Score -->
-        <template v-slot:body-cell-deliverabilityScore="props">
+        <!-- Actions -->
+        <template v-slot:body-cell-actions="props">
           <q-td
             :props="props"
           >
-            <router-link
-              :to="`/outreach/mailbox/${props.row.id}`"
-              class="mailbox-route-link"
-            >
-              <DeliverabilityScore
-                :score="props.row.health_score"
-              />
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Status -->
-        <template v-slot:body-cell-status="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/mailbox/${props.row.id}`"
-              class="mailbox-route-link"
-            >
-              <ConnectionStatus
-                :disconnectedReason="props.row.disconnect_reason"
-                :isConnected="props.row.status === WARMUP_STATUS.ACTIVE"
-              />
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Sent -->
-        <template v-slot:body-cell-sent="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/mailbox/${props.row.id}`"
-              class="mailbox-route-link"
-            >
-              <div class="flex no-wrap items-center">
+            <div class="actions-cell">
+              <q-btn
+                dense
+                outlined
+                unelevated
+                :disable="isReadOnly"
+                class="more-action-btn"
+              >
                 <LocalSvgIcon
-                  image="sent"
-                  classes="mailbox-icon"
+                  image="more"
+                  classes="more-menu-icon"
                 />
 
-                <div>
-                  {{ getNumeralAmount(props.row.emails_sent_today) }}
-                  /
-                  {{ props.row.sending_limit_per_day }} per day
-                </div>
-              </div>
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Email Authentication -->
-        <template v-slot:body-cell-emailAuthentication="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/mailbox/${props.row.id}`"
-              class="mailbox-route-link"
-            >
-              <EmailAuthentication />
-            </router-link>
-          </q-td>
-        </template>
-
-        <!-- Warmup Status -->
-        <template v-slot:body-cell-warmupStatus="props">
-          <q-td
-            :props="props"
-          >
-            <router-link
-              :to="`/outreach/mailbox/${props.row.id}`"
-              class="mailbox-route-link"
-            >
-              <WarmupStatus
-                :mailboxJson="props.row"
-
-                @onEnableWarmup="onEnableWarmupByMailboxId(props.row)"
-              />
-            </router-link>
+                <q-menu
+                  v-if="!isReadOnly"
+                  anchor="bottom right"
+                  self="top right"
+                >
+                  <MailboxesMoreActions
+                    :displayedActions="[]"
+                    @emitAction="onMailboxRowAction(props.row, $event)"
+                  />
+                </q-menu>
+              </q-btn>
+            </div>
           </q-td>
         </template>
       </q-table>
@@ -592,17 +600,20 @@ import { useRoute } from 'vue-router';
 
 // composition api
 import useAppHelpersApi from 'src/composables/app-helpers.js';
+import { usePermissions } from 'src/composables/usePermissions';
 
 // utils
 import { formatDate1 } from 'src/utils/dates';
 import { getApiCall } from 'src/utils/apiRequests';
 import { getNumeralAmount, findPercentage } from 'src/utils/numbers';
 import { getDeliverabilityRateJson, getBouncedRateJson } from 'src/utils/helperFunctions';
+import { getMultipleMailboxesDailyStats } from 'src/utils/warmupApi';
 
 // components
 import AppHeader from 'components/Headers/AppHeader.vue';
 import ApiLoader from 'components/General/ApiLoader.vue';
 import InfoTooltip from 'components/General/InfoTooltip.vue';
+import AppTooltip from 'components/General/AppTooltip.vue';
 
 import MoreFilters from 'components/Buttons/MoreFilters.vue';
 import MailboxMoreFilters from 'components/Menu/MailboxMoreFilters.vue';
@@ -612,13 +623,10 @@ import TableMultiSelect from 'components/Menu/TableMultiSelect.vue';
 import DeleteMailbox from 'components/Domains/Modals/DeleteMailbox.vue';
 import AllMailboxesIllustration from 'components/Illustrations/AllMailboxes.vue';
 import ColumnsVisibility from 'components/Modals/ColumnsVisibility.vue';
-import EspProvider from 'components/Mailboxes/EspProvider.vue';
 import TagsDisplay from 'components/Tags/TagsDisplay.vue';
-import ConnectionStatus from 'components/Mailboxes/ConnectionStatus.vue';
 import MailboxesActionSummary from 'components/Mailboxes/Modals/MailboxesActionSummary.vue';
-import DeliverabilityScore from 'components/Mailboxes/DeliverabilityScore.vue';
-import EmailAuthentication from 'components/Mailboxes/EmailAuthentication.vue';
 import WarmupStatus from 'components/Mailboxes/WarmupStatus.vue';
+import MailboxesMoreActions from 'components/Mailboxes/MailboxesMoreActions.vue';
 
 import AppSearchInput from 'components/Input/AppSearchInput.vue';
 import ColumnsVisibilityButton from 'components/Buttons/ColumnsVisibility.vue';
@@ -642,7 +650,7 @@ import {
 } from 'boot/constants';
 import { WARMUP_STATUS } from 'src/boot/warmup-constants';
 import { BULK_ASSIGN_TAG_FEATURE } from 'src/boot/workspace-constants';
-import { MAILBOX_ACTIONS, MAILBOX_STATUS } from 'src/boot/mailbox-constants';
+import { MAILBOX_ACTIONS, MAILBOX_STATUS, ESP_PROVIDERS } from 'src/boot/mailbox-constants';
 
 export default defineComponent({
   name: 'AllMailboxes',
@@ -655,23 +663,20 @@ export default defineComponent({
     AppHeader,
     ApiLoader,
     InfoTooltip,
+    AppTooltip,
     MoreFilters,
     MailboxMoreFilters,
 
     ColumnsVisibility,
-    EspProvider,
     TagsDisplay,
-    ConnectionStatus,
 
     DeleteMailbox,
     MailboxFilters,
     TableMultiSelect,
     AllMailboxesIllustration,
     MailboxesActionSummary,
-
-    DeliverabilityScore,
-    EmailAuthentication,
     WarmupStatus,
+    MailboxesMoreActions,
 
     AppSearchInput,
     MailboxesSummary,
@@ -714,6 +719,7 @@ export default defineComponent({
 
     // composition API
     const { generateMetadata, isMobileDevice } = useAppHelpersApi();
+    const { isReadOnly } = usePermissions();
 
     // store
     const userStore = useUserPreferencesStore();
@@ -727,6 +733,7 @@ export default defineComponent({
       areResultsFetchedOnce: false,
 
       tableData: [],
+      warmupDailyStatsByMailboxId: {},
 
       // pagination
       pagination: {},
@@ -806,48 +813,38 @@ export default defineComponent({
     const baseColumns = [
       {
         name: 'nameAndEmail',
-        label: 'Name',
+        label: 'NAME',
         align: 'left',
+        field: 'name',
       },
     ];
 
     const dynamicColumns = computed(() => {
       const columns = [
         {
-          name: 'provider',
-          label: 'Provider',
-          align: 'left',
-        },
-        {
-          name: 'tags',
-          label: 'Tags',
-          align: 'left',
-        },
-        {
-          name: 'warmupStatus',
-          label: 'Warmup Status',
-          align: 'left',
-        },
-        {
-          name: 'deliverabilityScore',
-          label: 'Deliverability Rate',
-          align: 'left',
-        },
-        {
           name: 'status',
-          label: 'Status',
+          label: 'STATUS',
           align: 'left',
+          field: 'status',
         },
         {
           name: 'sent',
-          label: 'Email sent / day',
+          label: 'SENT / LIMIT',
           align: 'left',
+          field: 'emails_sent_today',
         },
-        // {
-        //   name: 'emailAuthentication',
-        //   label: 'Email Authentication',
-        //   align: 'left',
-        // },
+        {
+          name: 'warmupStatus',
+          label: 'WARMUP STATS',
+          align: 'left',
+          field: 'warmup_status',
+        },
+        {
+          name: 'tags',
+          label: 'TAGS',
+          align: 'left',
+          field: 'tags',
+        },
       ];
 
       return columns;
@@ -861,6 +858,12 @@ export default defineComponent({
       return [
         ...baseColumns,
         ...filteredColumns,
+        // {
+        //   name: 'actions',
+        //   label: 'ACTIONS',
+        //   align: 'right',
+        //   field: 'actions',
+        // },
       ];
     });
 
@@ -934,6 +937,36 @@ export default defineComponent({
       return params;
     };
 
+    const fetchWarmupDailyStats = async (mailboxIds) => {
+      if (!Array.isArray(mailboxIds) || mailboxIds.length === 0) {
+        state.warmupDailyStatsByMailboxId = {};
+        return;
+      }
+
+      try {
+        const response = await getMultipleMailboxesDailyStats(mailboxIds);
+        const statsMap = {};
+        if (Array.isArray(response)) {
+          response.forEach((item) => {
+            const id = item.mailbox_id || item.id;
+            if (id) statsMap[id] = item;
+          });
+        } else if (response && typeof response === 'object') {
+          if (Array.isArray(response.data)) {
+            response.data.forEach((item) => {
+              const id = item.mailbox_id || item.id;
+              if (id) statsMap[id] = item;
+            });
+          } else {
+            Object.assign(statsMap, response);
+          }
+        }
+        state.warmupDailyStatsByMailboxId = statsMap;
+      } catch (error) {
+        state.warmupDailyStatsByMailboxId = {};
+      }
+    };
+
     const fetchData = async (page = 1, perPage = 10) => {
       try {
         state.isApiProcessing = true;
@@ -985,6 +1018,14 @@ export default defineComponent({
         state.multiSelectOptionJson = {};
 
         state.pagination.rowsNumber = count;
+
+        // Fetch warmup daily stats for mailboxes on this page
+        if (state.tableData.length > 0) {
+          const ids = state.tableData.map((element) => element.id);
+          fetchWarmupDailyStats(ids);
+        } else {
+          state.warmupDailyStatsByMailboxId = {};
+        }
 
         // store in pinia
         updateDataToStore({
@@ -1086,11 +1127,19 @@ export default defineComponent({
 
       state.areResultsFetchedOnce = !isEmpty(state.tableData);
 
+      const validKeys = dynamicColumns.value.map((col) => col.name);
+
       if (isEmpty(visibleColumns)) {
-        state.visibleColumns = dynamicColumns.value.map((col) => col.name);
+        state.visibleColumns = [...validKeys];
       } else {
-        // set from store
-        state.visibleColumns = [...visibleColumns];
+        // filter out any stale or removed columns such as deliverabilityScore or provider
+        const sanitized = visibleColumns.filter((col) => validKeys.includes(col));
+        if (!sanitized.includes('tags')) {
+          sanitized.push('tags');
+        }
+        state.visibleColumns = isEmpty(sanitized)
+          ? [...validKeys]
+          : [...sanitized];
       }
 
       onRequest({
@@ -1191,6 +1240,34 @@ export default defineComponent({
       onActionConfig(MAILBOX_ACTIONS.ENABLE_WARMUP);
     };
 
+    const onMailboxRowAction = (propsRow, actionType) => {
+      state.selectedMailboxes = [propsRow];
+
+      if (actionType === MAILBOX_ACTIONS.DELETE) {
+        onDeleteMailbox(propsRow);
+        return;
+      }
+
+      onActionConfig(actionType);
+    };
+
+    const getProviderIcon = (provider) => {
+      switch (provider) {
+        case ESP_PROVIDERS.GMAIL:
+          return 'gmail';
+        case ESP_PROVIDERS.OUTLOOK:
+          return 'outlook';
+        case ESP_PROVIDERS.YAHOO:
+          return 'yahoo';
+        case ESP_PROVIDERS.ZOHO:
+          return 'zoho';
+        case ESP_PROVIDERS.AZURE:
+          return 'azure';
+        default:
+          return 'other-smtp';
+      }
+    };
+
     const resetFilters = () => {
       state.filters = { ...mailboxFilters };
     };
@@ -1253,6 +1330,7 @@ export default defineComponent({
       // computed
       tableColumns,
       isMobileDevice,
+      isReadOnly,
       showApiLoader,
       showMailboxFilters,
       tablePaginationLabel,
@@ -1281,6 +1359,8 @@ export default defineComponent({
       exportMailboxes,
       onSuccessfulAction,
       onEnableWarmupByMailboxId,
+      onMailboxRowAction,
+      getProviderIcon,
 
       onFilterConnectedAccounts,
       onFilterWarmupErrorAccounts,
@@ -1289,6 +1369,8 @@ export default defineComponent({
       // hardcoded
       WARMUP_STATUS,
       BULK_ASSIGN_TAG_FEATURE,
+      ESP_PROVIDERS,
+      MAILBOX_STATUS,
     };
   },
 });
@@ -1435,6 +1517,90 @@ export default defineComponent({
           .mailbox-name-text {
             color: $primary;
           }
+        }
+      }
+    }
+
+    .name-email-cell {
+      display: flex;
+      gap: 12px;
+
+      .mailbox-provider-logo {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+    }
+
+    .mailbox-status-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      &.status-active {
+        color: $positive;
+        .status-dot {
+          background-color: $positive;
+        }
+      }
+
+      &.status-disconnected {
+        color: $negative;
+        .status-dot {
+          background-color: $negative;
+        }
+      }
+    }
+
+    .mailbox-sent-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 400;
+      color: $black;
+
+      .mailbox-icon {
+        margin-right: 0px;
+      }
+
+      .sent-counts-text {
+        font-weight: 400;
+        font-size: 13px;
+      }
+    }
+
+    .actions-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .more-action-btn {
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        padding: 0;
+        border-radius: 6px;
+        border: 1px solid $blue-grey;
+        background: $white;
+
+        .more-menu-icon {
+          transform: rotate(90deg);
+          pointer-events: none;
+        }
+
+        &:hover {
+          border-color: $grey;
         }
       }
     }

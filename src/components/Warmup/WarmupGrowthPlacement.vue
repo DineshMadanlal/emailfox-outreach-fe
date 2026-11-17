@@ -42,7 +42,7 @@
         v-if="isMounted"
 
         height="340"
-        type="area"
+        type="bar"
         :series="placementSeries"
         :options="placementChartOptions"
       />
@@ -94,8 +94,11 @@ export default defineComponent({
 
     // computed
     const labels = computed(() => {
-      if (state.backendResponse?.warmup_growth_timeline) {
-        return state.backendResponse?.warmup_growth_timeline.map((item) => formatDate1(item.date));
+      const timeline = state.backendResponse?.inbox_vs_spam_placement_timeline
+        || state.backendResponse?.warmup_growth_timeline;
+
+      if (timeline && Array.isArray(timeline)) {
+        return timeline.map((item) => formatDate1(item.date));
       }
 
       return [];
@@ -123,26 +126,21 @@ export default defineComponent({
         return [
           {
             name: 'Inbox',
-            data: state.backendResponse?.inbox_vs_spam_placement_timeline.map((i) => i.inbox),
+            data: state.backendResponse?.inbox_vs_spam_placement_timeline.map(
+              (i) => Number(i.inbox || 0),
+            ),
           },
           {
             name: 'Spam',
-            data: state.backendResponse?.inbox_vs_spam_placement_timeline.map((i) => i.spam),
+            data: state.backendResponse?.inbox_vs_spam_placement_timeline.map(
+              (i) => Number(i.spam || 0),
+            ),
           },
         ];
       }
 
       return [];
     });
-
-    const isSeriesActive = (series) => {
-      if (!series || !Array.isArray(series.data) || series.data.length === 0) return false;
-      return series.data.some((val) => Number(val) > 0);
-    };
-
-    const placementStrokeWidths = computed(() => placementSeries.value.map((s) => (
-      isSeriesActive(s) ? 2.2 : 0
-    )));
 
     const commonOptions = computed(() => {
       const grey50Color = getBrandColorByName('grey-50');
@@ -296,7 +294,7 @@ export default defineComponent({
     const placementChartOptions = computed(() => {
       const colors = [
         getBrandColorByName('primary'),
-        getBrandColorByName('warning'),
+        getBrandColorByName('negative'),
       ];
 
       return {
@@ -304,7 +302,8 @@ export default defineComponent({
 
         chart: {
           ...commonOptions.value.chart,
-          type: 'area',
+          type: 'bar',
+          stacked: true,
           animations: {
             enabled: true,
             easing: 'easeinout',
@@ -312,32 +311,27 @@ export default defineComponent({
           },
         },
 
+        plotOptions: {
+          bar: {
+            horizontal: false,
+            columnWidth: '35%',
+            borderRadius: 3,
+            dataLabels: {
+              total: {
+                enabled: false,
+              },
+            },
+          },
+        },
+
         stroke: {
-          curve: 'smooth',
-          width: placementStrokeWidths.value,
-          lineCap: 'round',
+          show: true,
+          width: 1,
+          colors: ['transparent'],
         },
 
         fill: {
-          type: 'gradient',
-          gradient: {
-            shade: 'light',
-            type: 'vertical',
-            shadeIntensity: 0.4,
-            inverseColors: false,
-            opacityFrom: 0.28,
-            opacityTo: 0.02,
-            stops: [0, 85, 100],
-          },
-        },
-
-        markers: {
-          size: 0,
-          strokeWidth: 2,
-          hover: {
-            size: 5,
-            sizeOffset: 1,
-          },
+          opacity: 1,
         },
 
         colors,
@@ -347,22 +341,32 @@ export default defineComponent({
           intersect: false,
           theme: 'light',
           y: {
-            formatter: (val) => `${val || 0}%`,
+            formatter: (val) => (val !== undefined && val !== null ? val : 0),
           },
         },
 
         yaxis: {
           min: 0,
-          max: 100,
-          tickAmount: 5,
+          forceNiceScale: true,
 
           labels: {
-            formatter: (val) => `${val}%`,
+            formatter: (val) => (Number.isInteger(val) ? val : Math.round(val)),
 
             style: {
               colors: '#94a3b8',
               fontSize: '12px',
             },
+          },
+        },
+
+        noData: {
+          text: 'No warmup data available',
+          align: 'center',
+          verticalAlign: 'middle',
+          style: {
+            color: '#94a3b8',
+            fontSize: '14px',
+            fontFamily: 'Inter, sans-serif',
           },
         },
       };

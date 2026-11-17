@@ -142,6 +142,26 @@ export const getMailboxWarmupDailyStats = async ({ mailboxId }) => {
   }
 };
 
+export const getMultipleMailboxesDailyStats = async (mailboxIds) => {
+  if (!Array.isArray(mailboxIds) || mailboxIds.length === 0) {
+    return {};
+  }
+
+  try {
+    const response = await getApiCall({
+      includeWorkspace: true,
+      endpoint: '/warmup/daily-stats',
+      params: {
+        mailbox_ids: mailboxIds,
+      },
+    });
+
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const getMailboxWarmupHealthMetrics = async ({ mailboxId }) => {
   try {
     const response = await getApiCall({

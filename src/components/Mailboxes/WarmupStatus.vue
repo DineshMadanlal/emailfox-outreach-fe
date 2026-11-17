@@ -1,52 +1,62 @@
 <template>
-  <div class="warmup-status">
-    <!-- Blocked -->
+  <div class="warmup-status-cell">
+    <!-- Day & Health text -->
+    <div class="warmup-metric-text">
+      <span class="day-text">{{ dayText }}</span>
+      <template v-if="healthScore !== null && healthScore !== undefined">
+        <span class="separator-dot">•</span>
+        <span
+          class="health-text"
+          :class="healthClass"
+        >
+          {{ healthScore }}% Health
+        </span>
+      </template>
+    </div>
+
+    <!-- 7 Segmented Tick Bars Chart (always shown if warmup is active) -->
+    <WarmupTickBars
+      :data="dailyStats"
+      :alwaysShow="isWarmupEnabled"
+      :barCount="7"
+      :height="16"
+      :barWidth="4"
+      :gap="3"
+    />
+
+    <!-- Warmup State Dot & Label / Start Warmup action -->
     <div
       v-if="isWarmupBlocked"
-      class="flex no-wrap items-center"
+      class="warmup-state-indicator state-blocked"
     >
-      <!--  -->
-      <LocalSvgIcon
-        image="warmup"
-        classes="warmup-icon blocked"
-      />
-
-      <div class="blocked-text">
-        Blocked
-      </div>
+      <span class="state-dot"></span>
+      <span class="state-label">Blocked</span>
     </div>
 
-    <!-- Enabled/Disabled -->
+    <div
+      v-else-if="isWarmupEnabled"
+      class="warmup-state-indicator state-active"
+    >
+      <span class="state-dot"></span>
+      <span class="state-label">Running</span>
+    </div>
+
+    <div
+      v-else-if="hasWarmupHistory"
+      class="warmup-state-indicator state-stopped"
+    >
+      <span class="state-dot"></span>
+      <span class="state-label">Stopped</span>
+    </div>
+
+    <!-- Start Warmup for never-started mailboxes -->
     <div
       v-else
-      class="flex no-wrap items-center"
+      class="start-warmup-btn"
+      :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
+      @click.prevent.stop="!isReadOnly && $emit('onEnableWarmup')"
     >
-      <!--  -->
-      <LocalSvgIcon
-        image="warmup"
-        classes="warmup-icon"
-        :class="{ enabled: isWarmupEnabled }"
-      />
-
-      <div v-if="isWarmupEnabled">
-        Enabled
-      </div>
-
-      <div
-        v-else
-        class="start-warmup-text"
-        :class="{ 'cursor-not-allowed is-disabled': isReadOnly }"
-        @click.prevent.stop="!isReadOnly && $emit('onEnableWarmup')"
-      >
-        Start Warmup
-      </div>
-    </div>
-
-    <div
-      class="warmup-duration-text"
-      :class="[warmupStatusJson.completed ? 'text-positive' : 'text-grey']"
-    >
-      {{ warmupStatusJson.label }}
+      Start Warmup
     </div>
   </div>
 </template>
@@ -62,75 +72,159 @@ import { usePermissions } from 'src/composables/usePermissions';
 import { getWarmupStatus } from 'src/utils/warmupApi.js';
 
 // constants
-import { WARMUP_STATUS } from 'src/boot/warmup-constants.js';
+import { MIN_WARMUP_DAYS, WARMUP_STATUS } from 'src/boot/warmup-constants.js';
+
+// components
+import WarmupTickBars from 'components/Charts/WarmupTickBars.vue';
 
 export default defineComponent({
   name: 'WarmupStatus',
 
   emits: ['onEnableWarmup'],
 
+  components: {
+    WarmupTickBars,
+  },
+
   props: {
     mailboxJson: {
       type: Object,
       default: () => ({}),
     },
+    dailyStats: {
+      type: [Object, Array],
+      default: () => null,
+    },
   },
 
   setup(props) {
+    // composables
     const { isReadOnly } = usePermissions();
-    // computed
-    const isWarmupBlocked = computed(() => props.mailboxJson.warmup_status
-      === WARMUP_STATUS.BLOCKED);
 
-    const isWarmupEnabled = computed(() => props.mailboxJson.warmup_enabled);
+    // computed
+    const isWarmupBlocked = computed(
+      () => props.mailboxJson?.warmup_status === WARMUP_STATUS.BLOCKED,
+    );
+
+    const isWarmupEnabled = computed(() => Boolean(props.mailboxJson?.warmup_enabled));
+
+    const hasWarmupHistory = computed(() => Boolean(
+      props.mailboxJson?.warmup_first_started_at || props.mailboxJson?.warmup_started_at,
+    ));
 
     const warmupStatusJson = computed(() => getWarmupStatus(
-      props.mailboxJson.warmup_first_started_at,
+      props.mailboxJson?.warmup_first_started_at || props.mailboxJson?.warmup_started_at,
     ));
+
+    const dayText = computed(() => {
+      const days = warmupStatusJson.value?.days || 0;
+      return `Day ${days}/${MIN_WARMUP_DAYS}`;
+    });
+
+    const healthScore = computed(() => {
+      if (props.mailboxJson?.health_score
+        !== undefined && props.mailboxJson?.health_score !== null) {
+        return Math.round(Number(props.mailboxJson.health_score));
+      }
+      return null;
+    });
+
+    const healthClass = computed(() => {
+      const score = healthScore.value;
+      if (score === null || score === undefined) return '';
+      if (score >= 85) return 'text-positive';
+      if (score >= 60) return 'text-warning';
+      return 'text-negative';
+    });
 
     return {
       // computed
-      isWarmupEnabled,
-      warmupStatusJson,
-      isWarmupBlocked,
+      dayText,
       isReadOnly,
+      healthScore,
+      healthClass,
+      isWarmupBlocked,
+      isWarmupEnabled,
+      hasWarmupHistory,
     };
   },
 });
 </script>
 
 <style lang="scss" scoped>
-.warmup-status {
-  display: flex;
-  flex-direction: column;
+.warmup-status-cell {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 16px;
 
-  gap: 4px;
+  .warmup-metric-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 
-  :deep(.warmup-icon) {
-    margin-right: 4px;
-
-    &.enabled {
-      @include svg-icon-fill('path', $primary);
+    .day-text {
+      color: $black;
+      font-weight: 500;
     }
 
-    &.blocked {
-      @include svg-icon-fill('path', $negative);
+    .separator-dot {
+      color: $grey;
+      font-size: 11px;
+    }
+
+    .health-text {
+      font-weight: 500;
     }
   }
 
-  .start-warmup-text {
-    color: $black;
-    text-decoration: unset;
-  }
-
-  .blocked-text {
-    color: $negative;
-  }
-
-  .warmup-duration-text {
+  .warmup-state-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 13px;
-    font-weight: 400;
-    line-height: 16px;
+    font-weight: 500;
+
+    .state-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    &.state-active {
+      color: $positive;
+      .state-dot {
+        background-color: $positive;
+      }
+    }
+
+    &.state-stopped,
+    &.state-blocked {
+      color: $negative;
+      .state-dot {
+        background-color: $negative;
+      }
+    }
+  }
+
+  .start-warmup-btn {
+    color: $primary;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &.is-disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
   }
 }
 </style>
